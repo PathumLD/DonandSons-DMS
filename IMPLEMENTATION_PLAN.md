@@ -527,6 +527,147 @@
 
 ---
 
+### **Stage 1.10A: DMS Order & Delivery Module UIs** (Week 6-7)
+
+> These stages cover the DMS-specific core modules from the requirements document that are distinct from the general ERP operations above.
+
+#### Task 1.10A.1: Order Entry Grid (DMS)
+- [ ] Create spreadsheet-like order entry grid (AG Grid or TanStack Table with inline cell editing)
+- [ ] Implement dynamic column structure:
+  - Item Name column (frozen — always visible when scrolling right)
+  - Product Code column (frozen — always visible)
+  - Full / Mini qty columns (shown based on product variant config)
+  - BAL column (available balance from freezer stock — read-only, auto-populated)
+  - Extra quantity column (manually editable)
+  - Total Full / Total Mini columns (auto-calculated = SUM(outlet qtys) + Extra + Immediate Orders, read-only)
+  - Per-Outlet columns (dynamic — one column per active outlet, sortable)
+  - Multi-Turn sub-columns for applicable items (e.g. 10:30 AM Full/Mini, 3:30 PM Full/Mini)
+- [ ] Implement Tab/Enter keyboard navigation between cells
+- [ ] Implement inline cell validation (no negatives; integer-only for products where `allow_decimal_quantity = false`)
+- [ ] Add per-row Y/N toggle checkbox (include/exclude item from this turn's production)
+- [ ] Add per-outlet column checkbox (include/exclude outlet for this turn)
+- [ ] Implement color coding:
+  - Y rows = white background
+  - N rows = light gray background
+  - Customized order rows = light yellow background
+- [ ] Implement decimal/integer input mode per product configuration
+- [ ] Implement virtual scrolling for performance with 80+ products × 14+ outlets
+- [ ] Test with mock 80+ products × 14 outlets dataset
+
+#### Task 1.10A.2: Delivery Plan Creation Screen (DMS)
+- [ ] Create delivery plan creation form:
+  - Date picker
+  - Day type selector (Weekday / Saturday / Sunday / Holiday / Special Event)
+  - Delivery turn selector (2–4 turns, admin-configured)
+- [ ] Auto-load default outlet quantities on plan creation (based on selected day type)
+- [ ] Show plan status workflow indicator: Draft → Confirmed → InProduction → Delivered
+- [ ] Test that correct defaults load for Weekday vs Saturday vs Sunday selections
+
+#### Task 1.10A.3: Delivery Summary View (DMS)
+- [ ] Create dedicated Delivery Summary page (mirrors Excel Delivery Summary sheet):
+  - Product list with Y/N production flag toggle per row
+  - Per-outlet quantity columns (dynamic, matches active outlets)
+  - Total Full, Total Mini, Grand Total columns
+  - "☑ Use Freezer Stock" toggle checkbox (when ON: shows Available Balance = Grand Total – Freezer Stock)
+  - Customized order sub-rows shown below the product row (visually distinct)
+  - Grand total row at bottom
+- [ ] Implement available balance deduction display when toggle is ON
+- [ ] Ensure deduction only shown on this view and on Stores Issue Note (NOT on Production Planner)
+- [ ] Test with 80+ products and 14 outlets
+
+#### Task 1.10A.4: Immediate Orders UI (DMS)
+- [ ] Create Immediate Orders list view
+- [ ] Design table: Order Date, Product, Qty Full, Qty Mini, Is Customized, Status (Pending/Confirmed/Cancelled), Requested By, Actions
+- [ ] Create "Add Immediate Order" form modal:
+  - Product picker
+  - Quantity Full input
+  - Quantity Mini input
+  - Is Customized checkbox
+  - Customization Notes textarea
+  - Link to delivery plan dropdown (optional — standalone if not linked)
+- [ ] Show immediate order quantity included in Grand Total
+- [ ] Flag customized orders with asterisk or distinct row style
+- [ ] Test immediate order creation and total inclusion
+
+#### Task 1.10A.5: Default Quantities Management UI (DMS)
+- [ ] Create default quantities management grid:
+  - Rows: Products (80+)
+  - Column groups: Weekday | Saturday | Sunday | Holiday / Special Event
+  - Sub-columns per group: one column per active outlet
+- [ ] Implement inline editing for all quantity cells
+- [ ] Add bulk save / reset functionality
+- [ ] Test that defaults auto-load when creating a delivery plan of the matching day type
+
+---
+
+### **Stage 1.10B: DMS Production Module UIs** (Week 7-8)
+
+#### Task 1.10B.1: Production Planner View (DMS)
+- [ ] Create section-tabbed production planner layout with tabs:
+  - Bakery 1 | Bakery 2 | Filling Section | Short-Eats 1 | Short-Eats 2 | Rotty Section | Plain Roll Section | Pastry Section
+- [ ] Each section tab shows:
+  - Header: Production Start Time and Effective Delivery Time (with "(Previous Day)" label when applicable)
+  - Item list with production quantities (Full and Mini shown separately)
+  - Ingredient totals grid (Ingredient qty_per_unit × Production Qty — NO extra quantities shown here)
+- [ ] Implement collapsible/expandable sub-tables (▼ toggle) per section:
+  - **Bakery 1/2:** Viyana Roll sub-table (Full + Mini rows), Sugar Candy Bun "Dough" sub-table, Sugar Candy Bun "Bun" sub-table, Egg Wash sub-table (Eggs × coefficient), Summary totals row (Plain Bun total, Yeast total, Sugar total, Beehive, Salt, Sesame Seeds), Beehive equivalence footnote ("SUM × 30g (Egg = Butter)")
+  - **Short-Eats 1:** Pattie Dough sub-table (Flour, Beehive, Salt, Eggs), Chinese Roll Batter sub-table (Flour 12 kg base, Salt, Corn Flour, Eggs, Oil), Crumb Batter sub-table (Flour), Egg Wash for Patties sub-table, Sheet counts (Pastry Sheet / Pattie Sheet / Spring Roll Sheet)
+  - **Rotty:** Chicken Rotty Egg Wrap sub-table (Flour, Salt, Eggs), Vege Oil for Rotty Dough row
+  - **Plain Roll:** Prawn Bun Batter sub-table (Corn Flour, Baking Powder, Eggs, Flour)
+- [ ] Add print button per section (opens print preview)
+- [ ] Test with mock recipe data for all sections
+
+#### Task 1.10B.2: Stores Issue Note View (DMS)
+- [ ] Create Stores Issue Note view per section (mirrors Production Planner but with extra quantities):
+  - All ingredients shown with Stores Qty = (Recipe Qty × Prod Qty) + (Extra Qty × Prod Qty)
+  - If "Use Freezer Stock" is ON: show "Available Balance: [qty]" per product
+  - Viyana Roll Flour Note at bottom: "Viyana Roll Flour: X g | Viyana Roll Mini Flour: Y g | Dusting Flour: Y g"
+  - Sign-off section at bottom: Printed By: _____ / Issued By: _____ / Checked By: _____
+  - Production Start Time and Effective Delivery Time in header
+- [ ] Add PDF download button per section
+- [ ] Add Excel export button per section
+- [ ] Verify extra quantities are shown here but NOT on the Production Planner
+- [ ] Test stores vs production output difference
+
+#### Task 1.10B.3: Recipe Management UI (DMS)
+- [ ] Create per-item recipe editor with ingredient grid:
+  - Per-row: ingredient picker, quantity per unit input (decimal or int per product config), extra qty per unit input, "Stores Only" toggle, "Is Percentage" checkbox, percentage source product picker (shown when is-percentage = ON)
+  - Add/remove ingredient rows
+  - Drag-and-drop row reordering (updates sort_order)
+- [ ] Add sub-recipe tabs for multi-recipe products (e.g. Sugar Candy Bun: "Dough" tab | "Bun" tab)
+- [ ] Add template loader button (opens predefined recipe template picker, loads ingredient lines)
+- [ ] Add recipe version management panel:
+  - List all recipe versions with effective-from dates
+  - Activate / deactivate specific versions
+  - Create new version (copies current, sets new effective_from date)
+- [ ] Add recipe preview (shows calculated ingredient totals for a user-entered sample quantity)
+- [ ] Test sub-recipe tabs, percentage-based rows, template loading, and versioning
+
+#### Task 1.10B.4: Predefined Recipe Templates UI (DMS)
+- [ ] Create recipe templates list view
+- [ ] Design table: Template Name, Description, Ingredient Count, Active, Actions
+- [ ] Create "Add Template" form modal:
+  - Template name input
+  - Description input
+  - Ingredient lines (ingredient picker + quantity per unit)
+  - Add/remove ingredient rows
+- [ ] Create "Edit Template" form
+- [ ] Add "Apply to Product" action (applies template as base recipe, editable per product)
+- [ ] Test Vegetable Curry template creation and application
+
+#### Task 1.10B.5: Freezer Stock Management UI (DMS)
+- [ ] Create Freezer Stock entry screen:
+  - Product picker
+  - Section picker (optional — for section-level stock)
+  - Quantity input
+  - Stock Date picker (default: today)
+  - Notes input
+- [ ] Create Freezer Stock list view with date filter
+- [ ] Show last-updated date per product
+- [ ] Test that freezer stock values appear in BAL column of Order Entry Grid and in Stores Issue Note
+
+---
+
 ### **Stage 1.11: Reusable Components** (Throughout Week 1-6)
 
 #### Task 1.11.1: Common Components
@@ -651,6 +792,24 @@
   - label_printers, label_templates, label_comments
   - price_manager, workflow_configs
   - audit_logs
+  **DMS-specific tables (required by DMS requirements document):**
+  - `delivery_turn_sections` — production_start_time (timestamp with tz, supports cross-midnight previous-day) + effective_delivery_time per delivery_turn per section
+  - `product_sections` — product-to-section assignment with `is_primary` flag and sort_order (a product can span multiple sections, e.g. Sugar Candy Bun: dough in Bakery, bun in Filling)
+  - `product_types` — Raw Material, Semi-Finished, Finished, Section
+  - `predefined_recipe_templates` — named recipe templates (e.g. "Vegetable Curry Base", "Standard Fish Filling")
+  - `predefined_recipe_template_lines` — ingredient lines per template (ingredient_id, quantity_per_unit, sort_order)
+  - `product_recipe_template_links` — links a product to a template, with `override_recipe` flag
+  - `product_recipes` — per product per section per variant (Full/Mini/Both), with `recipe_name` for named sub-recipes (e.g. "Dough", "Bun" for Sugar Candy Bun), `effective_from` date, `is_active`
+  - `product_recipe_lines` — ingredient lines per recipe: `quantity_per_unit`, `extra_qty_per_unit`, `extra_qty_visible_stores_only` (bool), `is_percentage`, `percentage_source_product_id`, sort_order
+  - `delivery_plans` — plan_date, plan_type (Weekday/Saturday/Sunday/Holiday/Custom), delivery_turn_id, status (Draft/Confirmed/InProduction/Delivered)
+  - `delivery_plan_outlets` — outlet active/inactive flag per plan (outlet checkbox in order grid)
+  - `delivery_plan_items` — item active/inactive Y/N flag per plan, extra_quantity_full, extra_quantity_mini, order_quantity_full, order_quantity_mini
+  - `delivery_plan_outlet_quantities` — quantity_full + quantity_mini per product per outlet per plan (core order grid data)
+  - `immediate_orders` — linked to delivery_plan or standalone, requested_by, is_customized, customization_notes, status (Pending/Confirmed/Cancelled)
+  - `immediate_order_lines` — product_id, quantity_full, quantity_mini, is_customized, customization_detail
+  - `freezer_stock` — product_id, section_id (nullable), quantity, stock_date, notes, created_by
+  - `outlet_default_quantities` — per product per outlet per day_type (Weekday/Saturday/Sunday/Holiday/Special Event) default quantities (Full and Mini)
+  - `production_logs` — audit trail of section-level production events (started, completed, etc.)
 - [ ] Create EF Core Entity models
 - [ ] Configure entity relationships
 - [ ] Add soft delete (Active Status) to all entities
@@ -805,6 +964,139 @@
 - [ ] Implement: Per-Item Quantity × Production Quantity = Total
 - [ ] Implement stores extra/waste allowance calculation
 - [ ] Test calculation accuracy
+
+---
+
+### **Stage 2.5A: DMS Calculation Engine & Core APIs** (Week 12-14)
+
+> This stage implements all DMS-specific business logic, calculation rules, and APIs that are central to replacing the Excel workbook.
+
+#### Task 2.5A.1: Enhanced Recipe API (DMS)
+- [ ] GET /api/v1/recipes?productId={id} — list all recipes including named sub-recipes and versions
+- [ ] POST /api/v1/recipes — create recipe (supports `recipe_name` for sub-recipes like "Dough" / "Bun", `variant` Full/Mini/Both, `section_id`, `effective_from`)
+- [ ] PUT /api/v1/recipes/{id} — update recipe header
+- [ ] PATCH /api/v1/recipes/{id}/activate — activate recipe version for production use
+- [ ] PATCH /api/v1/recipes/{id}/deactivate — deactivate recipe version
+- [ ] GET /api/v1/recipes/{id}/lines — get all lines for a recipe
+- [ ] POST /api/v1/recipes/{id}/lines — add recipe line (ingredient_id, qty_per_unit, extra_qty_per_unit, extra_qty_visible_stores_only, is_percentage, percentage_source_product_id, sort_order)
+- [ ] PUT /api/v1/recipes/{id}/lines/{lineId} — update recipe line
+- [ ] DELETE /api/v1/recipes/{id}/lines/{lineId} — remove recipe line
+- [ ] Implement Sugar Candy Bun dual sub-recipe: two `product_recipes` records under same product (`recipe_name = "Dough"` and `recipe_name = "Bun"`)
+- [ ] Implement percentage-based ingredient: `qty = (percentage / 100) × source_product_total_qty`
+- [ ] Implement `extra_qty_visible_stores_only` enforcement (extra qty excluded from production planner response)
+- [ ] Implement recipe versioning: only the active version with matching `effective_from ≤ plan_date` is used for calculations
+- [ ] Unit test Sugar Candy Bun, Viyana Roll, percentage-based, and stores-only extra qty
+
+#### Task 2.5A.2: Recipe Templates API (DMS)
+- [ ] GET /api/v1/recipe-templates — list all templates with their lines
+- [ ] POST /api/v1/recipe-templates — create template with ingredient lines
+- [ ] PUT /api/v1/recipe-templates/{id} — update template
+- [ ] PATCH /api/v1/recipe-templates/{id}/toggle-active
+- [ ] POST /api/v1/recipe-templates/{id}/apply?productId=&sectionId= — apply template to a product (creates a new recipe copying template lines; product can then override)
+- [ ] Implement Vegetable Curry template as seed data
+- [ ] Test template application and recipe override
+
+#### Task 2.5A.3: Delivery Plan & Order Grid APIs (DMS)
+- [ ] GET /api/v1/delivery-plans?date=&turnId= — list plans for date/turn
+- [ ] POST /api/v1/delivery-plans — create plan; auto-load `outlet_default_quantities` for selected day type into `delivery_plan_outlet_quantities`
+- [ ] PUT /api/v1/delivery-plans/{id}/confirm — confirm plan; lock quantities
+- [ ] GET /api/v1/delivery-plans/{id}/order-grid — return full order grid matrix (products × outlets) with: qty_full, qty_mini per outlet; extra_qty; order_qty from immediate orders; BAL from freezer_stock; total_full; total_mini; Y/N flag; multi-turn sub-columns for applicable products
+- [ ] PUT /api/v1/delivery-plans/{id}/outlet-quantities — bulk save grid (array of product_id + outlet_id + qty_full + qty_mini)
+- [ ] PUT /api/v1/delivery-plans/{id}/items/{productId}/toggle — toggle Y/N active flag
+- [ ] PUT /api/v1/delivery-plans/{id}/outlets/{outletId}/toggle — toggle outlet active flag
+- [ ] Implement multi-turn item filtering: products only appear in turns configured by admin
+- [ ] Test with 80+ products × 14 outlets; verify default loading and toggle behavior
+
+#### Task 2.5A.4: Default Quantities API (DMS)
+- [ ] GET /api/v1/default-quantities?dayType=&productId= — get defaults per product per outlet per day type
+- [ ] PUT /api/v1/default-quantities — bulk upsert defaults (array of product_id + outlet_id + day_type + qty_full + qty_mini)
+- [ ] Day types supported: Weekday, Saturday, Sunday, Holiday, Special Event
+- [ ] Auto-load on delivery plan creation based on plan date's resolved day type
+- [ ] Test default loading correctness for all day types
+
+#### Task 2.5A.5: Immediate Orders API (DMS)
+- [ ] GET /api/v1/immediate-orders?deliveryPlanId= — list orders linked to a plan
+- [ ] POST /api/v1/immediate-orders — create immediate order with lines (product_id, qty_full, qty_mini, is_customized, customization_notes, delivery_plan_id)
+- [ ] PUT /api/v1/immediate-orders/{id} — update order
+- [ ] DELETE /api/v1/immediate-orders/{id} — cancel order (soft delete, status = Cancelled)
+- [ ] GET /api/v1/immediate-orders/summary?date=&turnId= — summary grouped by status (Pending/Confirmed/Cancelled)
+- [ ] Business rule: immediate order quantities ALWAYS included in Grand Total for production (order_quantity_full/mini in delivery_plan_items)
+- [ ] Business rule: customized orders included in total but flagged separately in all views
+- [ ] Test inclusion of immediate orders in production planner totals
+
+#### Task 2.5A.6: Freezer Stock API (DMS)
+- [ ] GET /api/v1/freezer-stock?date= — get current freezer stock per product (used for BAL column in order grid)
+- [ ] POST /api/v1/freezer-stock — create stock entry (product_id, section_id, quantity, stock_date, notes)
+- [ ] PUT /api/v1/freezer-stock/{id} — update entry
+- [ ] Test that freezer stock values feed into BAL column and Stores Issue Note deduction
+
+#### Task 2.5A.7: Delivery Summary Calculation API (DMS)
+- [ ] GET /api/v1/delivery-plans/{id}/delivery-summary — return full delivery summary
+- [ ] Implement calculations:
+  - `Total Full = SUM(outlet qty_full) + extra_quantity_full + SUM(immediate_order qty_full)`
+  - `Total Mini = SUM(outlet qty_mini) + extra_quantity_mini + SUM(immediate_order qty_mini)`
+  - `Grand Total = Total Full + Total Mini`
+  - `Available Qty (if useBalance=true) = Grand Total – freezer_stock.quantity` (per product)
+- [ ] Include Y/N production flag per product
+- [ ] Include customized order sub-rows below each product row
+- [ ] Include outlet inactive flag (outlet OFF → zeroed/excluded in summary)
+- [ ] Ensure Available Balance deduction only appears in this view and Stores Issue Note (NOT in Production Planner)
+- [ ] Test against expected Excel Delivery Summary sheet output
+
+#### Task 2.5A.8: Production Planner Calculation API (DMS)
+- [ ] GET /api/v1/delivery-plans/{id}/production-planner?sectionId= — return production planner for a section
+- [ ] For each active product assigned to this section with Y flag ON:
+  - For each active recipe line: `ingredient_total = qty_per_unit × production_qty`
+  - Extra qty NOT included (extra_qty_visible_stores_only enforced)
+- [ ] Implement named sub-table grouping: group lines by `recipe_name` (e.g. "Dough" and "Bun" for Sugar Candy Bun appear as two separate sub-tables)
+- [ ] Implement Viyana Roll and Viyana Roll Mini as separate product rows with own recipes
+- [ ] Implement Egg-to-Beehive equivalence footnote: `beehive_g_total / 30` displayed as metadata field in response
+- [ ] Implement production start time with cross-midnight support: return full timestamp from `delivery_turn_sections`; flag as `is_previous_day = true` when applicable
+- [ ] Implement per-section sub-table calculations:
+  - **Bakery:** Egg Wash = eggs × coefficient; summary totals (Plain Bun total, Yeast, Sugar, Beehive, Salt, Sesame Seeds)
+  - **Short-Eats 1:** Pattie Dough (Flour, Beehive, Salt, Eggs based on pattie qty); Chinese Roll Batter (Flour 12 kg base, Salt, Corn Flour, Eggs, Oil based on roll qty); Crumb Batter; Egg Wash for Patties; sheet counts
+  - **Rotty:** Rotty Dough (Flour, Salt, Sugar, Eggs); Chicken Rotty Egg Wrap sub-table
+  - **Plain Roll:** Prawn Bun Batter (Corn Flour, Baking Powder, Eggs, Flour)
+- [ ] Implement rounding engine: if `product.rounding_value` is set, round production qty up to nearest N before recipe calculation
+- [ ] Implement item checkbox OFF: skip product from all calculations; return zero in delivery note
+- [ ] Implement outlet checkbox OFF: zero that outlet's quantities
+- [ ] Unit test every section calculation formula against the source Excel sheet values
+
+#### Task 2.5A.9: Stores Issue Note Calculation API (DMS)
+- [ ] GET /api/v1/delivery-plans/{id}/stores-issue-note?sectionId=&useBalance=true
+- [ ] For each active product in section:
+  - `Stores Qty = (qty_per_unit × production_qty) + (extra_qty_per_unit × production_qty)`
+  - If `useBalance=true`: `Stores Available Qty = Stores Qty – freezer_stock.quantity`
+- [ ] Include Viyana Roll Flour Note in response metadata: `{ viyanaRollFlour: Xg, viyanaRollMiniFlour: Yg, dustingFlour: Zg }`
+- [ ] Include sign-off metadata fields: `{ printedBy: "", issuedBy: "", checkedBy: "" }`
+- [ ] Confirm extra quantities are present here but absent from production planner response
+- [ ] Test stores vs production output difference with same plan data
+
+#### Task 2.5A.10: Delivery Note per Outlet API (DMS)
+- [ ] GET /api/v1/delivery-plans/{id}/delivery-note?outletId= — single-outlet delivery note
+- [ ] Return: outlet name, date, delivery turn, product code, product name, qty_full, qty_mini, total_qty
+- [ ] Implement product grouping by category
+- [ ] Include Total Items count and Total Qty footer
+- [ ] Return zero qty for Y=N items (item excluded from production — still shows on note as 0)
+- [ ] Exclude rows where outlet is marked inactive for this plan
+- [ ] Test for all 14 outlets
+
+#### Task 2.5A.11: DMS Business Rules Service (Centralized)
+- [ ] Create `DmsCalculationService` implementing all business rules:
+  - Quantity Calculation: `Total = SUM(outlet qtys) + Extra + ImmediateOrder` per Full and Mini
+  - Grand Total = Total Full + Total Mini
+  - Stores Available: `Grand Total – Freezer Stock` (stores only, never on production planner)
+  - Rounding: `Math.Ceiling(qty / rounding_value) × rounding_value` when `rounding_value` is set
+  - Decimal enforcement: truncate to integer when `allow_decimal_quantity = false`
+  - Item OFF: recipe qty = 0, delivery note qty = 0
+  - Outlet OFF: outlet quantities = 0/excluded in delivery note
+  - Multi-turn filtering: only return products whose turn config includes the requested turn
+  - Customized orders: always included in totals; flagged in response with `is_customized = true`
+  - Beehive equivalence: `beehive_total_g / 30` as additional computed field
+  - Sugar Candy Bun: two separate recipe result objects (Dough + Bun) in planner response
+  - Percentage-based ingredient: `ingredient_qty = (percentage / 100) × source_product_total_qty`
+- [ ] Create unit tests for every rule above against Excel-derived expected values
+- [ ] Achieve 100% coverage on calculation service
 
 ---
 
@@ -1061,6 +1353,52 @@
   - Excel (server-side generation)
 - [ ] Test all reports with real data
 
+#### Task 2.9.5: DMS-Specific Reports API
+- [ ] **Delivery Note per Outlet** — GET /api/v1/reports/delivery-note/{planId}/{outletId}?format=pdf|excel
+  - Columns: Item, Code, Full, Mini, Total
+  - Grouped by product category
+  - Footer: Total Items count, Total Qty
+  - Header: Company Name, Outlet Name, Date, Turn
+  - One report per outlet per turn
+- [ ] **Delivery Summary Report** — GET /api/v1/reports/delivery-summary/{planId}?format=pdf|excel
+  - All outlets in columns; products in rows
+  - Per-item Y/N production flag column
+  - Total Full, Total Mini, Grand Total columns
+  - Available Balance vs Required (if freezer stock used)
+- [ ] **Production Planner Report (per section)** — GET /api/v1/reports/production-planner/{planId}/{sectionId}?format=pdf
+  - Exact print layout per requirements doc §7.1:
+    - Header row: Company Name | Production Starting Time: [date] [time]
+    - Second row: Section Name | Effective Delivery Time: [date] [time]
+    - Item grid with quantities and ingredient totals
+    - Sub-tables (Pattie Dough, Egg Wash, Chinese Roll Batter, etc.) as applicable
+    - Footer: Printed By: _____ | Issued By: _____ | Checked By: _____
+  - Extra quantities NOT shown
+- [ ] **Stores Issue Note Report (per section)** — GET /api/v1/reports/stores-issue-note/{planId}/{sectionId}?useBalance=true&format=pdf
+  - Same structure as Production Planner but includes extra/waste quantities
+  - Shows "Available Balance: [qty]" per product if useBalance=true
+  - Viyana Roll Flour Note at bottom
+  - Sign-off section (Printed By / Issued By / Checked By)
+- [ ] **Immediate Orders Summary** — GET /api/v1/reports/immediate-orders/{planId}?format=pdf
+  - Company Name, Date, Turn header
+  - Table of all immediate orders: Product, Qty Full, Qty Mini, Requested By, Status, Customization Details
+  - Customized orders flagged separately (asterisk / highlighted row)
+- [ ] **Dashboard / Pivot Report** — GET /api/v1/reports/dashboard?date=&turnId=
+  - Pivot: Product × Turn × Outlet summary (quantity grid)
+  - Total quantities per product across all turns
+  - Average quantities per product
+  - Item count by category
+  - Active outlet count
+  - Filter by day type (Weekday/Saturday/Sunday)
+- [ ] **Recipe Reports**
+  - GET /api/v1/reports/recipe-card/{productId}?format=pdf — per-item recipe card (ingredient + qty per unit)
+  - GET /api/v1/reports/ingredient-requirements/{planId}/{sectionId}?format=pdf — aggregated ingredient requirements by section
+  - GET /api/v1/reports/ingredient-procurement/{date}?format=pdf — ingredient procurement totals across all turns for a day
+- [ ] **Label Printing (DMS Product Labels)** — POST /api/v1/label-printing/product-labels
+  - Template-based product labels (admin defines label template per product)
+  - Egg Sandwich label and similar item labels
+  - Supports printing to configured label printers
+- [ ] Verify all DMS report PDFs match existing Excel print layouts (margins, font sizes, column widths, signature line positions)
+
 #### Task 2.9.3: PDF Export Service
 - [ ] Install PDF library (iTextSharp/QuestPDF)
 - [ ] Create PDF templates for all reports
@@ -1305,6 +1643,142 @@
 - [ ] Provide user support
 - [ ] Collect enhancement requests
 - [ ] Plan future iterations
+
+---
+
+---
+
+## 📐 DMS BUSINESS RULES REFERENCE
+
+> This section is the authoritative reference for all calculation rules that must be faithfully replicated from the Excel workbook. Every rule must be unit-tested against live Excel data before UAT sign-off.
+
+### BR-01: Quantity Calculation Flow
+```
+Outlet Quantities (per outlet, per product, Full and Mini separately)
++ Extra Quantity (manually added in order grid)
++ Immediate Order Quantities (from immediate_orders)
+= Total Full + Total Mini
+= Grand Total (used in Production Planner as-is)
+
+Stores Available Qty = Grand Total – Freezer Stock Balance
+   → Only on Stores Issue Note when "Use Freezer Stock" is enabled
+   → Production Planner ALWAYS shows full Grand Total (no deduction)
+```
+
+### BR-02: Recipe Calculation
+```
+For each product in production:
+  For each recipe line (ingredient):
+    Production_Qty_for_ingredient = qty_per_unit × Product_Production_Qty
+
+  For stores issue note only:
+    Stores_Qty = Production_Qty_for_ingredient + (extra_qty_per_unit × Product_Production_Qty)
+
+  If ingredient is percentage-based (is_percentage = true):
+    Production_Qty_for_ingredient = (percentage / 100) × Source_Product_Total_Qty
+```
+
+### BR-03: Sugar Candy Bun — Dual Sub-Recipe Rule
+- Has two named sub-recipes: `recipe_name = "Dough"` and `recipe_name = "Bun"`
+- Each sub-recipe has its own ingredient list and qty_per_unit values
+- Both are calculated separately using the same production quantity
+- Displayed as two distinct sub-tables in Production Planner and Stores Issue Note
+- Dough ingredients shown under "Dough" sub-heading; Bun ingredients under "Bun" sub-heading
+
+### BR-04: Viyana Roll / Viyana Roll Mini
+- Viyana Roll Full and Viyana Roll Mini are stored as **separate products** with distinct recipes
+- Each has its own `extra_flour` value added to the Stores Issue Note
+- Displayed as two separate rows in all grids
+- Viyana Roll Flour Note displayed at bottom of Bakery Stores Issue Note:
+  `"Viyana Roll Flour: X g | Viyana Roll Mini Flour: Y g | Dusting Flour: Z g"`
+
+### BR-05: Egg-to-Beehive Equivalence (Bakery)
+- Beehive is measured in grams; its egg-as-butter equivalence = `Beehive_g / 30`
+- Displayed in Bakery section as a footnote: `"SUM × 30g (Egg = Butter)"`
+
+### BR-06: Production Start Time — Cross-Midnight Handling
+- Each section has its own production start time per delivery turn, stored as full timestamp (date + time)
+- Production start time can be on the **previous calendar day** (e.g. Short-Eats starts 2:00 PM the day before for a 5:00 AM delivery)
+- The system must store and display the full timestamp, not just the time
+- UI must label previous-day times clearly: "(Previous Day)"
+
+### BR-07: Customized Orders
+- Customized orders are **included in the Grand Total** — production sees the full combined count
+- On Delivery Summary and Production Planner: total count is shown as-is (includes customized qty)
+- Customization details (notes) are displayed in a sub-row below the product row
+- Visual indicator distinguishes customized items (asterisk, different row color, or badge)
+
+### BR-08: Item / Outlet Checkbox Logic
+- **Item Y/N OFF:** Item excluded from this turn's production
+  - Recipe is not calculated; ingredient totals exclude this item
+  - Delivery Note shows qty = 0 for this item
+- **Outlet Checkbox OFF:** Outlet not receiving delivery this turn
+  - Outlet column quantities zeroed in Delivery Summary
+  - Outlet excluded or shown as 0 in Delivery Note for that outlet
+
+### BR-09: Rounding Engine
+- If `product.rounding_value` is set (e.g. 5): `Rounded_Qty = CEILING(calculated_qty / rounding_value) × rounding_value`
+- Standard quantity (reference value) shown alongside actual for staff reference
+- Rounding applied to production quantity before recipe calculation
+
+### BR-10: Decimal Quantities
+- If `allow_decimal_quantity = true` for a product: input accepts decimals (e.g. 4.75)
+- If `allow_decimal_quantity = false`: input is integer-only; API returns validation error for decimals
+- Set per product by admin
+
+### BR-11: Multi-Turn Item Availability
+- Admin configures which products are available in which delivery turns
+- Products not configured for a turn are hidden from that turn's Order Entry Grid
+- Items like "Fish Curry Bun" may be restricted to 5 AM turn only
+
+### BR-12: Pattie Dough Sub-Table
+- Calculated based on total pattie quantity: Flour, Beehive, Salt, Eggs
+- Displayed as a separate sub-table in Short-Eats 1 Production Planner
+
+### BR-13: Chinese Roll Batter Sub-Table
+- Flour: 12 kg base; Salt, Corn Flour, Eggs, Oil — linked to total Chinese Roll count
+- Displayed as a separate sub-table in Short-Eats 1
+
+### BR-14: Rotty Dough Sub-Table
+- Flour, Salt, Sugar, Eggs, Vege Oil based on total rotty count
+- Chicken Rotty Egg Wrap: separate sub-table (Flour, Salt, Eggs)
+
+### BR-15: Extra Qty for Ingredients
+- Raw-weight vs cleaned-weight loss (e.g. carrots: raw > cleaned weight)
+- `extra_qty_per_unit` configured per ingredient per recipe line by admin
+- Only visible on Stores Issue Note — never on Production Planner
+- Stores note note: `Stores_Qty = Recipe_Qty + (extra_qty_per_unit × Prod_Qty)`
+
+---
+
+## ⚙️ NON-FUNCTIONAL REQUIREMENTS
+
+| Requirement | Specification |
+|---|---|
+| **Availability** | 99.5% uptime target; graceful degradation (no complete outage) |
+| **Performance** | Order grid loads within 2 seconds for 80+ products × 14+ outlets; recipe calculations complete within 1 second |
+| **Security** | JWT authentication, HTTPS only, RBAC per role, SQL injection prevention via EF Core parameterized queries, XSS/CSRF protection |
+| **Auditability** | Every data change logged with old/new values (JSON), user ID, timestamp; `audit_logs` table is immutable (no update/delete) |
+| **Concurrency** | Optimistic concurrency on delivery plan saves using ETag-based conflict detection; UI shows conflict resolution dialog on save collision |
+| **Scalability** | Stateless API — can scale horizontally; Redis for session/cache if load increases |
+| **Backup** | Daily PostgreSQL dumps; point-in-time recovery configured |
+| **Browser Support** | Chrome, Firefox, Edge (latest versions); mobile-responsive for outlet users (320px–1920px) |
+| **Print Quality** | PDF output must match existing Excel print layouts exactly: margins, font sizes, column widths, signature lines |
+| **Data Migration** | Tool to import existing Excel product list (470+), ingredient list (127), default quantities, and historical delivery data on go-live |
+| **Calculation Accuracy** | All calculation outputs must be verified against live Excel workbook values during UAT; zero tolerance for calculation drift |
+
+### Risk Register (from requirements document)
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| Recipe complexity missed — dual-recipe items (Sugar Candy Bun), percentage ingredients | Medium | High | Dedicated Stage 2.5A with Excel comparison unit tests per item |
+| Dynamic grid performance with 80+ products × 14+ outlets | Medium | Medium | Virtual scrolling (TanStack Virtual), server-side bulk save |
+| Cross-midnight production timing confusion (previous day's start time) | High | High | Always store full timestamp; UI shows "(Previous Day)" label clearly |
+| User adoption resistance (change from Excel) | High | Medium | Excel-like grid UI; phased rollout; staff training documentation |
+| Calculation drift from Excel rounding | Medium | High | Unit test every formula against Excel values; achieve 100% calc service coverage |
+| Multi-user simultaneous order entry conflicts | Low | High | Optimistic locking with ETag-based conflict resolution UI |
+| Print layout mismatch | Medium | Medium | Print preview before go-live; side-by-side comparison with Excel print output |
+| Decimal vs integer confusion per product | Low | Medium | Clear per-product setting enforced at both UI and API layer |
 
 ---
 
