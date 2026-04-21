@@ -11,11 +11,13 @@ import { brandColors } from '@/lib/theme/colors';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout, setUser } = useAuthStore();
+  const { isAuthenticated, accessToken, logout, setUser, _hasHydrated } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
+
     const validateSession = async () => {
       if (!isAuthenticated || !accessToken) {
         setIsValidating(false);
@@ -34,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     validateSession();
-  }, []);
+  }, [_hasHydrated]);
 
   if (isValidating || !isAuthenticated) {
     return (
