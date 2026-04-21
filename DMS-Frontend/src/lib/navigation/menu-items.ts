@@ -1,0 +1,315 @@
+import {
+  LayoutDashboard,
+  Package,
+  Store,
+  Truck,
+  FileText,
+  Settings,
+  Factory,
+  Archive,
+  Tag,
+  Layers,
+  ClipboardList,
+  Trash2,
+  ArrowLeftRight,
+  Archive as ArchiveIcon,
+  XCircle,
+  CornerUpLeft,
+  Printer,
+  Box,
+  CalendarDays,
+  DollarSign,
+  Users,
+  Shield,
+  Lock,
+  CheckSquare,
+  UserCog,
+  TrendingUp,
+  Workflow,
+  KeyRound,
+  type LucideIcon,
+} from 'lucide-react';
+
+export interface MenuItem {
+  name: string;
+  href?: string;
+  icon: LucideIcon;
+  permission?: string;
+  children?: MenuItem[];
+  badge?: string | number;
+}
+
+/**
+ * Complete navigation structure for Don & Sons DMS
+ * Based on requirements document section 1.4
+ */
+export const navigationMenu: MenuItem[] = [
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    name: 'Inventory',
+    icon: Package,
+    children: [
+      {
+        name: 'Products',
+        href: '/inventory/products',
+        icon: Package,
+        permission: 'inventory.products.view',
+      },
+      {
+        name: 'Category',
+        href: '/inventory/category',
+        icon: Tag,
+        permission: 'inventory.category.view',
+      },
+      {
+        name: 'Unit of Measure',
+        href: '/inventory/uom',
+        icon: Layers,
+        permission: 'inventory.uom.view',
+      },
+      {
+        name: 'Ingredient',
+        href: '/inventory/ingredient',
+        icon: Archive,
+        permission: 'inventory.ingredient.view',
+      },
+    ],
+  },
+  {
+    name: 'Show Room',
+    href: '/showroom',
+    icon: Store,
+    permission: 'showroom.view',
+  },
+  {
+    name: 'Operation',
+    icon: ClipboardList,
+    children: [
+      {
+        name: 'Delivery',
+        href: '/operation/delivery',
+        icon: Truck,
+        permission: 'operation.delivery.view',
+      },
+      {
+        name: 'Disposal',
+        href: '/operation/disposal',
+        icon: Trash2,
+        permission: 'operation.disposal.view',
+      },
+      {
+        name: 'Transfer',
+        href: '/operation/transfer',
+        icon: ArrowLeftRight,
+        permission: 'operation.transfer.view',
+      },
+      {
+        name: 'Stock BF',
+        href: '/operation/stock-bf',
+        icon: ArchiveIcon,
+        permission: 'operation.stock-bf.view',
+      },
+      {
+        name: 'Cancellation',
+        href: '/operation/cancellation',
+        icon: XCircle,
+        permission: 'operation.cancellation.view',
+      },
+      {
+        name: 'Delivery Return',
+        href: '/operation/delivery-return',
+        icon: CornerUpLeft,
+        permission: 'operation.delivery-return.view',
+      },
+      {
+        name: 'Label Printing',
+        href: '/operation/label-printing',
+        icon: Printer,
+        permission: 'operation.label-printing.view',
+      },
+      {
+        name: 'Showroom Open Stock',
+        href: '/operation/showroom-open-stock',
+        icon: Box,
+        permission: 'operation.showroom-open-stock.view',
+      },
+      {
+        name: 'Showroom Label Printing',
+        href: '/operation/showroom-label-printing',
+        icon: Printer,
+        permission: 'operation.showroom-label-printing.view',
+      },
+    ],
+  },
+  {
+    name: 'Production',
+    icon: Factory,
+    permission: 'production.view',
+    children: [
+      {
+        name: 'Daily Production',
+        href: '/production/daily-production',
+        icon: Factory,
+        permission: 'production.daily.view',
+      },
+      {
+        name: 'Production Cancel',
+        href: '/production/production-cancel',
+        icon: XCircle,
+        permission: 'production.cancel.view',
+      },
+      {
+        name: 'Current Stock',
+        href: '/production/current-stock',
+        icon: Box,
+        permission: 'production.stock.view',
+      },
+      {
+        name: 'Stock Adjustment',
+        href: '/production/stock-adjustment',
+        icon: Archive,
+        permission: 'production.adjustment.view',
+      },
+      {
+        name: 'Stock Adjustment Approval',
+        href: '/production/stock-adjustment-approval',
+        icon: CheckSquare,
+        permission: 'production.adjustment-approval.view',
+      },
+      {
+        name: 'Production Plan',
+        href: '/production/production-plan',
+        icon: ClipboardList,
+        permission: 'production.plan.view',
+      },
+    ],
+  },
+  {
+    name: 'Reports',
+    href: '/reports',
+    icon: FileText,
+    permission: 'reports.view',
+  },
+  {
+    name: 'Administrator',
+    icon: Settings,
+    permission: 'administrator.view',
+    children: [
+      {
+        name: 'Day-End Process',
+        href: '/administrator/day-end-process',
+        icon: CalendarDays,
+        permission: 'administrator.day-end.view',
+      },
+      {
+        name: 'Cashier Balance',
+        href: '/administrator/cashier-balance',
+        icon: DollarSign,
+        permission: 'administrator.cashier-balance.view',
+      },
+      {
+        name: 'System Settings',
+        href: '/administrator/system-settings',
+        icon: Settings,
+        permission: 'administrator.settings.view',
+      },
+      {
+        name: 'Label Settings',
+        href: '/administrator/label-settings',
+        icon: Printer,
+        permission: 'administrator.label-settings.view',
+      },
+      {
+        name: 'Delivery Plan',
+        href: '/administrator/delivery-plan',
+        icon: ClipboardList,
+        permission: 'administrator.delivery-plan.view',
+      },
+      {
+        name: 'Users',
+        href: '/administrator/users',
+        icon: Users,
+        permission: 'administrator.users.view',
+      },
+      {
+        name: 'Roles',
+        href: '/administrator/roles',
+        icon: Shield,
+        permission: 'administrator.roles.view',
+      },
+      {
+        name: 'Permissions',
+        href: '/administrator/permissions',
+        icon: KeyRound,
+        permission: 'administrator.permissions.view',
+      },
+      {
+        name: 'Day Lock',
+        href: '/administrator/day-lock',
+        icon: Lock,
+        permission: 'administrator.day-lock.view',
+      },
+      {
+        name: 'Approvals',
+        href: '/administrator/approvals',
+        icon: CheckSquare,
+        permission: 'administrator.approvals.view',
+      },
+      {
+        name: 'Showroom Employee',
+        href: '/administrator/showroom-employee',
+        icon: UserCog,
+        permission: 'administrator.showroom-employee.view',
+      },
+      {
+        name: 'Price Manager',
+        href: '/administrator/price-manager',
+        icon: TrendingUp,
+        permission: 'administrator.price-manager.view',
+      },
+      {
+        name: 'WorkFlow Config',
+        href: '/administrator/workflow-config',
+        icon: Workflow,
+        permission: 'administrator.workflow-config.view',
+      },
+    ],
+  },
+];
+
+/**
+ * Filter menu items based on user permissions
+ */
+export function filterMenuByPermissions(
+  menu: MenuItem[],
+  hasPermission: (permission: string) => boolean,
+  isSuperAdmin: boolean
+): MenuItem[] {
+  return menu
+    .map((item) => {
+      // Check if user has permission for this item
+      const hasAccess = !item.permission || isSuperAdmin || hasPermission(item.permission);
+      
+      if (!hasAccess) return null;
+
+      // If item has children, filter them recursively
+      if (item.children) {
+        const filteredChildren = filterMenuByPermissions(item.children, hasPermission, isSuperAdmin);
+        
+        // If no children are accessible, don't show parent
+        if (filteredChildren.length === 0) return null;
+        
+        return {
+          ...item,
+          children: filteredChildren,
+        };
+      }
+
+      return item;
+    })
+    .filter((item): item is MenuItem => item !== null);
+}

@@ -1,0 +1,82 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { authApi } from '@/lib/api/auth';
+import Sidebar from '@/components/layout/sidebar';
+import Header from '@/components/layout/header';
+import { ThemeProvider } from '@/lib/theme/theme-context';
+import { brandColors } from '@/lib/theme/colors';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { isAuthenticated, accessToken, logout, setUser } = useAuthStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
+
+  useEffect(() => {
+    const validateSession = async () => {
+      if (!isAuthenticated || !accessToken) {
+        setIsValidating(false);
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const user = await authApi.getCurrentUser();
+        setUser(user);
+        setIsValidating(false);
+      } catch (error) {
+        logout();
+        router.push('/login');
+      }
+    };
+
+    validateSession();
+  }, []);
+
+  if (isValidating || !isAuthenticated) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: '#F9FAFB' }}>
+        <div className="text-center">
+          <div 
+            className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent"
+            style={{ borderColor: brandColors.primary.DEFAULT, borderRightColor: 'transparent' }}
+          ></div>
+          <p className="mt-2 text-sm" style={{ color: '#6B7280' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ThemeProvider defaultColor={brandColors.primary.DEFAULT}>
+      <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#F9FAFB' }}>
+        {/* Mobile Overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          ></div>
+        )}
+
+        {/* Fixed Sidebar */}
+        <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden w-full">
+          {/* Fixed Header */}
+          <Header onMenuClick={() => setMobileMenuOpen(true)} />
+
+          {/* Scrollable Page Content */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="h-full">
+              {children}
+            </div>
+          </main>
+        </div>
+      </div>
+    </ThemeProvider>
+  );
+}
