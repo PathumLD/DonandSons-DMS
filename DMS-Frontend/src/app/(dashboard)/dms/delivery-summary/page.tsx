@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -11,17 +11,31 @@ export default function DeliverySummaryPage() {
   const [products] = useState(mockOrderProducts);
   const [outlets] = useState(mockOutlets);
   const [useFreezerStock, setUseFreezerStock] = useState(false);
-  const [productData] = useState<{ [productId: number]: { [outletId: number]: number; includeProd: boolean } }>({
-    1: { 1: 50, 2: 45, 3: 40, 4: 55, 5: 35, 6: 30, 7: 25, 8: 45, 9: 50, 10: 40, 11: 35, 12: 30, 13: 25, 14: 20, includeProd: true },
+  const [productData, setProductData] = useState<{ [productId: number]: { [outletId: number]: number; includeProd: boolean; customizedOrders?: Array<{ customerName: string; qtyFull: number; qtyMini: number; notes: string }> } }>({
+    1: { 1: 50, 2: 45, 3: 40, 4: 55, 5: 35, 6: 30, 7: 25, 8: 45, 9: 50, 10: 40, 11: 35, 12: 30, 13: 25, 14: 20, includeProd: true, customizedOrders: [{ customerName: 'Special Order - Hotel ABC', qtyFull: 10, qtyMini: 5, notes: 'Extra soft, no crust' }] },
     5: { 1: 60, 2: 55, 3: 50, 4: 65, 5: 45, 6: 40, 7: 35, 8: 55, 9: 60, 10: 50, 11: 45, 12: 40, 13: 35, 14: 30, includeProd: true },
-    6: { 1: 50, 2: 45, 3: 40, 4: 55, 5: 35, 6: 30, 7: 25, 8: 45, 9: 50, 10: 40, 11: 35, 12: 30, 13: 25, 14: 20, includeProd: true },
+    6: { 1: 50, 2: 45, 3: 40, 4: 55, 5: 35, 6: 30, 7: 25, 8: 45, 9: 50, 10: 40, 11: 35, 12: 30, 13: 25, 14: 20, includeProd: true, customizedOrders: [{ customerName: 'Custom - Restaurant XYZ', qtyFull: 15, qtyMini: 10, notes: 'Less spicy' }] },
   });
+
+  const toggleProductInclude = (productId: number) => {
+    setProductData(prev => ({
+      ...prev,
+      [productId]: { ...prev[productId], includeProd: !prev[productId].includeProd },
+    }));
+  };
 
   const calculateGrandTotal = (productId: number) => {
     let total = 0;
     outlets.forEach(outlet => {
       total += productData[productId]?.[outlet.id] || 0;
     });
+    
+    // Add customized orders
+    const customOrders = productData[productId]?.customizedOrders || [];
+    customOrders.forEach(order => {
+      total += order.qtyFull + order.qtyMini;
+    });
+    
     return total;
   };
 
@@ -75,35 +89,60 @@ export default function DeliverySummaryPage() {
               </thead>
               <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
                 {products.filter(p => productData[p.id]?.includeProd).map((product) => (
-                  <tr key={product.id}>
-                    <td className="sticky left-0 z-10 px-4 py-3 text-sm font-medium" style={{ color: '#111827', backgroundColor: 'white' }}>
-                      {product.code} - {product.name}
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <div className="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold text-white" style={{ backgroundColor: '#10B981' }}>Y</div>
-                    </td>
-                    
-                    {outlets.map(outlet => (
-                      <td key={outlet.id} className="px-3 py-3 text-center text-sm font-medium" style={{ color: '#111827' }}>
-                        {productData[product.id]?.[outlet.id] || 0}
+                  <React.Fragment key={product.id}>
+                    <tr>
+                      <td className="sticky left-0 z-10 px-4 py-3 text-sm font-medium" style={{ color: '#111827', backgroundColor: 'white' }}>
+                        {product.code} - {product.name}
                       </td>
+                      <td className="px-3 py-3 text-center">
+                        <button
+                          onClick={() => toggleProductInclude(product.id)}
+                          className="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold text-white transition-colors"
+                          style={{ backgroundColor: productData[product.id]?.includeProd ? '#10B981' : '#D1D5DB', cursor: 'pointer' }}
+                        >
+                          {productData[product.id]?.includeProd ? 'Y' : 'N'}
+                        </button>
+                      </td>
+                      
+                      {outlets.map(outlet => (
+                        <td key={outlet.id} className="px-3 py-3 text-center text-sm font-medium" style={{ color: '#111827' }}>
+                          {productData[product.id]?.[outlet.id] || 0}
+                        </td>
+                      ))}
+                      
+                      <td className="px-4 py-3 text-center text-lg font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                        {calculateGrandTotal(product.id)}
+                      </td>
+                      
+                      {useFreezerStock && (
+                        <>
+                          <td className="px-4 py-3 text-center text-sm font-semibold" style={{ color: '#DC2626' }}>
+                            {product.freezerBalance}
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#166534', backgroundColor: '#F0FDF4' }}>
+                            {calculateAvailableBalance(product.id)}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                    
+                    {/* Customized Order Sub-rows */}
+                    {productData[product.id]?.customizedOrders?.map((order, idx) => (
+                      <tr key={`${product.id}-custom-${idx}`} style={{ backgroundColor: '#FFFBEB' }}>
+                        <td colSpan={2} className="sticky left-0 z-10 px-4 py-2 text-xs italic" style={{ color: '#92400E', backgroundColor: '#FFFBEB', paddingLeft: '2rem' }}>
+                          ★ {order.customerName}
+                          {order.notes && <span className="ml-2 text-xs">({order.notes})</span>}
+                        </td>
+                        <td colSpan={outlets.length} className="px-3 py-2 text-center text-xs font-medium" style={{ color: '#92400E' }}>
+                          Full: {order.qtyFull} • Mini: {order.qtyMini}
+                        </td>
+                        <td className="px-4 py-2 text-center text-sm font-semibold" style={{ color: '#92400E', backgroundColor: '#FEF3C4' }}>
+                          +{order.qtyFull + order.qtyMini}
+                        </td>
+                        {useFreezerStock && <td colSpan={2}></td>}
+                      </tr>
                     ))}
-                    
-                    <td className="px-4 py-3 text-center text-lg font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
-                      {calculateGrandTotal(product.id)}
-                    </td>
-                    
-                    {useFreezerStock && (
-                      <>
-                        <td className="px-4 py-3 text-center text-sm font-semibold" style={{ color: '#DC2626' }}>
-                          {product.freezerBalance}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#166534', backgroundColor: '#F0FDF4' }}>
-                          {calculateAvailableBalance(product.id)}
-                        </td>
-                      </>
-                    )}
-                  </tr>
+                  </React.Fragment>
                 ))}
                 
                 <tr style={{ backgroundColor: '#F9FAFB' }}>
@@ -166,9 +205,11 @@ export default function DeliverySummaryPage() {
       <div className="p-4 rounded-lg" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FFD100' }}>
         <p className="text-sm font-medium mb-2" style={{ color: '#78350F' }}>Notes:</p>
         <ul className="text-sm space-y-1" style={{ color: '#92400E' }}>
-          <li>• <strong>Y/N</strong> indicates if product is included in production</li>
+          <li>• <strong>Y/N</strong> toggle to include/exclude products from production (click to change)</li>
+          <li>• <strong>Customized orders</strong> appear as sub-rows below the product (★ yellow background)</li>
           <li>• <strong>Use Freezer Stock</strong> toggle shows available balance after deducting freezer stock</li>
           <li>• Available Balance = Grand Total - Freezer Stock</li>
+          <li>• Grand Total includes outlet quantities + customized order quantities</li>
           <li>• This view mirrors the Excel Delivery Summary sheet</li>
         </ul>
       </div>

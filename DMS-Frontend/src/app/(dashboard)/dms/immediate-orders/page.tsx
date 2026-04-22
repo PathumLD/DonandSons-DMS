@@ -7,7 +7,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import Checkbox from '@/components/ui/checkbox';
 import { Zap, Plus, Search, Eye, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockImmediateOrders, mockOrderProducts, mockDeliveryPlans, type ImmediateOrder } from '@/lib/mock-data/dms-orders';
@@ -147,7 +147,17 @@ export default function ImmediateOrdersPage() {
           <Checkbox checked={formData.isCustomized} onChange={(checked) => setFormData({ ...formData, isCustomized: checked })} label="Is Customized Order" />
           
           {formData.isCustomized && (
-            <Input label="Customization Notes" value={formData.customizationNotes} onChange={(e) => setFormData({ ...formData, customizationNotes: e.target.value })} placeholder="Special instructions or customizations..." fullWidth multiline />
+            <div className="w-full">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>Customization Notes</label>
+              <textarea
+                value={formData.customizationNotes}
+                onChange={(e) => setFormData({ ...formData, customizationNotes: e.target.value })}
+                placeholder="Special instructions or customizations..."
+                rows={3}
+                className="w-full rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none"
+                style={{ border: '1px solid #D1D5DB', color: '#111827' }}
+              />
+            </div>
           )}
           
           <Select label="Link to Delivery Plan (Optional)" value={formData.deliveryPlanId} onChange={(e) => setFormData({ ...formData, deliveryPlanId: e.target.value })} options={[{ value: '', label: 'Standalone Order' }, ...mockDeliveryPlans.filter(p => p.status !== 'Delivered').map(p => ({ value: p.id, label: `${p.planNo} - ${p.dayType} ${p.deliveryTurn}` }))]} fullWidth />

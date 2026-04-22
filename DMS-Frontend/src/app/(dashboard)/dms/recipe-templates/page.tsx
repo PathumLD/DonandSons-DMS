@@ -7,7 +7,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { FileTemplate, Plus, Search, Edit, Eye, Copy } from 'lucide-react';
+import { FileStack, Plus, Search, Edit, Eye, Copy, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockRecipeTemplates, type RecipeTemplate } from '@/lib/mock-data/dms-production';
 import { mockIngredients } from '@/lib/mock-data/products';
@@ -18,6 +18,7 @@ export default function RecipeTemplatesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<RecipeTemplate | null>(null);
   
@@ -51,6 +52,29 @@ export default function RecipeTemplatesPage() {
     resetForm();
   };
 
+  const handleEdit = () => {
+    if (selectedTemplate) {
+      setTemplates(templates.map(t =>
+        t.id === selectedTemplate.id
+          ? { ...t, name: formData.name, description: formData.description, active: formData.active }
+          : t
+      ));
+      setShowEditModal(false);
+      setSelectedTemplate(null);
+      resetForm();
+    }
+  };
+
+  const openEditModal = (template: RecipeTemplate) => {
+    setSelectedTemplate(template);
+    setFormData({
+      name: template.name,
+      description: template.description,
+      active: template.active,
+    });
+    setShowEditModal(true);
+  };
+
   const resetForm = () => {
     setFormData({ name: '', description: '', active: true });
   };
@@ -71,7 +95,7 @@ export default function RecipeTemplatesPage() {
       key: 'actions', label: 'Actions', render: (item: RecipeTemplate) => (
         <div className="flex items-center space-x-2">
           <button onClick={() => { setSelectedTemplate(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
-          <button className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
+          <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
           <button onClick={() => handleApplyToProduct(item.id)} className="p-1.5 rounded transition-colors" style={{ color: '#10B981' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Apply to Product"><Copy className="w-4 h-4" /></button>
         </div>
       )
@@ -121,6 +145,21 @@ export default function RecipeTemplatesPage() {
         </ModalFooter>
       </Modal>
 
+      <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedTemplate(null); resetForm(); }} title="Edit Recipe Template" size="lg">
+        <div className="space-y-4">
+          <Input label="Template Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth required />
+          <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth />
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} className="rounded" />
+            <label className="text-sm" style={{ color: '#374151' }}>Active</label>
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => { setShowEditModal(false); setSelectedTemplate(null); resetForm(); }}>Cancel</Button>
+          <Button variant="primary" onClick={handleEdit}><Save className="w-4 h-4 mr-2" />Save Changes</Button>
+        </ModalFooter>
+      </Modal>
+
       <Modal isOpen={showViewModal} onClose={() => { setShowViewModal(false); setSelectedTemplate(null); }} title="Template Details" size="lg">
         {selectedTemplate && (
           <div className="space-y-4">
@@ -166,7 +205,7 @@ export default function RecipeTemplatesPage() {
 
       <div className="p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
         <div className="flex items-start space-x-3">
-          <FileTemplate className="w-5 h-5 mt-0.5" style={{ color: '#166534' }} />
+          <FileStack className="w-5 h-5 mt-0.5" style={{ color: '#166534' }} />
           <div>
             <p className="text-sm font-medium mb-2" style={{ color: '#166534' }}>Template Benefits:</p>
             <ul className="text-sm space-y-1" style={{ color: '#166534' }}>

@@ -189,7 +189,7 @@ export default function FreezerStockPage() {
               <li>• Freezer stock values appear in the <strong>BAL column</strong> of the Order Entry Grid</li>
               <li>• When "Use Freezer Stock" is enabled in Delivery Summary, available balance is calculated</li>
               <li>• Available Balance = Grand Total - Freezer Stock</li>
-              <li>• Low stock alerts (< 10 units) appear at the top of this page</li>
+              <li>• Low stock alerts (&lt; 10 units) appear at the top of this page</li>
             </ul>
           </div>
         </div>
