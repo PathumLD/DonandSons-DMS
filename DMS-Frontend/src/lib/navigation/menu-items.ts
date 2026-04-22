@@ -202,8 +202,8 @@ export const navigationMenu: MenuItem[] = [
     permission: 'dms.view',
     children: [
       {
-        name: 'Order Entry Grid',
-        href: '/dms/order-entry',
+        name: 'Order Entry',
+        href: '/dms/order-entry-enhanced',
         icon: Grid,
         permission: 'dms.order-entry.view',
       },
@@ -233,13 +233,13 @@ export const navigationMenu: MenuItem[] = [
       },
       {
         name: 'Production Planner',
-        href: '/dms/production-planner',
+        href: '/dms/production-planner-enhanced',
         icon: ChefHat,
         permission: 'dms.production-planner.view',
       },
       {
         name: 'Stores Issue Note',
-        href: '/dms/stores-issue-note',
+        href: '/dms/stores-issue-note-enhanced',
         icon: FileText,
         permission: 'dms.stores-issue-note.view',
       },
@@ -351,6 +351,12 @@ export const navigationMenu: MenuItem[] = [
         href: '/administrator/workflow-config',
         icon: Workflow,
         permission: 'administrator.workflow-config.view',
+      },
+      {
+        name: 'Grid Configuration',
+        href: '/administrator/grid-configuration',
+        icon: Grid,
+        permission: 'administrator.grid-config.view',
       },
     ],
   },
