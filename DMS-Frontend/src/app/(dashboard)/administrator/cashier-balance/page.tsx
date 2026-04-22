@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { DollarSign, Save } from 'lucide-react';
 import { mockShowrooms } from '@/lib/mock-data/showrooms';
 
