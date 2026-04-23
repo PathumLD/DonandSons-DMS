@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { Lock, Eye, EyeOff } from 'lucide-react';
+import { authApi } from '@/lib/api/auth';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(6, 'Current password is required'),
@@ -44,17 +45,15 @@ export default function ChangePasswordPage() {
     setSuccess(false);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.changePassword(data);
       setSuccess(true);
       reset();
       
-      // Optionally redirect after success
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
     } catch (err: any) {
-      setError('Failed to change password. Please check your current password and try again.');
+      setError(err.response?.data?.message || 'Failed to change password. Please check your current password and try again.');
     } finally {
       setIsLoading(false);
     }

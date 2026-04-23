@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { authApi } from '@/lib/api/auth';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -33,11 +34,10 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await authApi.forgotPassword(data);
       setIsSubmitted(true);
     } catch (err: any) {
-      setError('Failed to send reset email. Please try again.');
+      setError(err.response?.data?.message || 'Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }

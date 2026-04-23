@@ -21,6 +21,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<AuthenticationLog> AuthenticationLogs => Set<AuthenticationLog>();
     public DbSet<ApiRequestLog> ApiRequestLogs => Set<ApiRequestLog>();
     public DbSet<DayLock> DayLocks => Set<DayLock>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -245,6 +246,25 @@ public sealed class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.LockDate).IsUnique();
             entity.HasIndex(e => e.IsLocked);
+        });
+
+        // PasswordResetToken entity configuration
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.ToTable("password_reset_tokens");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Token).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.IsUsed).HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.ExpiresAt, e.IsUsed });
         });
     }
 }

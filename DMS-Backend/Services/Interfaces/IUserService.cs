@@ -8,4 +8,5 @@ public interface IUserService
     Task<User?> GetByIdWithRolesAndPermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<List<string>> GetUserPermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
     Task UpdateLastLoginAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task UpdatePasswordAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default);
 }

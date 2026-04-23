@@ -60,4 +60,15 @@ public sealed class UserService : IUserService
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
+
+    public async Task UpdatePasswordAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        if (user != null)
+        {
+            user.PasswordHash = passwordHash;
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
 }
