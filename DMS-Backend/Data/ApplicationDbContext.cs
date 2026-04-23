@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using DMS_Backend.Models.Entities;
 
@@ -19,10 +20,26 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<SystemLog> SystemLogs => Set<SystemLog>();
     public DbSet<AuthenticationLog> AuthenticationLogs => Set<AuthenticationLog>();
     public DbSet<ApiRequestLog> ApiRequestLogs => Set<ApiRequestLog>();
+    public DbSet<DayLock> DayLocks => Set<DayLock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Apply global query filter for soft delete on all BaseEntity types
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+                var property = Expression.Property(parameter, nameof(BaseEntity.IsActive));
+                var filter = Expression.Lambda(
+                    Expression.Equal(property, Expression.Constant(true)),
+                    parameter);
+                
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            }
+        }
 
         // User entity configuration
         modelBuilder.Entity<User>(entity =>
@@ -208,6 +225,26 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.ResponseStatusCode);
             entity.HasIndex(e => e.RequestId).IsUnique();
+        });
+
+        // DayLock entity configuration
+        modelBuilder.Entity<DayLock>(entity =>
+        {
+            entity.ToTable("day_locks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.LockDate).IsRequired();
+            entity.Property(e => e.IsLocked).HasDefaultValue(false);
+            entity.Property(e => e.LockReason).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.LockedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.LockedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.LockDate).IsUnique();
+            entity.HasIndex(e => e.IsLocked);
         });
     }
 }
