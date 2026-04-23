@@ -28,19 +28,6 @@ public sealed class AuthController : ControllerBase
 
             var response = await _authService.LoginAsync(request, ipAddress, userAgent, cancellationToken);
 
-            // Extract refresh token from response (it would be generated in AuthService)
-            // For now, we'll set it via cookie in a proper implementation
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddDays(7)
-            };
-
-            // Note: In production, the refresh token should be returned from AuthService
-            // Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-
             return Ok(response);
         }
         catch (UnauthorizedAccessException ex)
@@ -62,41 +49,40 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<ActionResult> RefreshToken(CancellationToken cancellationToken)
+    public async Task<ActionResult<RefreshTokenResponseDto>> RefreshToken(
+        [FromBody] RefreshTokenRequestDto request, 
+        CancellationToken cancellationToken)
     {
-        var refreshToken = Request.Cookies["refreshToken"];
-        if (string.IsNullOrEmpty(refreshToken))
-            return Unauthorized(new { message = "Refresh token not found" });
-
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var result = await _authService.RefreshTokenAsync(refreshToken, ipAddress, cancellationToken);
+        var result = await _authService.RefreshTokenAsync(request.RefreshToken, ipAddress, cancellationToken);
 
         if (result == null)
             return Unauthorized(new { message = "Invalid refresh token" });
 
-        return Ok(new
+        return Ok(new RefreshTokenResponseDto
         {
-            accessToken = result.Value.AccessToken,
-            user = result.Value.User,
-            expiresIn = 900
+            AccessToken = result.Value.AccessToken,
+            RefreshToken = result.Value.RefreshToken,
+            User = result.Value.User,
+            ExpiresIn = 900
         });
     }
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<ActionResult> Logout(CancellationToken cancellationToken)
+    public async Task<ActionResult> Logout(
+        [FromBody] RefreshTokenRequestDto request, 
+        CancellationToken cancellationToken)
     {
-        var refreshToken = Request.Cookies["refreshToken"];
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
         var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
 
-        if (!string.IsNullOrEmpty(refreshToken))
+        if (!string.IsNullOrEmpty(request.RefreshToken))
         {
-            await _authService.LogoutAsync(refreshToken, email, ipAddress, userAgent, cancellationToken);
+            await _authService.LogoutAsync(request.RefreshToken, email, ipAddress, userAgent, cancellationToken);
         }
 
-        Response.Cookies.Delete("refreshToken");
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -113,5 +99,63 @@ public sealed class AuthController : ControllerBase
             return NotFound();
 
         return Ok(user);
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<ActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword, cancellationToken);
+            return Ok(new { message = "Password changed successfully" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        await _authService.ForgotPasswordAsync(request.Email, cancellationToken);
+        
+        // Always return success to prevent email enumeration
+        return Ok(new { message = "If an account exists with that email, a password reset link has been sent" });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+            return Ok(new { message = "Password reset successfully. You can now log in with your new password" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
     }
 }

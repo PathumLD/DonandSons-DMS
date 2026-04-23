@@ -24,8 +24,32 @@ export interface Role {
 
 export interface LoginResponse {
   accessToken: string;
+  refreshToken: string;
   user: User;
   expiresIn: number;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+  expiresIn: number;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export const authApi = {
@@ -34,8 +58,8 @@ export const authApi = {
     return response.data;
   },
 
-  logout: async (): Promise<void> => {
-    await apiClient.post('/api/auth/logout');
+  logout: async (refreshToken: string): Promise<void> => {
+    await apiClient.post('/api/auth/logout', { refreshToken });
   },
 
   getCurrentUser: async (): Promise<User> => {
@@ -43,8 +67,23 @@ export const authApi = {
     return response.data;
   },
 
-  refreshToken: async (): Promise<{ accessToken: string; user: User; expiresIn: number }> => {
-    const response = await apiClient.post('/api/auth/refresh');
+  refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
+    const response = await apiClient.post<RefreshTokenResponse>('/api/auth/refresh', { refreshToken });
+    return response.data;
+  },
+
+  changePassword: async (request: ChangePasswordRequest): Promise<{ message: string }> => {
+    const response = await apiClient.post('/api/auth/change-password', request);
+    return response.data;
+  },
+
+  forgotPassword: async (request: ForgotPasswordRequest): Promise<{ message: string }> => {
+    const response = await apiClient.post('/api/auth/forgot-password', request);
+    return response.data;
+  },
+
+  resetPassword: async (request: ResetPasswordRequest): Promise<{ message: string }> => {
+    const response = await apiClient.post('/api/auth/reset-password', request);
     return response.data;
   },
 };

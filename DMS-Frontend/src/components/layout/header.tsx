@@ -14,7 +14,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
-  const { user, logout } = useAuthStore();
+  const { user, refreshToken, logout } = useAuthStore();
   const router = useRouter();
   const { pageColor } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -52,7 +52,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      await authApi.logout();
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

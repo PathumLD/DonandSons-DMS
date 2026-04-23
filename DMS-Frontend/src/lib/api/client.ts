@@ -3,7 +3,6 @@ import { useAuthStore } from '../stores/auth-store';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,15 +29,21 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      const refreshToken = useAuthStore.getState().refreshToken;
+      if (!refreshToken) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
       try {
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
-          {},
-          { withCredentials: true }
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/refresh`,
+          { refreshToken }
         );
 
-        const { accessToken, user } = response.data;
-        useAuthStore.getState().updateToken(accessToken);
+        const { accessToken, refreshToken: newRefreshToken, user } = response.data;
+        useAuthStore.getState().updateTokens(accessToken, newRefreshToken);
         useAuthStore.getState().setUser(user);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
