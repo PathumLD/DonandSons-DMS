@@ -101,12 +101,12 @@ export default function FreezerStockPage() {
   const columns = [
     { key: 'stockDate', label: 'Stock Date', render: (item: FreezerStock) => <span className="font-medium">{new Date(item.stockDate).toLocaleDateString()}</span> },
     { key: 'product', label: 'Product', render: (item: FreezerStock) => <span className="font-medium">{item.productCode} - {item.productName}</span> },
-    { key: 'section', label: 'Section', render: (item: FreezerStock) => item.section ? <Badge variant="primary" size="sm">{item.section}</Badge> : <span className="text-xs" style={{ color: '#9CA3AF' }}>General</span> },
+    { key: 'section', label: 'Section', render: (item: FreezerStock) => item.section ? <Badge variant="primary" size="sm">{item.section}</Badge> : <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>General</span> },
     { key: 'quantity', label: 'Quantity', render: (item: FreezerStock) => <span className="text-lg font-bold" style={{ color: item.quantity < 10 ? '#DC2626' : '#10B981' }}>{item.quantity}</span> },
-    { key: 'lastUpdated', label: 'Last Updated', render: (item: FreezerStock) => <span className="text-sm" style={{ color: '#6B7280' }}>{item.lastUpdated}</span> },
+    { key: 'lastUpdated', label: 'Last Updated', render: (item: FreezerStock) => <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>{item.lastUpdated}</span> },
     {
       key: 'actions', label: 'Actions', render: (item: FreezerStock) => (
-        <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
+        <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: 'var(--muted-foreground)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
       )
     },
   ];
@@ -117,8 +117,8 @@ export default function FreezerStockPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Freezer Stock Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Track freezer stock levels for production planning ({filteredStock.length} items)</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Freezer Stock Management</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Track freezer stock levels for production planning ({filteredStock.length} items)</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="secondary" size="md"><RefreshCw className="w-4 h-4 mr-2" />Refresh</Button>
@@ -127,9 +127,9 @@ export default function FreezerStockPage() {
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="p-4 rounded-lg" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
-          <p className="text-sm font-medium mb-2" style={{ color: '#991B1B' }}>⚠ Low Stock Alert ({lowStockItems.length} items)</p>
-          <ul className="text-sm space-y-1" style={{ color: '#991B1B' }}>
+        <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-error-callout)', border: '1px solid var(--dms-error-border)' }}>
+          <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-error-text)' }}>⚠ Low Stock Alert ({lowStockItems.length} items)</p>
+          <ul className="text-sm space-y-1" style={{ color: 'var(--dms-error-text)' }}>
             {lowStockItems.map(item => (
               <li key={item.id}>• {item.productCode} - {item.productName}: <strong>{item.quantity} units</strong></li>
             ))}
@@ -144,8 +144,8 @@ export default function FreezerStockPage() {
             <div className="flex items-center space-x-3">
               <Select value={sectionFilter} onChange={(e) => { setSectionFilter(e.target.value); setCurrentPage(1); }} options={[{ value: '', label: 'All Sections' }, ...productionSections.map(s => ({ value: s, label: s }))]} />
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-                <input type="text" placeholder="Search stock..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <input type="text" placeholder="Search stock..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--input)' }} />
               </div>
             </div>
           </div>
@@ -180,12 +180,12 @@ export default function FreezerStockPage() {
         </ModalFooter>
       </Modal>
 
-      <div className="p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
+      <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}>
         <div className="flex items-start space-x-3">
-          <Snowflake className="w-5 h-5 mt-0.5" style={{ color: '#166534' }} />
+          <Snowflake className="w-5 h-5 mt-0.5" style={{ color: 'var(--dms-success-text)' }} />
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: '#166534' }}>Freezer Stock Integration:</p>
-            <ul className="text-sm space-y-1" style={{ color: '#166534' }}>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-success-text)' }}>Freezer Stock Integration:</p>
+            <ul className="text-sm space-y-1" style={{ color: 'var(--dms-success-text)' }}>
               <li>• Freezer stock values appear in the <strong>BAL column</strong> of the Order Entry Grid</li>
               <li>• When "Use Freezer Stock" is enabled in Delivery Summary, available balance is calculated</li>
               <li>• Available Balance = Grand Total - Freezer Stock</li>

@@ -49,8 +49,8 @@ export default function DeliverySummaryPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Delivery Summary</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Complete delivery summary with outlet quantities and totals</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Delivery Summary</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Complete delivery summary with outlet quantities and totals</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="secondary" size="md"><Printer className="w-4 h-4 mr-2" />Print</Button>
@@ -67,59 +67,59 @@ export default function DeliverySummaryPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-              <thead style={{ backgroundColor: '#F9FAFB' }}>
+            <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+              <thead style={{ backgroundColor: 'var(--muted)' }}>
                 <tr>
-                  <th className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium" style={{ backgroundColor: '#F9FAFB', color: '#6B7280', minWidth: '200px' }}>Product</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '60px' }}>Y/N</th>
+                  <th className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', minWidth: '200px' }}>Product</th>
+                  <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '60px' }}>Y/N</th>
                   
                   {outlets.map(outlet => (
-                    <th key={outlet.id} className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '80px' }}>{outlet.code}</th>
+                    <th key={outlet.id} className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '80px' }}>{outlet.code}</th>
                   ))}
                   
-                  <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px', backgroundColor: '#FEF3C4' }}>Grand Total</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px', backgroundColor: 'var(--dms-amber)' }}>Grand Total</th>
                   
                   {useFreezerStock && (
                     <>
-                      <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px' }}>Freezer Stock</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '120px', backgroundColor: '#F0FDF4' }}>Avail. Balance</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}>Freezer Stock</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '120px', backgroundColor: 'var(--dms-green)' }}>Avail. Balance</th>
                     </>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+              <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                 {products.filter(p => productData[p.id]?.includeProd).map((product) => (
                   <React.Fragment key={product.id}>
                     <tr>
-                      <td className="sticky left-0 z-10 px-4 py-3 text-sm font-medium" style={{ color: '#111827', backgroundColor: 'white' }}>
+                      <td className="sticky left-0 z-10 px-4 py-3 text-sm font-medium" style={{ color: 'var(--foreground)', backgroundColor: 'var(--card)' }}>
                         {product.code} - {product.name}
                       </td>
                       <td className="px-3 py-3 text-center">
                         <button
                           onClick={() => toggleProductInclude(product.id)}
                           className="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold text-white transition-colors"
-                          style={{ backgroundColor: productData[product.id]?.includeProd ? '#10B981' : '#D1D5DB', cursor: 'pointer' }}
+                          style={{ backgroundColor: productData[product.id]?.includeProd ? 'var(--status-success)' : 'var(--neutral-300)', cursor: 'pointer' }}
                         >
                           {productData[product.id]?.includeProd ? 'Y' : 'N'}
                         </button>
                       </td>
                       
                       {outlets.map(outlet => (
-                        <td key={outlet.id} className="px-3 py-3 text-center text-sm font-medium" style={{ color: '#111827' }}>
+                        <td key={outlet.id} className="px-3 py-3 text-center text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                           {productData[product.id]?.[outlet.id] || 0}
                         </td>
                       ))}
                       
-                      <td className="px-4 py-3 text-center text-lg font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                      <td className="px-4 py-3 text-center text-lg font-bold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>
                         {calculateGrandTotal(product.id)}
                       </td>
                       
                       {useFreezerStock && (
                         <>
-                          <td className="px-4 py-3 text-center text-sm font-semibold" style={{ color: '#DC2626' }}>
+                          <td className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--dms-red-text)' }}>
                             {product.freezerBalance}
                           </td>
-                          <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#166534', backgroundColor: '#F0FDF4' }}>
+                          <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: 'var(--dms-green-fg)', backgroundColor: 'var(--dms-green)' }}>
                             {calculateAvailableBalance(product.id)}
                           </td>
                         </>
@@ -128,15 +128,15 @@ export default function DeliverySummaryPage() {
                     
                     {/* Customized Order Sub-rows */}
                     {productData[product.id]?.customizedOrders?.map((order, idx) => (
-                      <tr key={`${product.id}-custom-${idx}`} style={{ backgroundColor: '#FFFBEB' }}>
-                        <td colSpan={2} className="sticky left-0 z-10 px-4 py-2 text-xs italic" style={{ color: '#92400E', backgroundColor: '#FFFBEB', paddingLeft: '2rem' }}>
+                      <tr key={`${product.id}-custom-${idx}`} style={{ backgroundColor: 'var(--dms-amber-tint)' }}>
+                        <td colSpan={2} className="sticky left-0 z-10 px-4 py-2 text-xs italic" style={{ color: 'var(--dms-amber-text)', backgroundColor: 'var(--dms-amber-tint)', paddingLeft: '2rem' }}>
                           ★ {order.customerName}
                           {order.notes && <span className="ml-2 text-xs">({order.notes})</span>}
                         </td>
-                        <td colSpan={outlets.length} className="px-3 py-2 text-center text-xs font-medium" style={{ color: '#92400E' }}>
+                        <td colSpan={outlets.length} className="px-3 py-2 text-center text-xs font-medium" style={{ color: 'var(--dms-amber-text)' }}>
                           Full: {order.qtyFull} • Mini: {order.qtyMini}
                         </td>
-                        <td className="px-4 py-2 text-center text-sm font-semibold" style={{ color: '#92400E', backgroundColor: '#FEF3C4' }}>
+                        <td className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--dms-amber-text)', backgroundColor: 'var(--dms-amber)' }}>
                           +{order.qtyFull + order.qtyMini}
                         </td>
                         {useFreezerStock && <td colSpan={2}></td>}
@@ -145,13 +145,13 @@ export default function DeliverySummaryPage() {
                   </React.Fragment>
                 ))}
                 
-                <tr style={{ backgroundColor: '#F9FAFB' }}>
-                  <td colSpan={2} className="sticky left-0 z-10 px-4 py-4 text-sm font-bold" style={{ color: '#111827', backgroundColor: '#F9FAFB' }}>GRAND TOTAL</td>
+                <tr style={{ backgroundColor: 'var(--muted)' }}>
+                  <td colSpan={2} className="sticky left-0 z-10 px-4 py-4 text-sm font-bold" style={{ color: 'var(--foreground)', backgroundColor: 'var(--muted)' }}>GRAND TOTAL</td>
                   {outlets.map(outlet => {
                     const outletTotal = products.filter(p => productData[p.id]?.includeProd).reduce((sum, p) => sum + (productData[p.id]?.[outlet.id] || 0), 0);
-                    return <td key={outlet.id} className="px-3 py-4 text-center text-sm font-bold" style={{ color: '#111827' }}>{outletTotal}</td>;
+                    return <td key={outlet.id} className="px-3 py-4 text-center text-sm font-bold" style={{ color: 'var(--foreground)' }}>{outletTotal}</td>;
                   })}
-                  <td className="px-4 py-4 text-center text-xl font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                  <td className="px-4 py-4 text-center text-xl font-bold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>
                     {products.filter(p => productData[p.id]?.includeProd).reduce((sum, p) => sum + calculateGrandTotal(p.id), 0)}
                   </td>
                   {useFreezerStock && <td colSpan={2}></td>}
@@ -167,8 +167,8 @@ export default function DeliverySummaryPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm" style={{ color: '#6B7280' }}>Total Products</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#111827' }}>{products.filter(p => productData[p.id]?.includeProd).length}</p>
+                <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Total Products</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>{products.filter(p => productData[p.id]?.includeProd).length}</p>
               </div>
               <Calculator className="w-10 h-10" style={{ color: '#C8102E' }} />
             </div>
@@ -179,8 +179,8 @@ export default function DeliverySummaryPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm" style={{ color: '#6B7280' }}>Total Outlets</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#111827' }}>{outlets.length}</p>
+                <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Total Outlets</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>{outlets.length}</p>
               </div>
               <Calculator className="w-10 h-10" style={{ color: '#10B981' }} />
             </div>
@@ -191,8 +191,8 @@ export default function DeliverySummaryPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm" style={{ color: '#6B7280' }}>Overall Total</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#111827' }}>
+                <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Overall Total</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>
                   {products.filter(p => productData[p.id]?.includeProd).reduce((sum, p) => sum + calculateGrandTotal(p.id), 0)}
                 </p>
               </div>
@@ -202,9 +202,9 @@ export default function DeliverySummaryPage() {
         </Card>
       </div>
 
-      <div className="p-4 rounded-lg" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FFD100' }}>
-        <p className="text-sm font-medium mb-2" style={{ color: '#78350F' }}>Notes:</p>
-        <ul className="text-sm space-y-1" style={{ color: '#92400E' }}>
+      <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-notes)', border: '1px solid var(--dms-notes-border)' }}>
+        <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-notes-title)' }}>Notes:</p>
+        <ul className="text-sm space-y-1" style={{ color: 'var(--dms-notes-fg)' }}>
           <li>• <strong>Y/N</strong> toggle to include/exclude products from production (click to change)</li>
           <li>• <strong>Customized orders</strong> appear as sub-rows below the product (★ yellow background)</li>
           <li>• <strong>Use Freezer Stock</strong> toggle shows available balance after deducting freezer stock</li>

@@ -375,7 +375,7 @@ export default function GridConfigurationPage() {
       <div key={column.id}>
         <div
           className="flex items-center justify-between p-3 border-b hover:bg-gray-50"
-          style={{ borderColor: '#E5E7EB', paddingLeft: `${12 + indent}px` }}
+          style={{ borderColor: 'var(--border)', paddingLeft: `${12 + indent}px` }}
         >
           <div className="flex items-center space-x-3 flex-1">
             {column.hasSubColumns && (
@@ -392,21 +392,21 @@ export default function GridConfigurationPage() {
             )}
             {!column.hasSubColumns && <div className="w-6"></div>}
 
-            <GripVertical className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+            <GripVertical className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
 
             <div className="flex-1">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium" style={{ color: '#111827' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                   {column.columnName}
                 </span>
-                <Badge variant="secondary">{column.columnType}</Badge>
+                <Badge variant="neutral">{column.columnType}</Badge>
                 {column.isRequired && (
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge variant="danger" className="text-xs">
                     Required
                   </Badge>
                 )}
               </div>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>
+              <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
                 Key: {column.columnKey}
                 {column.width && ` • Width: ${column.width}px`}
                 {column.showCondition && ` • Condition: ${column.showCondition}`}
@@ -436,10 +436,10 @@ export default function GridConfigurationPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
             Grid Configuration
           </h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Customize grid structure like Excel - Add columns, rows, sub-columns dynamically
           </p>
         </div>
@@ -492,15 +492,15 @@ export default function GridConfigurationPage() {
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <h3 className="font-semibold" style={{ color: '#111827' }}>
+                <h3 className="font-semibold" style={{ color: 'var(--foreground)' }}>
                   {config.name}
                 </h3>
-                <p className="text-xs mt-1" style={{ color: '#6B7280' }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
                   {config.description}
                 </p>
                 <div className="flex items-center space-x-2 mt-3">
-                  <Badge variant="secondary">{config.columns.length} columns</Badge>
-                  <Badge variant="secondary">v{config.version}</Badge>
+                  <Badge variant="neutral">{config.columns.length} columns</Badge>
+                  <Badge variant="neutral">v{config.version}</Badge>
                 </div>
               </div>
             ))}
@@ -535,7 +535,7 @@ export default function GridConfigurationPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="border-t" style={{ borderColor: '#E5E7EB' }}>
+            <div className="border-t" style={{ borderColor: 'var(--border)' }}>
               {selectedConfig.columns.map((column) => renderColumnRow(column))}
             </div>
           </CardContent>
@@ -551,7 +551,7 @@ export default function GridConfigurationPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Column Name
               </label>
               <Input
@@ -564,7 +564,7 @@ export default function GridConfigurationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Column Key (Unique)
               </label>
               <Input
@@ -577,7 +577,7 @@ export default function GridConfigurationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Column Type
               </label>
               <Select
@@ -600,7 +600,7 @@ export default function GridConfigurationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Width (pixels)
               </label>
               <Input
@@ -622,7 +622,7 @@ export default function GridConfigurationPage() {
                     setNewColumn({ ...newColumn, isEditable: e.target.checked })
                   }
                 />
-                <span className="text-sm" style={{ color: '#374151' }}>
+                <span className="text-sm" style={{ color: 'var(--foreground)' }}>
                   Editable
                 </span>
               </label>
@@ -635,7 +635,7 @@ export default function GridConfigurationPage() {
                     setNewColumn({ ...newColumn, isRequired: e.target.checked })
                   }
                 />
-                <span className="text-sm" style={{ color: '#374151' }}>
+                <span className="text-sm" style={{ color: 'var(--foreground)' }}>
                   Required
                 </span>
               </label>
@@ -662,7 +662,7 @@ export default function GridConfigurationPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Turn Name
               </label>
               <Input
@@ -673,7 +673,7 @@ export default function GridConfigurationPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
                 Turn Time
               </label>
               <Input

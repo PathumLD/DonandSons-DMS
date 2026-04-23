@@ -7,12 +7,23 @@ import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Truck, Plus, Search, Edit, Eye, Printer, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Printer, CheckCircle, XCircle, Clock, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockDeliveries, type Delivery } from '@/lib/mock-data/operations';
 import { mockShowrooms } from '@/lib/mock-data/showrooms';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { useThemeStore } from '@/lib/stores/theme-store';
+import { getDateBounds, isAdminUser, todayISO } from '@/lib/date-restrictions';
 
 export default function DeliveryPage() {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = isAdminUser(user);
+  const pageTheme = useThemeStore((s) => s.getPageTheme('delivery'));
+  const dateBounds = getDateBounds('delivery', user as any, {
+    allowBackDatePermission: 'operation.delivery.allow-back-future',
+    allowFutureDatePermission: 'operation.delivery.allow-back-future',
+  });
+
   const [deliveries, setDeliveries] = useState<Delivery[]>(mockDeliveries);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -22,24 +33,31 @@ export default function DeliveryPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
+  const [showPreviousRecords, setShowPreviousRecords] = useState(false);
   
   const [formData, setFormData] = useState({
     deliveryNo: '',
-    deliveryDate: new Date().toISOString().split('T')[0],
+    deliveryDate: todayISO(),
     showroomId: '',
     notes: '',
-    status: 'Draft' as const,
+    status: 'Draft' as Delivery['status'],
   });
 
   const filteredDeliveries = useMemo(() => {
+    const today = todayISO();
     return deliveries.filter(d => {
       const matchesSearch = 
         d.deliveryNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.showroom.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = !statusFilter || d.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      // Admin / Super Admin sees all records. Other users only see records they
+      // entered for today or future (4.i Delivery), unless "Show Previous Records" is enabled.
+      const matchesRole =
+        isAdmin ||
+        (d.editUser === user?.email && (showPreviousRecords || (d.deliveryDate ?? '') >= today));
+      return matchesSearch && matchesStatus && matchesRole;
     });
-  }, [deliveries, searchTerm, statusFilter]);
+  }, [deliveries, searchTerm, statusFilter, isAdmin, user, showPreviousRecords]);
 
   const totalPages = Math.ceil(filteredDeliveries.length / pageSize);
   const paginatedDeliveries = filteredDeliveries.slice(
@@ -103,7 +121,7 @@ export default function DeliveryPage() {
   const resetForm = () => {
     setFormData({
       deliveryNo: '',
-      deliveryDate: new Date().toISOString().split('T')[0],
+      deliveryDate: todayISO(),
       showroomId: '',
       notes: '',
       status: 'Draft',
@@ -147,7 +165,7 @@ export default function DeliveryPage() {
       key: 'deliveryNo',
       label: 'Delivery No',
       render: (item: Delivery) => (
-        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+        <span className="font-mono font-semibold" style={{ color: pageTheme?.secondaryColor || '#C8102E' }}>
           {item.deliveryNo}
         </span>
       ),
@@ -183,6 +201,20 @@ export default function DeliveryPage() {
       label: 'Edit User',
     },
     {
+      key: 'editDate',
+      label: 'Edit Date',
+      render: (item: Delivery) => (
+        <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.editDate}</span>
+      ),
+    },
+    {
+      key: 'approvedBy',
+      label: 'Approved/Rejected By',
+      render: (item: Delivery) => (
+        <span className="text-sm">{item.approvedBy || '-'}</span>
+      ),
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (item: Delivery) => (
@@ -193,7 +225,7 @@ export default function DeliveryPage() {
               setShowViewModal(true);
             }}
             className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="View"
@@ -204,7 +236,7 @@ export default function DeliveryPage() {
             <button
               onClick={() => openEditModal(item)}
               className="p-1.5 rounded transition-colors"
-              style={{ color: '#6B7280' }}
+              style={{ color: 'var(--muted-foreground)' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Edit"
@@ -239,7 +271,7 @@ export default function DeliveryPage() {
           <button
             onClick={() => console.log('Print DN:', item.deliveryNo)}
             className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Print DN"
@@ -259,6 +291,9 @@ export default function DeliveryPage() {
           type="date"
           value={formData.deliveryDate}
           onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
+          min={dateBounds.min}
+          max={dateBounds.max}
+          helperText={dateBounds.helperText}
           fullWidth
           required
         />
@@ -286,21 +321,39 @@ export default function DeliveryPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Delivery Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Delivery Management</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Manage product deliveries to showrooms ({filteredDeliveries.length} deliveries)
           </p>
+          <div className="mt-2">
+            <Badge variant={isAdmin ? 'primary' : 'neutral'} size="sm">
+              <Info className="w-3 h-3 mr-1" />
+              {isAdmin
+                ? 'Admin: All records visible. Any date allowed.'
+                : 'You see your own records for today/future only.'}
+            </Badge>
+          </div>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="secondary" size="md">
-            Show Previous Records
-          </Button>
+          {!isAdmin && (
+            <Button
+              variant={showPreviousRecords ? 'primary' : 'secondary'}
+              size="md"
+              onClick={() => setShowPreviousRecords(!showPreviousRecords)}
+            >
+              {showPreviousRecords ? 'Hide Previous Records' : 'Show Previous Records'}
+            </Button>
+          )}
           <Button variant="primary" size="md" onClick={() => {
             resetForm();
             setShowAddModal(true);
           }}>
             <Plus className="w-4 h-4 mr-2" />
             Add New
+          </Button>
+          <Button variant="ghost" size="md" onClick={() => console.log('Print CH')}>
+            <Printer className="w-4 h-4 mr-2" />
+            Print CH
           </Button>
         </div>
       </div>
@@ -325,7 +378,7 @@ export default function DeliveryPage() {
                 ]}
               />
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
                 <input
                   type="text"
                   placeholder="Search deliveries..."
@@ -335,7 +388,7 @@ export default function DeliveryPage() {
                     setCurrentPage(1);
                   }}
                   className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                  style={{ border: '1px solid #D1D5DB' }}
+                  style={{ border: '1px solid var(--input)' }}
                 />
               </div>
             </div>
@@ -416,56 +469,56 @@ export default function DeliveryPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Delivery No</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedDelivery.deliveryNo}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Delivery No</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedDelivery.deliveryNo}</p>
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Delivery Date</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Delivery Date</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
                   {new Date(selectedDelivery.deliveryDate).toLocaleDateString()}
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Showroom</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedDelivery.showroom}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Showroom</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedDelivery.showroom}</p>
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Status</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
                 {getStatusBadge(selectedDelivery.status)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Total Items</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedDelivery.totalItems}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Total Items</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedDelivery.totalItems}</p>
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Total Value</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Total Value</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
                   Rs. {selectedDelivery.totalValue.toLocaleString()}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Edit User / Date</p>
-              <p className="text-sm" style={{ color: '#111827' }}>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Edit User / Date</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>
                 {selectedDelivery.editUser} • {selectedDelivery.editDate}
               </p>
             </div>
             {selectedDelivery.approvedBy && (
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Approved By / Date</p>
-                <p className="text-sm" style={{ color: '#111827' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Approved By / Date</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>
                   {selectedDelivery.approvedBy} • {selectedDelivery.approvedDate}
                 </p>
               </div>
             )}
             {selectedDelivery.notes && (
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Notes</p>
-                <p className="text-sm" style={{ color: '#111827' }}>{selectedDelivery.notes}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Notes</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedDelivery.notes}</p>
               </div>
             )}
           </div>

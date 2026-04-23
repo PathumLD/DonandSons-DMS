@@ -142,8 +142,8 @@ export default function OrderEntryPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Order Entry Grid</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Spreadsheet-style order entry for all outlets</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Order Entry Grid</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Spreadsheet-style order entry for all outlets</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="secondary" size="md"><Download className="w-4 h-4 mr-2" />Export</Button>
@@ -156,13 +156,13 @@ export default function OrderEntryPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <div className="inline-block min-w-full align-middle">
-              <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-                <thead style={{ backgroundColor: '#F9FAFB' }}>
+              <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                <thead style={{ backgroundColor: 'var(--muted)' }}>
                   <tr>
-                    <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-medium" style={{ backgroundColor: '#F9FAFB', color: '#6B7280', minWidth: '80px' }}>Y/N</th>
-                    <th className="sticky left-20 z-20 px-3 py-3 text-left text-xs font-medium" style={{ backgroundColor: '#F9FAFB', color: '#6B7280', minWidth: '200px' }}>Product</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px' }}>Code</th>
-                    <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '80px' }}>BAL</th>
+                    <th className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-medium" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', minWidth: '80px' }}>Y/N</th>
+                    <th className="sticky left-20 z-20 px-3 py-3 text-left text-xs font-medium" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', minWidth: '200px' }}>Product</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}>Code</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '80px' }}>BAL</th>
                     
                     {outlets.map(outlet => {
                       const product = products[0]; // Check first product to see if any have multi-turn
@@ -171,7 +171,7 @@ export default function OrderEntryPage() {
                       const multiTurnColSpan = hasAnyMultiTurn ? 4 : 0; // 2 for 10:30, 2 for 3:30
                       
                       return (
-                        <th key={outlet.id} colSpan={baseColSpan} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: '#6B7280', borderColor: '#D1D5DB', minWidth: '120px' }}>
+                        <th key={outlet.id} colSpan={baseColSpan} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)', minWidth: '120px' }}>
                           <div className="flex items-center justify-center space-x-2">
                             <input
                               type="checkbox"
@@ -186,42 +186,43 @@ export default function OrderEntryPage() {
                       );
                     })}
                     
-                    <th colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: '#6B7280', borderColor: '#D1D5DB', minWidth: '120px' }}>Extra</th>
-                    <th colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: '#6B7280', borderColor: '#D1D5DB', minWidth: '120px', backgroundColor: '#FEF3C4' }}>Total</th>
+                    <th colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)', minWidth: '120px' }}>Extra</th>
+                    <th colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)', minWidth: '120px', backgroundColor: 'var(--dms-amber)' }}>Total</th>
                   </tr>
-                  <tr style={{ backgroundColor: '#F9FAFB' }}>
+                  <tr style={{ backgroundColor: 'var(--muted)' }}>
                     <th colSpan={4}></th>
                     {outlets.map(outlet => (
                       <React.Fragment key={outlet.id}>
-                        <th className="px-2 py-2 text-center text-xs" style={{ color: '#6B7280' }}>5AM F</th>
-                        <th className="px-2 py-2 text-center text-xs border-r" style={{ color: '#6B7280', borderColor: '#D1D5DB' }}>5AM M</th>
+                        <th className="px-2 py-2 text-center text-xs" style={{ color: 'var(--muted-foreground)' }}>5AM F</th>
+                        <th className="px-2 py-2 text-center text-xs border-r" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)' }}>5AM M</th>
                       </React.Fragment>
                     ))}
-                    <th className="px-2 py-2 text-center text-xs" style={{ color: '#6B7280' }}>F</th>
-                    <th className="px-2 py-2 text-center text-xs border-r" style={{ color: '#6B7280', borderColor: '#D1D5DB' }}>M</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>F</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>M</th>
+                    <th className="px-2 py-2 text-center text-xs" style={{ color: 'var(--muted-foreground)' }}>F</th>
+                    <th className="px-2 py-2 text-center text-xs border-r" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)' }}>M</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>F</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>M</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+                <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                   {products.map((product) => (
-                    <tr key={product.id} style={{ backgroundColor: product.isIncluded ? 'white' : '#F3F4F6' }}>
-                      <td className="sticky left-0 z-10 px-3 py-2 text-center" style={{ backgroundColor: product.isIncluded ? 'white' : '#F3F4F6' }}>
+                    <tr key={product.id} style={{ backgroundColor: product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)' }}>
+                      <td className="sticky left-0 z-10 px-3 py-2 text-center" style={{ backgroundColor: product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)' }}>
                         <button
+                          type="button"
                           onClick={() => toggleProductIncluded(product.id)}
                           className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-                          style={{ backgroundColor: product.isIncluded ? '#10B981' : '#D1D5DB', color: 'white' }}
+                          style={{ backgroundColor: product.isIncluded ? 'var(--status-success)' : 'var(--neutral-300)', color: '#ffffff' }}
                         >
                           {product.isIncluded ? 'Y' : 'N'}
                         </button>
                       </td>
-                      <td className="sticky left-20 z-10 px-3 py-2 text-sm font-medium" style={{ color: '#111827', backgroundColor: product.isIncluded ? 'white' : '#F3F4F6' }}>{product.name}</td>
-                      <td className="px-3 py-2 text-sm font-mono" style={{ color: '#6B7280' }}>{product.code}</td>
-                      <td className="px-3 py-2 text-center text-sm font-semibold" style={{ color: '#C8102E' }}>{product.freezerBalance}</td>
+                      <td className="sticky left-20 z-10 px-3 py-2 text-sm font-medium" style={{ color: 'var(--foreground)', backgroundColor: product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)' }}>{product.name}</td>
+                      <td className="px-3 py-2 text-sm font-mono" style={{ color: 'var(--foreground)', backgroundColor: product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)' }}>{product.code}</td>
+                      <td className="px-3 py-2 text-center text-sm font-semibold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)' }}>{product.freezerBalance}</td>
                       
                       {outlets.map(outlet => {
                         const isOutletActive = activeOutlets[outlet.id];
-                        const bgColor = !isOutletActive ? '#F3F4F6' : (product.isIncluded ? 'white' : '#F3F4F6');
+                        const bgColor = !isOutletActive ? 'var(--dms-surface-muted)' : (product.isIncluded ? 'var(--dms-surface)' : 'var(--dms-surface-muted)');
                         const isDisabled = !product.isIncluded || !isOutletActive;
                         
                         return (
@@ -237,14 +238,14 @@ export default function OrderEntryPage() {
                                   onKeyDown={(e) => handleKeyDown(e, product.id, outlet.id, 'full')}
                                   disabled={isDisabled}
                                   className="w-full px-2 py-1 text-sm text-center rounded"
-                                  style={{ border: '1px solid #D1D5DB', backgroundColor: bgColor }}
+                                  style={{ border: '1px solid var(--input)', backgroundColor: bgColor, color: 'var(--foreground)' }}
                                 />
                               </td>
                             )}
-                            {!product.hasFull && <td className="px-1 py-1 bg-gray-100"></td>}
+                            {!product.hasFull && <td className="px-1 py-1" style={{ backgroundColor: 'var(--muted)' }}></td>}
                             
                             {product.hasMini && (
-                              <td className="px-1 py-1 border-r" style={{ borderColor: '#D1D5DB' }}>
+                              <td className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)' }}>
                                 <input
                                   ref={el => { inputRefs.current[`${product.id}-${outlet.id}-mini`] = el; }}
                                   type="number"
@@ -254,11 +255,11 @@ export default function OrderEntryPage() {
                                   onKeyDown={(e) => handleKeyDown(e, product.id, outlet.id, 'mini')}
                                   disabled={isDisabled}
                                   className="w-full px-2 py-1 text-sm text-center rounded"
-                                  style={{ border: '1px solid #D1D5DB', backgroundColor: bgColor }}
+                                  style={{ border: '1px solid var(--input)', backgroundColor: bgColor, color: 'var(--foreground)' }}
                                 />
                               </td>
                             )}
-                            {!product.hasMini && <td className="px-1 py-1 border-r bg-gray-100" style={{ borderColor: '#D1D5DB' }}></td>}
+                            {!product.hasMini && <td className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)', backgroundColor: 'var(--muted)' }}></td>}
                           </React.Fragment>
                         );
                       })}
@@ -271,10 +272,10 @@ export default function OrderEntryPage() {
                           onChange={(e) => handleExtraChange(product.id, 'full', e.target.value)}
                           disabled={!product.isIncluded}
                           className="w-full px-2 py-1 text-sm text-center rounded"
-                          style={{ border: '1px solid #D1D5DB', backgroundColor: product.isIncluded ? '#FFFBEB' : '#F3F4F6' }}
+                          style={{ border: '1px solid var(--input)', backgroundColor: product.isIncluded ? 'var(--dms-amber-tint)' : 'var(--dms-surface-muted)', color: 'var(--foreground)' }}
                         />
                       </td>
-                      <td className="px-1 py-1 border-r" style={{ borderColor: '#D1D5DB' }}>
+                      <td className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)' }}>
                         <input
                           type="number"
                           min="0"
@@ -282,14 +283,14 @@ export default function OrderEntryPage() {
                           onChange={(e) => handleExtraChange(product.id, 'mini', e.target.value)}
                           disabled={!product.isIncluded}
                           className="w-full px-2 py-1 text-sm text-center rounded"
-                          style={{ border: '1px solid #D1D5DB', backgroundColor: product.isIncluded ? '#FFFBEB' : '#F3F4F6' }}
+                          style={{ border: '1px solid var(--input)', backgroundColor: product.isIncluded ? 'var(--dms-amber-tint)' : 'var(--dms-surface-muted)', color: 'var(--foreground)' }}
                         />
                       </td>
                       
-                      <td className="px-3 py-2 text-center text-sm font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                      <td className="px-3 py-2 text-center text-sm font-bold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>
                         {calculateTotal(product.id, 'full')}
                       </td>
-                      <td className="px-3 py-2 text-center text-sm font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                      <td className="px-3 py-2 text-center text-sm font-bold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>
                         {calculateTotal(product.id, 'mini')}
                       </td>
                     </tr>
@@ -301,22 +302,22 @@ export default function OrderEntryPage() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
+      <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'white', border: '1px solid #D1D5DB' }}></div>
-            <span className="text-sm" style={{ color: '#166534' }}>Included (Y)</span>
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--input)' }}></div>
+            <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>Included (Y)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F3F4F6' }}></div>
-            <span className="text-sm" style={{ color: '#166534' }}>Excluded (N) / Inactive Outlet</span>
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--muted)' }}></div>
+            <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>Excluded (N) / Inactive Outlet</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FEF3C4' }}></div>
-            <span className="text-sm" style={{ color: '#166534' }}>Totals</span>
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--dms-amber)' }}></div>
+            <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>Totals</span>
           </div>
         </div>
-        <p className="text-sm" style={{ color: '#166534' }}>
+        <p className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
           Use Tab/Enter to navigate • Check/uncheck outlets to include/exclude • F = Full, M = Mini • BAL = Freezer Balance
         </p>
       </div>

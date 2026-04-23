@@ -50,23 +50,23 @@ export function DataTable<T extends { id?: string | number }>({
     }
 
     return (
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #E5E7EB' }}>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center space-x-2">
-          <span className="text-sm" style={{ color: '#6B7280' }}>
+          <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Rows per page:
           </span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
             className="px-3 py-1.5 rounded-lg text-sm focus:outline-none"
-            style={{ border: '1px solid #D1D5DB', color: '#111827' }}
+            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
           >
             <option value={10}>10</option>
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
           </select>
-          <span className="text-sm ml-4" style={{ color: '#6B7280' }}>
+          <span className="text-sm ml-4" style={{ color: 'var(--muted-foreground)' }}>
             Page {currentPage} of {totalPages}
           </span>
         </div>
@@ -76,8 +76,8 @@ export function DataTable<T extends { id?: string | number }>({
             onClick={() => onPageChange?.(currentPage - 1)}
             disabled={currentPage === 1}
             className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ color: '#6B7280' }}
-            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#F9FAFB')}
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--muted)')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -88,13 +88,13 @@ export function DataTable<T extends { id?: string | number }>({
               <button
                 onClick={() => onPageChange?.(1)}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors"
-                style={{ color: '#374151' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                style={{ color: 'var(--foreground)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 1
               </button>
-              {startPage > 2 && <span className="px-2" style={{ color: '#9CA3AF' }}>...</span>}
+              {startPage > 2 && <span className="px-2" style={{ color: 'var(--muted-foreground)' }}>...</span>}
             </>
           )}
 
@@ -105,11 +105,11 @@ export function DataTable<T extends { id?: string | number }>({
               className="px-3 py-1.5 text-sm rounded-lg font-medium transition-colors"
               style={{
                 backgroundColor: page === currentPage ? pageColor : 'transparent',
-                color: page === currentPage ? 'white' : '#374151',
+                color: page === currentPage ? 'white' : 'var(--foreground)',
               }}
               onMouseEnter={(e) => {
                 if (page !== currentPage) {
-                  e.currentTarget.style.backgroundColor = '#F9FAFB';
+                  e.currentTarget.style.backgroundColor = 'var(--muted)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -124,12 +124,12 @@ export function DataTable<T extends { id?: string | number }>({
 
           {endPage < totalPages && (
             <>
-              {endPage < totalPages - 1 && <span className="px-2" style={{ color: '#9CA3AF' }}>...</span>}
+              {endPage < totalPages - 1 && <span className="px-2" style={{ color: 'var(--muted-foreground)' }}>...</span>}
               <button
                 onClick={() => onPageChange?.(totalPages)}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors"
-                style={{ color: '#374151' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                style={{ color: 'var(--foreground)' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {totalPages}
@@ -141,8 +141,8 @@ export function DataTable<T extends { id?: string | number }>({
             onClick={() => onPageChange?.(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ color: '#6B7280' }}
-            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#F9FAFB')}
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--muted)')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <ChevronRight className="w-5 h-5" />
@@ -154,9 +154,9 @@ export function DataTable<T extends { id?: string | number }>({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>
+      <div className="rounded-lg shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
+          <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
             <thead>
               <tr style={{ backgroundColor: pageColor }}>
                 {columns.map((column) => (
@@ -183,9 +183,9 @@ export function DataTable<T extends { id?: string | number }>({
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>
+      <div className="rounded-lg shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
+          <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
             <thead>
               <tr style={{ backgroundColor: pageColor }}>
                 {columns.map((column) => (
@@ -201,16 +201,16 @@ export function DataTable<T extends { id?: string | number }>({
           </table>
         </div>
         <div className="text-center py-12">
-          <p className="text-sm" style={{ color: '#6B7280' }}>No data available</p>
+          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>No data available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ border: '1px solid #E5E7EB' }}>
+    <div className="rounded-lg shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
+        <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
           <thead>
             <tr style={{ backgroundColor: pageColor }}>
               {columns.map((column) => (
@@ -223,20 +223,23 @@ export function DataTable<T extends { id?: string | number }>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y" style={{ borderColor: '#E5E7EB' }}>
+          <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
             {data.map((item, index) => (
               <tr 
                 key={item.id || index}
-                className="hover:bg-opacity-50 transition-colors"
-                style={{ backgroundColor: index % 2 === 0 ? 'white' : '#F9FAFB' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : '#F9FAFB'}
+                className="transition-colors"
+                style={{ backgroundColor: index % 2 === 0 ? 'var(--card)' : 'var(--muted)' }}
+                onMouseEnter={(e) => {
+                  const isDark = document.documentElement.classList.contains('dark');
+                  e.currentTarget.style.backgroundColor = isDark ? 'var(--border)' : '#FEF2F2';
+                }}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'var(--card)' : 'var(--muted)'}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
                     className={`px-6 py-4 whitespace-nowrap text-sm ${column.className || ''}`}
-                    style={{ color: '#111827' }}
+                    style={{ color: 'var(--foreground)' }}
                   >
                     {column.render ? column.render(item) : (item as any)[column.key]}
                   </td>

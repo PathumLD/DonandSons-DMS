@@ -52,7 +52,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--muted)' }}>
       <div className="w-full max-w-md space-y-8">
         {/* Logo/Brand */}
         <div className="text-center">
@@ -62,15 +62,15 @@ export default function LoginPage() {
           >
             <span className="text-white font-bold text-3xl">D&S</span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight" style={{ color: '#111827' }}>
+          <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
             Don & Sons DMS
           </h2>
-          <p className="mt-2 text-sm" style={{ color: '#6B7280' }}>
+          <p className="mt-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Delivery Management System
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="rounded-lg shadow-xl p-8" style={{ backgroundColor: 'var(--card)' }}>
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {error && (
               <div className="rounded-lg p-4" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
@@ -80,7 +80,7 @@ export default function LoginPage() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
                   Email Address
                 </label>
                 <input
@@ -90,8 +90,9 @@ export default function LoginPage() {
                   autoComplete="email"
                   className="block w-full rounded-lg px-4 py-3 text-sm focus:outline-none transition-all"
                   style={{ 
-                    border: '1px solid #D1D5DB',
-                    color: '#111827'
+                    border: '1px solid var(--input)',
+                    backgroundColor: 'var(--background)',
+                    color: 'var(--foreground)'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#C8102E';
@@ -99,7 +100,7 @@ export default function LoginPage() {
                     e.currentTarget.style.outlineOffset = '2px';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#D1D5DB';
+                    e.currentTarget.style.borderColor = 'var(--input)';
                     e.currentTarget.style.outline = 'none';
                   }}
                   placeholder="your.email@donandson.com"
@@ -110,7 +111,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+                <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
                   Password
                 </label>
                 <input
@@ -120,8 +121,9 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   className="block w-full rounded-lg px-4 py-3 text-sm focus:outline-none transition-all"
                   style={{ 
-                    border: '1px solid #D1D5DB',
-                    color: '#111827'
+                    border: '1px solid var(--input)',
+                    backgroundColor: 'var(--background)',
+                    color: 'var(--foreground)'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#C8102E';
@@ -129,7 +131,7 @@ export default function LoginPage() {
                     e.currentTarget.style.outlineOffset = '2px';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#D1D5DB';
+                    e.currentTarget.style.borderColor = 'var(--input)';
                     e.currentTarget.style.outline = 'none';
                   }}
                   placeholder="Enter your password"
@@ -147,11 +149,11 @@ export default function LoginPage() {
                     type="checkbox"
                     className="h-4 w-4 rounded"
                     style={{ 
-                      borderColor: '#D1D5DB',
+                      borderColor: 'var(--input)',
                       color: '#C8102E'
                     }}
                   />
-                  <label htmlFor="rememberMe" className="ml-2 block text-sm" style={{ color: '#6B7280' }}>
+                  <label htmlFor="rememberMe" className="ml-2 block text-sm" style={{ color: 'var(--muted-foreground)' }}>
                     Remember me
                   </label>
                 </div>
@@ -185,7 +187,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+            <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
               Don & Sons (Pvt) Ltd © {new Date().getFullYear()}
             </p>
           </div>

@@ -63,8 +63,8 @@ export default function ChangePasswordPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Change Password</h1>
-        <p className="mt-1" style={{ color: '#6B7280' }}>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Change Password</h1>
+        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
           Update your password to keep your account secure
         </p>
       </div>
@@ -93,7 +93,7 @@ export default function ChangePasswordPage() {
             )}
 
             <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+              <label htmlFor="currentPassword" className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
                 Current Password
               </label>
               <div className="relative">
@@ -104,8 +104,8 @@ export default function ChangePasswordPage() {
                   autoComplete="current-password"
                   className="block w-full rounded-lg px-4 py-3 pr-12 text-sm focus:outline-none transition-all"
                   style={{ 
-                    border: '1px solid #D1D5DB',
-                    color: '#111827'
+                    border: '1px solid var(--input)',
+                    color: 'var(--foreground)'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#C8102E';
@@ -122,7 +122,7 @@ export default function ChangePasswordPage() {
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  style={{ color: '#6B7280' }}
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -133,7 +133,7 @@ export default function ChangePasswordPage() {
             </div>
 
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+              <label htmlFor="newPassword" className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
                 New Password
               </label>
               <div className="relative">
@@ -144,8 +144,8 @@ export default function ChangePasswordPage() {
                   autoComplete="new-password"
                   className="block w-full rounded-lg px-4 py-3 pr-12 text-sm focus:outline-none transition-all"
                   style={{ 
-                    border: '1px solid #D1D5DB',
-                    color: '#111827'
+                    border: '1px solid var(--input)',
+                    color: 'var(--foreground)'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#C8102E';
@@ -162,7 +162,7 @@ export default function ChangePasswordPage() {
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  style={{ color: '#6B7280' }}
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -173,7 +173,7 @@ export default function ChangePasswordPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
                 Confirm New Password
               </label>
               <div className="relative">
@@ -184,8 +184,8 @@ export default function ChangePasswordPage() {
                   autoComplete="new-password"
                   className="block w-full rounded-lg px-4 py-3 pr-12 text-sm focus:outline-none transition-all"
                   style={{ 
-                    border: '1px solid #D1D5DB',
-                    color: '#111827'
+                    border: '1px solid var(--input)',
+                    color: 'var(--foreground)'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#C8102E';
@@ -202,7 +202,7 @@ export default function ChangePasswordPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  style={{ color: '#6B7280' }}
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -212,7 +212,7 @@ export default function ChangePasswordPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end space-x-3 pt-4" style={{ borderTop: '1px solid #E5E7EB' }}>
+            <div className="flex items-center justify-end space-x-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
               <Button
                 type="button"
                 variant="ghost"

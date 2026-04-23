@@ -192,7 +192,7 @@ export default function ProductsPage() {
           <button
             onClick={() => openEditModal(item)}
             className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Edit"
@@ -205,7 +205,7 @@ export default function ProductsPage() {
               setShowInfoModal(true);
             }}
             className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Info"
@@ -307,8 +307,8 @@ export default function ProductsPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Products</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Products</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Manage your product catalog ({filteredProducts.length} items)
           </p>
         </div>
@@ -326,7 +326,7 @@ export default function ProductsPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Product List</CardTitle>
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Search products..."
@@ -336,7 +336,7 @@ export default function ProductsPage() {
                   setCurrentPage(1);
                 }}
                 className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                style={{ border: '1px solid #D1D5DB' }}
+                style={{ border: '1px solid var(--input)' }}
               />
             </div>
           </div>
@@ -416,31 +416,31 @@ export default function ProductsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Product Code</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedProduct.code}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product Code</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedProduct.code}</p>
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Category</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedProduct.category}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Category</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedProduct.category}</p>
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Description</p>
-              <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedProduct.description}</p>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Description</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedProduct.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Unit Price</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>Rs. {selectedProduct.unitPrice.toFixed(2)}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Unit Price</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Rs. {selectedProduct.unitPrice.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Unit of Measure</p>
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedProduct.uom}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Unit of Measure</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedProduct.uom}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Require Open Stock</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Require Open Stock</p>
                 {selectedProduct.requireOpenStock ? (
                   <Badge variant="success" size="sm">Yes</Badge>
                 ) : (
@@ -448,7 +448,7 @@ export default function ProductsPage() {
                 )}
               </div>
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Enable Label Print</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Enable Label Print</p>
                 {selectedProduct.enableLabelPrint ? (
                   <Badge variant="success" size="sm">Yes</Badge>
                 ) : (
@@ -457,7 +457,7 @@ export default function ProductsPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Status</p>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
               {selectedProduct.active ? (
                 <Badge variant="success" size="sm">Active</Badge>
               ) : (

@@ -30,20 +30,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       if (variant === 'yellow') {
         return '#FEF3C4';
       }
-      return 'white';
+      return 'var(--background)';
     };
 
     const getBorderColor = () => {
       if (variant === 'yellow') {
         return '#FFD100';
       }
-      return error ? '#DC2626' : '#D1D5DB';
+      return error ? '#DC2626' : 'var(--input)';
     };
 
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
             {label}
           </label>
         )}
@@ -55,7 +55,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           style={{
             border: `1px solid ${getBorderColor()}`,
             backgroundColor: getBackgroundColor(),
-            color: '#111827',
+            color: 'var(--foreground)',
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = pageColor;
@@ -74,7 +74,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {helperText && !error && (
-          <p className="mt-1.5 text-sm" style={{ color: '#6B7280' }}>
+          <p className="mt-1.5 text-sm" style={{ color: 'var(--muted-foreground)' }}>
             {helperText}
           </p>
         )}

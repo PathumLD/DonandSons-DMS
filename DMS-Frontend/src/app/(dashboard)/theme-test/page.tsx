@@ -25,8 +25,8 @@ export default function ThemeTestPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Theme System Test</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Theme System Test</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Testing Don & Sons brand theme and per-page color coding
           </p>
         </div>
@@ -50,9 +50,9 @@ export default function ThemeTestPage() {
               }}
             ></div>
             <div>
-              <p className="text-sm" style={{ color: '#6B7280' }}>Hex Color Code</p>
-              <p className="text-2xl font-mono font-bold" style={{ color: '#111827' }}>{pageColor}</p>
-              <p className="text-xs mt-2" style={{ color: '#6B7280' }}>
+              <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Hex Color Code</p>
+              <p className="text-2xl font-mono font-bold" style={{ color: 'var(--foreground)' }}>{pageColor}</p>
+              <p className="text-xs mt-2" style={{ color: 'var(--muted-foreground)' }}>
                 This color is applied to sidebar highlights, buttons, and active states
               </p>
             </div>
@@ -69,7 +69,7 @@ export default function ThemeTestPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
+          <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
             Click any color below to see the theme change. Notice how the sidebar active
             state, buttons, and other accents update automatically.
           </p>
@@ -91,11 +91,11 @@ export default function ThemeTestPage() {
                     style={{ backgroundColor: item.color }}
                   ></div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium" style={{ color: '#111827' }}>{item.name}</p>
-                    <p className="text-xs font-mono" style={{ color: '#6B7280' }}>{item.color}</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{item.name}</p>
+                    <p className="text-xs font-mono" style={{ color: 'var(--muted-foreground)' }}>{item.color}</p>
                   </div>
                   {pageColor === item.color && (
-                    <Check className="w-5 h-5" style={{ color: '#111827' }} />
+                    <Check className="w-5 h-5" style={{ color: 'var(--foreground)' }} />
                   )}
                 </div>
               </button>
@@ -111,7 +111,7 @@ export default function ThemeTestPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>Variants</p>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Variants</p>
             <div className="flex flex-wrap gap-3">
               <Button variant="primary">Primary Button</Button>
               <Button variant="secondary">Secondary</Button>
@@ -123,7 +123,7 @@ export default function ThemeTestPage() {
           </div>
 
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>Sizes</p>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Sizes</p>
             <div className="flex flex-wrap items-center gap-3">
               <Button size="sm">Small</Button>
               <Button size="md">Medium</Button>
@@ -132,7 +132,7 @@ export default function ThemeTestPage() {
           </div>
 
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>States</p>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>States</p>
             <div className="flex flex-wrap gap-3">
               <Button disabled>Disabled</Button>
               <Button isLoading>Loading...</Button>
@@ -149,7 +149,7 @@ export default function ThemeTestPage() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>Variants</p>
+              <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Variants</p>
               <div className="flex flex-wrap gap-3">
                 <Badge variant="primary">Primary</Badge>
                 <Badge variant="success">Success</Badge>
@@ -161,7 +161,7 @@ export default function ThemeTestPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>Sizes</p>
+              <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Sizes</p>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge size="sm">Small</Badge>
                 <Badge size="md">Medium</Badge>
@@ -170,7 +170,7 @@ export default function ThemeTestPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-2" style={{ color: '#374151' }}>Status Examples</p>
+              <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Status Examples</p>
               <div className="flex flex-wrap gap-3">
                 <Badge variant="success">Approved</Badge>
                 <Badge variant="warning">Pending</Badge>
@@ -188,7 +188,7 @@ export default function ThemeTestPage() {
         <Card padding="sm">
           <CardTitle>Small Padding</CardTitle>
           <CardContent className="mt-2">
-            <p className="text-sm" style={{ color: '#6B7280' }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               Card with small padding for compact layouts.
             </p>
           </CardContent>
@@ -197,7 +197,7 @@ export default function ThemeTestPage() {
         <Card padding="md">
           <CardTitle>Medium Padding</CardTitle>
           <CardContent className="mt-2">
-            <p className="text-sm" style={{ color: '#6B7280' }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               Card with medium padding (default).
             </p>
           </CardContent>
@@ -206,7 +206,7 @@ export default function ThemeTestPage() {
         <Card padding="lg" hover>
           <CardTitle>Large Padding + Hover</CardTitle>
           <CardContent className="mt-2">
-            <p className="text-sm" style={{ color: '#6B7280' }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               Card with large padding and hover effect.
             </p>
           </CardContent>
@@ -226,7 +226,7 @@ export default function ThemeTestPage() {
             >
               1
             </div>
-            <p className="text-sm" style={{ color: '#374151' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
               Click on different colors above to change the page theme. Notice how the
               sidebar active state updates automatically.
             </p>
@@ -238,7 +238,7 @@ export default function ThemeTestPage() {
             >
               2
             </div>
-            <p className="text-sm" style={{ color: '#374151' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
               Navigate to different pages in the sidebar. Each page can have its own color
               (configured by admin in Label Settings).
             </p>
@@ -250,7 +250,7 @@ export default function ThemeTestPage() {
             >
               3
             </div>
-            <p className="text-sm" style={{ color: '#374151' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
               Test the responsive design by resizing your browser window. The layout should
               adapt from 320px (mobile) to 1920px (desktop).
             </p>
@@ -262,14 +262,14 @@ export default function ThemeTestPage() {
             >
               4
             </div>
-            <p className="text-sm" style={{ color: '#374151' }}>
+            <p className="text-sm" style={{ color: 'var(--foreground)' }}>
               On mobile, click the menu icon to open the sidebar. Test the expandable menu
               items (Inventory, Operation, Administrator, Production).
             </p>
           </div>
         </CardContent>
         <CardFooter>
-          <p className="text-xs" style={{ color: '#6B7280' }}>
+          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
             All components use the brand colors and respond to theme changes automatically.
           </p>
         </CardFooter>

@@ -57,13 +57,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         return { backgroundColor: pageColor };
       }
       if (variant === 'secondary') {
-        return { backgroundColor: '#4B5563', color: 'white' };
+        return { backgroundColor: 'var(--muted-foreground)', color: 'white' };
       }
       if (variant === 'accent') {
-        return { backgroundColor: brandColors.accent.DEFAULT, color: '#111827' };
+        return { backgroundColor: brandColors.accent.DEFAULT, color: 'var(--foreground)' };
       }
       if (variant === 'ghost') {
-        return { color: '#374151' };
+        return { color: 'var(--foreground)' };
       }
       if (variant === 'outline') {
         return { borderColor: pageColor, color: pageColor };

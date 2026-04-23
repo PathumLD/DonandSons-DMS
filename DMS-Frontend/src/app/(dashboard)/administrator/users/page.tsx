@@ -122,83 +122,45 @@ export default function UsersPage() {
   const columns = [
     {
       key: 'username',
-      label: 'Username',
+      label: 'User Name',
       render: (item: User) => (
-        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+        <span className="font-medium" style={{ color: 'var(--foreground)' }}>
+          <Users className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
           {item.username}
         </span>
       ),
     },
     {
-      key: 'fullName',
-      label: 'Full Name',
-      render: (item: User) => (
-        <span className="font-medium">{item.fullName}</span>
-      ),
-    },
-    {
-      key: 'email',
-      label: 'Email',
-    },
-    {
       key: 'role',
-      label: 'Role',
+      label: 'User Role',
       render: (item: User) => (
-        <Badge variant="primary" size="sm">{item.role}</Badge>
-      ),
-    },
-    {
-      key: 'phone',
-      label: 'Phone',
-    },
-    {
-      key: 'active',
-      label: 'Status',
-      render: (item: User) => (
-        item.active ? (
-          <Badge variant="success" size="sm">Active</Badge>
-        ) : (
-          <Badge variant="danger" size="sm">Inactive</Badge>
-        )
+        <span style={{ color: 'var(--muted-foreground)' }}>{item.role}</span>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: '',
       render: (item: User) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-end space-x-2">
           <button
             onClick={() => openEditModal(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DBEAFE'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => {
-              setSelectedUser(item);
-              setShowResetPasswordModal(true);
-            }}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Reset Password"
-          >
-            <Key className="w-4 h-4" />
-          </button>
-          <button
             onClick={() => handleToggleActive(item.id)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: item.active ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.active ? '#FEF2F2' : '#F0FDF4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.active ? 'Deactivate' : 'Activate'}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: '#DC2626', backgroundColor: '#FEF2F2' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+            title={item.active ? 'Delete' : 'Restore'}
           >
-            {item.active ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            <X className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -294,9 +256,12 @@ export default function UsersPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>User Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
-            Manage system users and their access ({filteredUsers.length} users)
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Users className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Users & User Roles
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Manage system users, assign roles and capabilities. Only Admin can create users.
           </p>
         </div>
         <Button variant="primary" size="md" onClick={() => {
@@ -304,16 +269,21 @@ export default function UsersPage() {
           setShowAddModal(true);
         }}>
           <Plus className="w-4 h-4 mr-2" />
-          Add User
+          Add New
         </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>User List</CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="danger" size="sm">Users</Badge>
+              <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                Showing 1 to 10 of 57 entries
+              </span>
+            </div>
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Search users..."
@@ -323,7 +293,7 @@ export default function UsersPage() {
                   setCurrentPage(1);
                 }}
                 className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                style={{ border: '1px solid #D1D5DB' }}
+                style={{ border: '1px solid var(--input)' }}
               />
             </div>
           </div>
@@ -402,7 +372,7 @@ export default function UsersPage() {
       >
         {selectedUser && (
           <div className="space-y-4">
-            <p className="text-sm" style={{ color: '#6B7280' }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               Reset password for <strong>{selectedUser.fullName}</strong> (@{selectedUser.username})
             </p>
             <div className="grid grid-cols-1 gap-4">

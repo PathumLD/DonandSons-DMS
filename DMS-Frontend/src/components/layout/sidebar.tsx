@@ -65,12 +65,26 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             onClick={() => toggleExpanded(item.name)}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
               isActive
-                ? 'text-white font-medium'
-                : 'text-slate-300 hover:text-white'
+                ? 'font-medium'
+                : ''
             }`}
-            onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)')}
-            onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
-            style={isActive ? { backgroundColor: pageColor } : undefined}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'var(--muted)';
+                e.currentTarget.style.color = 'var(--foreground)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--card-foreground)';
+              }
+            }}
+            style={
+              isActive
+                ? { backgroundColor: pageColor, color: 'white' }
+                : { color: 'var(--card-foreground)' }
+            }
             title={collapsed ? item.name : ''}
           >
             <div className="flex items-center space-x-3">
@@ -86,7 +100,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             )}
           </button>
           {isExpanded && !collapsed && (
-            <div className="ml-4 mt-1 space-y-1 border-l-2 pl-2" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+            <div className="ml-4 mt-1 space-y-1 border-l-2 pl-2" style={{ borderColor: 'var(--border)' }}>
               {item.children?.map((child) => renderMenuItem(child, level + 1))}
             </div>
           )}
@@ -101,12 +115,26 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         onClick={handleNavClick}
         className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all ${
           isActive
-            ? 'text-white font-medium'
-            : 'text-slate-300 hover:text-white'
+            ? 'font-medium'
+            : ''
         }`}
-        onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)')}
-        onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
-        style={isActive ? { backgroundColor: pageColor } : undefined}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'var(--muted)';
+            e.currentTarget.style.color = 'var(--foreground)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = 'var(--card-foreground)';
+          }
+        }}
+        style={
+          isActive
+            ? { backgroundColor: pageColor, color: 'white' }
+            : { color: 'var(--card-foreground)' }
+        }
         title={collapsed ? item.name : ''}
       >
         <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -127,10 +155,13 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       } fixed lg:static inset-y-0 left-0 z-50 transform ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}
-      style={{ backgroundColor: '#2D2D2D' }}
+      style={{ 
+        backgroundColor: 'var(--card)',
+        borderRight: '1px solid var(--border)'
+      }}
     >
       {/* Header with Don & Sons branding */}
-      <div className="h-16 flex items-center justify-between px-4" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+      <div className="h-16 flex items-center justify-between px-4" style={{ borderBottom: '1px solid var(--border)' }}>
         {!collapsed && (
           <div className="flex items-center space-x-2">
             <div 
@@ -139,7 +170,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
             >
               <span className="text-white font-bold">D&S</span>
             </div>
-            <span className="font-semibold text-lg">Don & Sons</span>
+            <span className="font-semibold text-lg" style={{ color: 'var(--foreground)' }}>Don & Sons</span>
           </div>
         )}
         {collapsed && (
@@ -157,11 +188,16 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
         onClick={() => setCollapsed(!collapsed)}
         className="hidden lg:block absolute top-5 -right-3 rounded-full p-1 transition-colors border"
         style={{ 
-          backgroundColor: '#2D2D2D',
-          borderColor: 'rgba(255, 255, 255, 0.2)',
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
+          color: 'var(--foreground)',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3D3D3D'}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2D2D2D'}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--muted)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--card)';
+        }}
       >
         {collapsed ? (
           <ChevronRight className="w-4 h-4" />
@@ -178,7 +214,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
       </nav>
 
       {/* User Info */}
-      <div className="p-4" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+      <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
         {!collapsed ? (
           <div className="flex items-center space-x-3">
             <div 
@@ -191,10 +227,10 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>{user?.email}</p>
             </div>
           </div>
         ) : (

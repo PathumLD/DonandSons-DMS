@@ -31,7 +31,7 @@ export function Badge({ children, variant = 'neutral', size = 'md', className = 
       case 'info':
         return { backgroundColor: brandColors.status.info, color: 'white' };
       case 'neutral':
-        return { backgroundColor: brandColors.neutral[200], color: brandColors.neutral[700] };
+        return { backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)' };
       default:
         return {};
     }

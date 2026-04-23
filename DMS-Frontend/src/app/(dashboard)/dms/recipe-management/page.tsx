@@ -20,7 +20,7 @@ export default function RecipeManagementPage() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const productOptions = mockOrderProducts.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }));
-  const ingredientOptions = mockIngredients.filter(i => i.active).map(i => ({ value: i.id, label: `${i.code} - ${i.name}` }));
+  const ingredientOptions = mockIngredients.filter(i => i.active).map(i => ({ value: i.id, label: `${i.code} - ${i.description}` }));
 
   const handleAddIngredient = () => {
     setRecipe(prev => ({
@@ -85,8 +85,8 @@ export default function RecipeManagementPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Recipe Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Create and edit product recipes with ingredients</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Recipe Management</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Create and edit product recipes with ingredients</p>
         </div>
         <Button variant="primary" size="md" onClick={handleSave}><Save className="w-4 h-4 mr-2" />Save Recipe</Button>
       </div>
@@ -99,7 +99,7 @@ export default function RecipeManagementPage() {
               <Select label="Product" value={String(selectedProductId)} onChange={(e) => setSelectedProductId(Number(e.target.value))} options={productOptions} fullWidth />
               
               <div>
-                <p className="text-sm font-medium mb-2" style={{ color: '#6B7280' }}>Sub-Recipes</p>
+                <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>Sub-Recipes</p>
                 <div className="space-y-2">
                   {['main', 'dough', 'filling'].map((subRecipe) => (
                     <button
@@ -107,9 +107,9 @@ export default function RecipeManagementPage() {
                       onClick={() => setSelectedSubRecipe(subRecipe)}
                       className="w-full px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors"
                       style={{
-                        backgroundColor: selectedSubRecipe === subRecipe ? '#FEF3C4' : 'white',
-                        border: `1px solid ${selectedSubRecipe === subRecipe ? '#FFD100' : '#E5E7EB'}`,
-                        color: '#111827',
+                        backgroundColor: selectedSubRecipe === subRecipe ? 'var(--dms-amber)' : 'var(--dms-pill-off-bg)',
+                        border: `1px solid ${selectedSubRecipe === subRecipe ? 'var(--dms-notes-border)' : 'var(--dms-pill-off-border)'}`,
+                        color: 'var(--foreground)',
                       }}
                     >
                       {subRecipe === 'main' ? 'Main Recipe' : subRecipe.charAt(0).toUpperCase() + subRecipe.slice(1)}
@@ -118,10 +118,10 @@ export default function RecipeManagementPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t" style={{ borderColor: '#E5E7EB' }}>
-                <p className="text-sm font-medium mb-2" style={{ color: '#6B7280' }}>Recipe Version</p>
-                <p className="text-sm" style={{ color: '#111827' }}>Version {recipe.version}</p>
-                <p className="text-xs" style={{ color: '#9CA3AF' }}>Effective from: {new Date(recipe.effectiveFrom).toLocaleDateString()}</p>
+              <div className="pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>Recipe Version</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>Version {recipe.version}</p>
+                <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Effective from: {new Date(recipe.effectiveFrom).toLocaleDateString()}</p>
                 <Button variant="ghost" size="sm" className="mt-2">Create New Version</Button>
               </div>
             </div>
@@ -141,38 +141,38 @@ export default function RecipeManagementPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-                  <thead style={{ backgroundColor: '#F9FAFB' }}>
+                <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                  <thead style={{ backgroundColor: 'var(--muted)' }}>
                     <tr>
-                      <th className="px-2 py-3 text-xs font-medium" style={{ color: '#6B7280', width: '30px' }}></th>
-                      <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: '#6B7280', minWidth: '200px' }}>Ingredient</th>
-                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px' }}>Qty/Unit</th>
-                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px' }}>Extra/Unit</th>
-                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '80px' }}>Unit</th>
-                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', minWidth: '100px' }}>Options</th>
-                      <th className="px-2 py-3 text-xs font-medium" style={{ color: '#6B7280', width: '50px' }}></th>
+                      <th className="px-2 py-3 text-xs font-medium" style={{ color: 'var(--muted-foreground)', width: '30px' }}></th>
+                      <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '200px' }}>Ingredient</th>
+                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}>Qty/Unit</th>
+                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}>Extra/Unit</th>
+                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '80px' }}>Unit</th>
+                      <th className="px-3 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}>Options</th>
+                      <th className="px-2 py-3 text-xs font-medium" style={{ color: 'var(--muted-foreground)', width: '50px' }}></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+                  <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                     {recipe.ingredients.map((ingredient, index) => (
                       <tr key={ingredient.id}>
                         <td className="px-2 py-2">
-                          <GripVertical className="w-4 h-4" style={{ color: '#9CA3AF', cursor: 'grab' }} />
+                          <GripVertical className="w-4 h-4" style={{ color: 'var(--muted-foreground)', cursor: 'grab' }} />
                         </td>
                         <td className="px-3 py-2">
-                          <select className="w-full px-2 py-1 text-sm rounded" style={{ border: '1px solid #D1D5DB' }}>
+                          <select className="w-full px-2 py-1 text-sm rounded" style={{ border: '1px solid var(--input)' }}>
                             <option>{ingredient.ingredientCode} - {ingredient.ingredientName}</option>
                             {ingredientOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                           </select>
                         </td>
                         <td className="px-3 py-2">
-                          <input type="number" step="0.01" value={ingredient.qtyPerUnit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid #D1D5DB' }} />
+                          <input type="number" step="0.01" value={ingredient.qtyPerUnit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid var(--input)' }} />
                         </td>
                         <td className="px-3 py-2">
-                          <input type="number" step="0.01" value={ingredient.extraQtyPerUnit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid #D1D5DB' }} />
+                          <input type="number" step="0.01" value={ingredient.extraQtyPerUnit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid var(--input)' }} />
                         </td>
                         <td className="px-3 py-2">
-                          <input type="text" value={ingredient.unit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid #D1D5DB' }} />
+                          <input type="text" value={ingredient.unit} className="w-full px-2 py-1 text-sm text-center rounded" style={{ border: '1px solid var(--input)' }} />
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex flex-col space-y-1">
@@ -187,7 +187,7 @@ export default function RecipeManagementPage() {
                           </div>
                         </td>
                         <td className="px-2 py-2">
-                          <button onClick={() => handleRemoveIngredient(ingredient.id)} className="p-1 rounded transition-colors" style={{ color: '#DC2626' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                          <button type="button" onClick={() => handleRemoveIngredient(ingredient.id)} className="p-1 rounded transition-colors" style={{ color: 'var(--dms-red-text)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--dms-destructive-soft)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
@@ -206,22 +206,22 @@ export default function RecipeManagementPage() {
                 <Input label="Production Quantity" type="number" value={previewQty} onChange={(e) => setPreviewQty(e.target.value)} placeholder="100" helperText="Enter quantity to calculate ingredient requirements" fullWidth />
                 
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-                    <thead style={{ backgroundColor: '#F9FAFB' }}>
+                  <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                    <thead style={{ backgroundColor: 'var(--muted)' }}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium" style={{ color: '#6B7280' }}>Ingredient</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280' }}>Qty/Unit</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280' }}>Extra/Unit</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: '#6B7280', backgroundColor: '#FEF3C4' }}>Total Req'd</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Ingredient</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Qty/Unit</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Extra/Unit</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--dms-amber)' }}>Total Req'd</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+                    <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                       {recipe.ingredients.map((ingredient) => (
                         <tr key={ingredient.id}>
-                          <td className="px-4 py-3 text-sm" style={{ color: '#111827' }}>{ingredient.ingredientName}</td>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--foreground)' }}>{ingredient.ingredientName}</td>
                           <td className="px-4 py-3 text-center text-sm" style={{ color: '#3B82F6' }}>{ingredient.qtyPerUnit} {ingredient.unit}</td>
                           <td className="px-4 py-3 text-center text-sm" style={{ color: '#F59E0B' }}>{ingredient.extraQtyPerUnit} {ingredient.unit}</td>
-                          <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}>
+                          <td className="px-4 py-3 text-center text-sm font-bold" style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}>
                             {calculatePreview(ingredient.qtyPerUnit, ingredient.extraQtyPerUnit)} {ingredient.unit}
                           </td>
                         </tr>
@@ -237,21 +237,21 @@ export default function RecipeManagementPage() {
 
       <Modal isOpen={showTemplateModal} onClose={() => setShowTemplateModal(false)} title="Load Recipe Template" size="md">
         <div className="space-y-3">
-          <p className="text-sm" style={{ color: '#6B7280' }}>
+          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Select a predefined template to load as the base recipe. You can customize it after loading.
           </p>
           {mockRecipeTemplates.filter(t => t.active).map((template) => (
             <button
               key={template.id}
               onClick={() => handleLoadTemplate(template.id)}
-              className="w-full p-4 rounded-lg text-left transition-colors hover:bg-gray-50"
-              style={{ border: '1px solid #E5E7EB' }}
+              className="w-full p-4 rounded-lg text-left transition-colors hover:!bg-[color:var(--muted)]"
+              style={{ border: '1px solid var(--border)' }}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium" style={{ color: '#111827' }}>{template.name}</p>
-                  <p className="text-sm" style={{ color: '#6B7280' }}>{template.description}</p>
-                  <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{template.ingredientCount} ingredients</p>
+                  <p className="font-medium" style={{ color: 'var(--foreground)' }}>{template.name}</p>
+                  <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>{template.description}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>{template.ingredientCount} ingredients</p>
                 </div>
                 <FileStack className="w-6 h-6" style={{ color: '#C8102E' }} />
               </div>

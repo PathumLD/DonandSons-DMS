@@ -40,13 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isValidating || !isAuthenticated) {
     return (
-      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: '#F9FAFB' }}>
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--muted)' }}>
         <div className="text-center">
           <div 
             className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent"
             style={{ borderColor: brandColors.primary.DEFAULT, borderRightColor: 'transparent' }}
           ></div>
-          <p className="mt-2 text-sm" style={{ color: '#6B7280' }}>Loading...</p>
+          <p className="mt-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>Loading...</p>
         </div>
       </div>
     );
@@ -54,7 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <ThemeProvider defaultColor={brandColors.primary.DEFAULT}>
-      <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#F9FAFB' }}>
+      <div className="h-screen flex overflow-hidden" style={{ backgroundColor: 'var(--muted)' }}>
         {/* Mobile Overlay */}
         {mobileMenuOpen && (
           <div

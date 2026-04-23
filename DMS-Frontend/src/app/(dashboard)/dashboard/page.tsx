@@ -14,16 +14,16 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
             Welcome back, {user?.firstName}!
           </h1>
-          <p className="text-sm sm:text-base mt-1" style={{ color: '#6B7280' }}>
+          <p className="text-sm sm:text-base mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Here's what's happening with your business today.
           </p>
         </div>
         <div className="text-left sm:text-right">
-          <p className="text-xs sm:text-sm" style={{ color: '#6B7280' }}>Today's Date</p>
-          <p className="text-base sm:text-lg font-semibold" style={{ color: '#111827' }}>
+          <p className="text-xs sm:text-sm" style={{ color: 'var(--muted-foreground)' }}>Today's Date</p>
+          <p className="text-base sm:text-lg font-semibold" style={{ color: 'var(--foreground)' }}>
             {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',

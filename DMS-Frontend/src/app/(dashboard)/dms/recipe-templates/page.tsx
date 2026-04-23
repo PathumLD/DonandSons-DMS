@@ -94,9 +94,9 @@ export default function RecipeTemplatesPage() {
     {
       key: 'actions', label: 'Actions', render: (item: RecipeTemplate) => (
         <div className="flex items-center space-x-2">
-          <button onClick={() => { setSelectedTemplate(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
-          <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
-          <button onClick={() => handleApplyToProduct(item.id)} className="p-1.5 rounded transition-colors" style={{ color: '#10B981' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Apply to Product"><Copy className="w-4 h-4" /></button>
+          <button onClick={() => { setSelectedTemplate(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: 'var(--muted-foreground)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
+          <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: 'var(--muted-foreground)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
+          <button onClick={() => handleApplyToProduct(item.id)} className="p-1.5 rounded transition-colors" style={{ color: '#10B981' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--dms-success-callout)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Apply to Product"><Copy className="w-4 h-4" /></button>
         </div>
       )
     },
@@ -106,8 +106,8 @@ export default function RecipeTemplatesPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Predefined Recipe Templates</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Reusable recipe templates for quick product setup ({filteredTemplates.length} templates)</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Predefined Recipe Templates</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Reusable recipe templates for quick product setup ({filteredTemplates.length} templates)</p>
         </div>
         <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}><Plus className="w-4 h-4 mr-2" />Create Template</Button>
       </div>
@@ -117,8 +117,8 @@ export default function RecipeTemplatesPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Recipe Templates</CardTitle>
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-              <input type="text" placeholder="Search templates..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input type="text" placeholder="Search templates..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--input)' }} />
             </div>
           </div>
         </CardHeader>
@@ -132,9 +132,9 @@ export default function RecipeTemplatesPage() {
           <Input label="Template Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Vegetable Curry Template" fullWidth required />
           <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Brief description of the template..." fullWidth />
           
-          <div className="p-4 rounded-lg" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FFD100' }}>
-            <p className="text-sm font-medium mb-2" style={{ color: '#78350F' }}>Next Steps:</p>
-            <p className="text-sm" style={{ color: '#92400E' }}>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-notes)', border: '1px solid var(--dms-notes-border)' }}>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-notes-title)' }}>Next Steps:</p>
+            <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
               After creating the template, you can add ingredient lines. Templates can then be applied to products as a starting point for their recipes.
             </p>
           </div>
@@ -151,7 +151,7 @@ export default function RecipeTemplatesPage() {
           <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth />
           <div className="flex items-center space-x-2">
             <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} className="rounded" />
-            <label className="text-sm" style={{ color: '#374151' }}>Active</label>
+            <label className="text-sm" style={{ color: 'var(--foreground)' }}>Active</label>
           </div>
         </div>
         <ModalFooter>
@@ -164,31 +164,31 @@ export default function RecipeTemplatesPage() {
         {selectedTemplate && (
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Template Name</p>
-              <p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedTemplate.name}</p>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Template Name</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedTemplate.name}</p>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Description</p>
-              <p className="text-sm" style={{ color: '#111827' }}>{selectedTemplate.description}</p>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Description</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedTemplate.description}</p>
             </div>
             
             <div>
-              <p className="text-xs font-medium mb-3" style={{ color: '#6B7280' }}>Ingredients ({selectedTemplate.ingredientCount})</p>
+              <p className="text-xs font-medium mb-3" style={{ color: 'var(--muted-foreground)' }}>Ingredients ({selectedTemplate.ingredientCount})</p>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-                  <thead style={{ backgroundColor: '#F9FAFB' }}>
+                <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                  <thead style={{ backgroundColor: 'var(--muted)' }}>
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium" style={{ color: '#6B7280' }}>Ingredient</th>
-                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: '#6B7280' }}>Qty/Unit</th>
-                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: '#6B7280' }}>Unit</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Ingredient</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Qty/Unit</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Unit</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+                  <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                     {selectedTemplate.ingredients.map((ingredient, index) => (
                       <tr key={index}>
-                        <td className="px-4 py-2 text-sm" style={{ color: '#111827' }}>{ingredient.ingredientCode} - {ingredient.ingredientName}</td>
+                        <td className="px-4 py-2 text-sm" style={{ color: 'var(--foreground)' }}>{ingredient.ingredientCode} - {ingredient.ingredientName}</td>
                         <td className="px-4 py-2 text-center text-sm font-semibold" style={{ color: '#C8102E' }}>{ingredient.qtyPerUnit}</td>
-                        <td className="px-4 py-2 text-center text-sm" style={{ color: '#6B7280' }}>{ingredient.unit}</td>
+                        <td className="px-4 py-2 text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>{ingredient.unit}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -203,12 +203,12 @@ export default function RecipeTemplatesPage() {
         </ModalFooter>
       </Modal>
 
-      <div className="p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
+      <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}>
         <div className="flex items-start space-x-3">
-          <FileStack className="w-5 h-5 mt-0.5" style={{ color: '#166534' }} />
+          <FileStack className="w-5 h-5 mt-0.5" style={{ color: 'var(--dms-success-text)' }} />
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: '#166534' }}>Template Benefits:</p>
-            <ul className="text-sm space-y-1" style={{ color: '#166534' }}>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-success-text)' }}>Template Benefits:</p>
+            <ul className="text-sm space-y-1" style={{ color: 'var(--dms-success-text)' }}>
               <li>• Save time by creating standard recipes once and applying them to multiple products</li>
               <li>• Maintain consistency across similar products (e.g., all curry fillings use the same base recipe)</li>
               <li>• Templates can be applied as a starting point, then customized per product</li>

@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
-import { CheckCircle, XCircle, Search, Eye, TrendingUp, TrendingDown } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockStockAdjustments, type StockAdjustment } from '@/lib/mock-data/production';
 
@@ -21,7 +21,7 @@ export default function StockAdjustmentApprovalPage() {
     return adjustments.filter(a => {
       const matchesSearch = 
         a.adjustmentNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.productCode.toLowerCase().includes(searchTerm.toLowerCase());
+        a.editUser.toLowerCase().includes(searchTerm.toLowerCase());
       return a.status === 'Pending' && matchesSearch;
     });
   }, [adjustments, searchTerm]);
@@ -33,14 +33,16 @@ export default function StockAdjustmentApprovalPage() {
   );
 
   const handleApprove = (id: number) => {
+    const approvedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: '1-digit', day: '1-digit', year: 'numeric' })}`;
     setAdjustments(adjustments.map(a =>
-      a.id === id ? { ...a, status: 'Approved', approvedBy: 'Manager' } : a
+      a.id === id ? { ...a, status: 'Approved', approvedBy: approvedByText } : a
     ));
   };
 
   const handleReject = (id: number) => {
+    const rejectedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: '1-digit', day: '1-digit', year: 'numeric' })}`;
     setAdjustments(adjustments.map(a =>
-      a.id === id ? { ...a, status: 'Rejected', approvedBy: 'Manager' } : a
+      a.id === id ? { ...a, status: 'Rejected', approvedBy: rejectedByText } : a
     ));
   };
 
@@ -48,45 +50,48 @@ export default function StockAdjustmentApprovalPage() {
     {
       key: 'adjustmentDate',
       label: 'Date',
-      render: (item: StockAdjustment) => <span className="font-medium">{new Date(item.adjustmentDate).toLocaleDateString()}</span>,
-    },
-    {
-      key: 'adjustmentNo',
-      label: 'Adjustment No',
-      render: (item: StockAdjustment) => <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>{item.adjustmentNo}</span>,
-    },
-    {
-      key: 'productCode',
-      label: 'Product',
-      render: (item: StockAdjustment) => <span>{item.productCode} - {item.productName}</span>,
-    },
-    {
-      key: 'adjustmentType',
-      label: 'Type',
       render: (item: StockAdjustment) => (
-        <Badge variant={item.adjustmentType === 'Increase' ? 'success' : 'danger'} size="sm">
-          {item.adjustmentType === 'Increase' ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-          {item.adjustmentType}
-        </Badge>
+        <span style={{ color: 'var(--muted-foreground)' }}>{item.adjustmentDate.split('-').reverse().join('/')}</span>
       ),
     },
     {
-      key: 'quantity',
-      label: 'Qty',
-      render: (item: StockAdjustment) => <span className="font-semibold">{item.quantity}</span>,
+      key: 'adjustmentNo',
+      label: 'Display No',
+      render: (item: StockAdjustment) => (
+        <span className="font-semibold" style={{ color: '#C8102E' }}>
+          {item.adjustmentNo}
+        </span>
+      ),
     },
     {
       key: 'editUser',
-      label: 'Requested By',
+      label: 'Edit User',
+      render: (item: StockAdjustment) => (
+        <span style={{ color: 'var(--muted-foreground)' }}>{item.editUser}</span>
+      ),
+    },
+    {
+      key: 'editDate',
+      label: 'Edit Date',
+      render: (item: StockAdjustment) => (
+        <span style={{ color: 'var(--muted-foreground)' }}>{item.editDate}</span>
+      ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: '',
       render: (item: StockAdjustment) => (
-        <div className="flex items-center space-x-2">
-          <button onClick={() => { setSelectedAdjustment(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
-          <button onClick={() => handleApprove(item.id)} className="p-1.5 rounded transition-colors" style={{ color: '#10B981' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Approve"><CheckCircle className="w-4 h-4" /></button>
-          <button onClick={() => handleReject(item.id)} className="p-1.5 rounded transition-colors" style={{ color: '#DC2626' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Reject"><XCircle className="w-4 h-4" /></button>
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={() => { setSelectedAdjustment(item); setShowViewModal(true); }}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            title="View"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
         </div>
       ),
     },
@@ -95,17 +100,25 @@ export default function StockAdjustmentApprovalPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Stock Adjustment Approval</h1>
-        <p className="mt-1" style={{ color: '#6B7280' }}>Review and approve stock adjustment requests ({pendingAdjustments.length} pending)</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Production Stock BF Approval</h1>
+        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+          Review and approve pending stock adjustments
+        </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Pending Approvals</CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-              <input type="text" placeholder="Search adjustments..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input 
+                type="text" 
+                placeholder="Search:" 
+                value={searchTerm} 
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" 
+                style={{ border: '1px solid var(--input)' }} 
+              />
             </div>
           </div>
         </CardHeader>
@@ -114,20 +127,53 @@ export default function StockAdjustmentApprovalPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={showViewModal} onClose={() => { setShowViewModal(false); setSelectedAdjustment(null); }} title="Adjustment Details" size="md">
+      <Modal isOpen={showViewModal} onClose={() => { setShowViewModal(false); setSelectedAdjustment(null); }} title="Stock Adjustment Details" size="md">
         {selectedAdjustment && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Adjustment No</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedAdjustment.adjustmentNo}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Date</p><p className="text-sm" style={{ color: '#111827' }}>{new Date(selectedAdjustment.adjustmentDate).toLocaleDateString()}</p></div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Display No</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.adjustmentNo}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
+                <Badge variant="warning" size="sm">Pending</Badge>
+              </div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Product</p><p className="text-sm" style={{ color: '#111827' }}>{selectedAdjustment.productCode} - {selectedAdjustment.productName}</p></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Type</p><Badge variant={selectedAdjustment.adjustmentType === 'Increase' ? 'success' : 'danger'} size="sm">{selectedAdjustment.adjustmentType}</Badge></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Quantity</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedAdjustment.quantity}</p></div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Date</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.adjustmentDate.split('-').reverse().join('/')}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Type</p>
+                <Badge variant={selectedAdjustment.adjustmentType === 'Increase' ? 'success' : 'danger'} size="sm">
+                  {selectedAdjustment.adjustmentType}
+                </Badge>
+              </div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Reason</p><p className="text-sm" style={{ color: '#111827' }}>{selectedAdjustment.reason}</p></div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Requested By</p><p className="text-sm" style={{ color: '#111827' }}>{selectedAdjustment.editUser}</p></div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.productCode} - {selectedAdjustment.productName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.quantity}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Reason</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.reason}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Edit User</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.editUser}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Edit Date</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedAdjustment.editDate}</p>
+              </div>
+            </div>
           </div>
         )}
         <ModalFooter>

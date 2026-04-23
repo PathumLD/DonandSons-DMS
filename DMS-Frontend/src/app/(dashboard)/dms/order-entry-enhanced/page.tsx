@@ -191,10 +191,10 @@ export default function OrderEntryEnhancedPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
             Enhanced Order Entry Grid
           </h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Multi-turn, decimal support, section-based production planning
           </p>
         </div>
@@ -215,7 +215,7 @@ export default function OrderEntryEnhancedPage() {
         <CardContent className="p-4">
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#6B7280' }}>
+              <label className="block text-xs font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
                 Delivery Date
               </label>
               <input
@@ -223,11 +223,11 @@ export default function OrderEntryEnhancedPage() {
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-full px-3 py-2 rounded border"
-                style={{ borderColor: '#D1D5DB' }}
+                style={{ borderColor: 'var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#6B7280' }}>
+              <label className="block text-xs font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
                 Delivery Turn
               </label>
               <select
@@ -239,7 +239,7 @@ export default function OrderEntryEnhancedPage() {
                   if (turn) setSelectedDeliveryTurn(turn);
                 }}
                 className="w-full px-3 py-2 rounded border"
-                style={{ borderColor: '#D1D5DB' }}
+                style={{ borderColor: 'var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
               >
                 {mockDeliveryTurnConfigurations.map((turn) => (
                   <option key={turn.id} value={turn.id}>
@@ -251,12 +251,12 @@ export default function OrderEntryEnhancedPage() {
             <div className="flex items-end">
               <div
                 className="px-4 py-2 rounded-lg"
-                style={{ backgroundColor: '#FEF3C4', border: '1px solid #FDE68A' }}
+                style={{ backgroundColor: 'var(--dms-warn-box)', border: '1px solid var(--dms-warn-box-border)' }}
               >
-                <p className="text-xs font-medium" style={{ color: '#92400E' }}>
+                <p className="text-xs font-medium" style={{ color: 'var(--dms-warn-label)' }}>
                   Order Entry For:
                 </p>
-                <p className="text-lg font-bold" style={{ color: '#C8102E' }}>
+                <p className="text-lg font-bold" style={{ color: 'var(--dms-warn-accent)' }}>
                   {selectedDeliveryTurn.name}
                 </p>
               </div>
@@ -269,7 +269,7 @@ export default function OrderEntryEnhancedPage() {
                   onChange={(e) => setUseFreezerStock(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <span className="text-sm font-medium" style={{ color: '#1E40AF' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--dms-link)' }}>
                   Use Freezer Stock
                 </span>
               </label>
@@ -287,15 +287,15 @@ export default function OrderEntryEnhancedPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <div className="inline-block min-w-full align-middle">
-              <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
+              <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
                 {/* Header Row 1: Outlet Names with Checkboxes */}
-                <thead style={{ backgroundColor: '#F9FAFB' }}>
+                <thead style={{ backgroundColor: 'var(--muted)' }}>
                   <tr>
                     <th
                       className="sticky left-0 z-20 px-3 py-3 text-left text-xs font-medium"
                       style={{
-                        backgroundColor: '#F9FAFB',
-                        color: '#6B7280',
+                        backgroundColor: 'var(--muted)',
+                        color: 'var(--muted-foreground)',
                         minWidth: '80px',
                       }}
                     >
@@ -304,8 +304,8 @@ export default function OrderEntryEnhancedPage() {
                     <th
                       className="sticky left-20 z-20 px-3 py-3 text-left text-xs font-medium"
                       style={{
-                        backgroundColor: '#F9FAFB',
-                        color: '#6B7280',
+                        backgroundColor: 'var(--muted)',
+                        color: 'var(--muted-foreground)',
                         minWidth: '200px',
                       }}
                     >
@@ -313,19 +313,19 @@ export default function OrderEntryEnhancedPage() {
                     </th>
                     <th
                       className="px-3 py-3 text-left text-xs font-medium"
-                      style={{ color: '#6B7280', minWidth: '100px' }}
+                      style={{ color: 'var(--muted-foreground)', minWidth: '100px' }}
                     >
                       Code
                     </th>
                     <th
                       className="px-3 py-3 text-center text-xs font-medium"
-                      style={{ color: '#6B7280', minWidth: '80px' }}
+                      style={{ color: 'var(--muted-foreground)', minWidth: '80px' }}
                     >
                       BAL
                     </th>
                     <th
                       className="px-3 py-3 text-center text-xs font-medium"
-                      style={{ color: '#6B7280', minWidth: '120px' }}
+                      style={{ color: 'var(--muted-foreground)', minWidth: '120px' }}
                     >
                       Section
                     </th>
@@ -337,8 +337,8 @@ export default function OrderEntryEnhancedPage() {
                         colSpan={2}
                         className="px-3 py-3 text-center text-xs font-medium border-l"
                         style={{
-                          color: '#6B7280',
-                          borderColor: '#D1D5DB',
+                          color: 'var(--muted-foreground)',
+                          borderColor: 'var(--input)',
                           minWidth: '120px',
                         }}
                       >
@@ -359,8 +359,8 @@ export default function OrderEntryEnhancedPage() {
                       colSpan={2}
                       className="px-3 py-3 text-center text-xs font-medium border-l"
                       style={{
-                        color: '#6B7280',
-                        borderColor: '#D1D5DB',
+                        color: 'var(--muted-foreground)',
+                        borderColor: 'var(--input)',
                         minWidth: '120px',
                       }}
                     >
@@ -370,10 +370,10 @@ export default function OrderEntryEnhancedPage() {
                       colSpan={2}
                       className="px-3 py-3 text-center text-xs font-medium border-l"
                       style={{
-                        color: '#6B7280',
-                        borderColor: '#D1D5DB',
+                        color: 'var(--muted-foreground)',
+                        borderColor: 'var(--input)',
                         minWidth: '120px',
-                        backgroundColor: '#FEF3C4',
+                        backgroundColor: 'var(--dms-amber)',
                       }}
                     >
                       Total
@@ -383,10 +383,10 @@ export default function OrderEntryEnhancedPage() {
                         colSpan={2}
                         className="px-3 py-3 text-center text-xs font-medium border-l"
                         style={{
-                          color: '#6B7280',
-                          borderColor: '#D1D5DB',
+                          color: 'var(--muted-foreground)',
+                          borderColor: 'var(--input)',
                           minWidth: '120px',
-                          backgroundColor: '#DBEAFE',
+                          backgroundColor: 'var(--dms-blue)',
                         }}
                       >
                         Available
@@ -395,20 +395,20 @@ export default function OrderEntryEnhancedPage() {
                   </tr>
 
                   {/* Header Row 2: F/M columns */}
-                  <tr style={{ backgroundColor: '#F9FAFB' }}>
+                  <tr style={{ backgroundColor: 'var(--muted)' }}>
                     <th colSpan={5}></th>
 
                     {outlets.map((outlet) => (
                       <React.Fragment key={outlet.id}>
                         <th
                           className="px-2 py-2 text-center text-xs"
-                          style={{ color: '#6B7280' }}
+                          style={{ color: 'var(--muted-foreground)' }}
                         >
                           F
                         </th>
                         <th
                           className="px-2 py-2 text-center text-xs border-r"
-                          style={{ color: '#6B7280', borderColor: '#D1D5DB' }}
+                          style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)' }}
                         >
                           M
                         </th>
@@ -417,25 +417,25 @@ export default function OrderEntryEnhancedPage() {
 
                     <th
                       className="px-2 py-2 text-center text-xs"
-                      style={{ color: '#6B7280' }}
+                      style={{ color: 'var(--muted-foreground)' }}
                     >
                       F
                     </th>
                     <th
                       className="px-2 py-2 text-center text-xs border-r"
-                      style={{ color: '#6B7280', borderColor: '#D1D5DB' }}
+                      style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)' }}
                     >
                       M
                     </th>
                     <th
                       className="px-2 py-2 text-center text-xs font-semibold"
-                      style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                      style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                     >
                       F
                     </th>
                     <th
                       className="px-2 py-2 text-center text-xs font-semibold"
-                      style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                      style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                     >
                       M
                     </th>
@@ -443,13 +443,13 @@ export default function OrderEntryEnhancedPage() {
                       <>
                         <th
                           className="px-2 py-2 text-center text-xs font-semibold"
-                          style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                          style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                         >
                           F
                         </th>
                         <th
                           className="px-2 py-2 text-center text-xs font-semibold"
-                          style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                          style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                         >
                           M
                         </th>
@@ -461,28 +461,35 @@ export default function OrderEntryEnhancedPage() {
                 {/* Body */}
                 <tbody
                   className="divide-y"
-                  style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}
+                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                 >
                   {products.map((product) => (
                     <tr
                       key={product.id}
                       style={{
-                        backgroundColor: product.isIncluded ? 'white' : '#F3F4F6',
+                        backgroundColor: product.isIncluded
+                          ? 'var(--dms-surface)'
+                          : 'var(--dms-surface-muted)',
                       }}
                     >
                       {/* Y/N Toggle */}
                       <td
                         className="sticky left-0 z-10 px-3 py-2 text-center"
                         style={{
-                          backgroundColor: product.isIncluded ? 'white' : '#F3F4F6',
+                          backgroundColor: product.isIncluded
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)',
                         }}
                       >
                         <button
                           onClick={() => toggleProductIncluded(product.id)}
                           className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                          type="button"
                           style={{
-                            backgroundColor: product.isIncluded ? '#10B981' : '#D1D5DB',
-                            color: 'white',
+                            backgroundColor: product.isIncluded
+                              ? 'var(--status-success)'
+                              : 'var(--neutral-300)',
+                            color: '#ffffff',
                           }}
                         >
                           {product.isIncluded ? 'Y' : 'N'}
@@ -493,15 +500,17 @@ export default function OrderEntryEnhancedPage() {
                       <td
                         className="sticky left-20 z-10 px-3 py-2 text-sm font-medium"
                         style={{
-                          color: '#111827',
-                          backgroundColor: product.isIncluded ? 'white' : '#F3F4F6',
+                          color: 'var(--foreground)',
+                          backgroundColor: product.isIncluded
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)',
                         }}
                       >
                         {product.name}
                         {product.allowDecimal && (
                           <span
                             className="ml-2 text-xs px-1 rounded"
-                            style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}
+                            style={{ backgroundColor: 'var(--dms-blue)', color: 'var(--dms-blue-fg)' }}
                           >
                             ±{product.decimalPlaces}
                           </span>
@@ -511,7 +520,12 @@ export default function OrderEntryEnhancedPage() {
                       {/* Product Code */}
                       <td
                         className="px-3 py-2 text-sm font-mono"
-                        style={{ color: '#6B7280' }}
+                        style={{
+                          color: 'var(--foreground)',
+                          backgroundColor: product.isIncluded
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)',
+                        }}
                       >
                         {product.code}
                       </td>
@@ -519,15 +533,25 @@ export default function OrderEntryEnhancedPage() {
                       {/* Freezer Balance */}
                       <td
                         className="px-3 py-2 text-center text-sm font-semibold"
-                        style={{ color: '#C8102E' }}
+                        style={{
+                          color: 'var(--dms-amber-fg)',
+                          backgroundColor: product.isIncluded
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)',
+                        }}
                       >
                         {product.freezerBalance}
                       </td>
 
                       {/* Primary Section */}
                       <td
-                        className="px-3 py-2 text-center text-xs"
-                        style={{ color: '#6B7280' }}
+                        className="px-3 py-2 text-center text-xs font-medium"
+                        style={{
+                          color: 'var(--foreground)',
+                          backgroundColor: product.isIncluded
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)',
+                        }}
                       >
                         {product.primarySection}
                       </td>
@@ -536,10 +560,10 @@ export default function OrderEntryEnhancedPage() {
                       {outlets.map((outlet) => {
                         const isOutletActive = activeOutlets[outlet.id];
                         const bgColor = !isOutletActive
-                          ? '#F3F4F6'
+                          ? 'var(--dms-surface-muted)'
                           : product.isIncluded
-                          ? 'white'
-                          : '#F3F4F6';
+                            ? 'var(--dms-surface)'
+                            : 'var(--dms-surface-muted)';
                         const isDisabled = !product.isIncluded || !isOutletActive;
 
                         // Check if product is available for selected delivery turn
@@ -572,8 +596,9 @@ export default function OrderEntryEnhancedPage() {
                                   disabled={isDisabled}
                                   className="w-full px-2 py-1 text-sm text-center rounded"
                                   style={{
-                                    border: '1px solid #D1D5DB',
+                                    border: '1px solid var(--input)',
                                     backgroundColor: bgColor,
+                                    color: 'var(--foreground)',
                                   }}
                                 />
                               </td>
@@ -581,13 +606,13 @@ export default function OrderEntryEnhancedPage() {
                             {(!product.hasFull || !productHasTurn) && (
                               <td
                                 className="px-1 py-1"
-                                style={{ backgroundColor: '#F3F4F6' }}
+                                style={{ backgroundColor: 'var(--muted)' }}
                               ></td>
                             )}
 
                             {/* Mini */}
                             {product.hasMini && productHasTurn && (
-                              <td className="px-1 py-1 border-r" style={{ borderColor: '#D1D5DB' }}>
+                              <td className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)' }}>
                                 <input
                                   type={product.allowDecimal ? 'text' : 'number'}
                                   step={
@@ -608,8 +633,9 @@ export default function OrderEntryEnhancedPage() {
                                   disabled={isDisabled}
                                   className="w-full px-2 py-1 text-sm text-center rounded"
                                   style={{
-                                    border: '1px solid #D1D5DB',
+                                    border: '1px solid var(--input)',
                                     backgroundColor: bgColor,
+                                    color: 'var(--foreground)',
                                   }}
                                 />
                               </td>
@@ -618,8 +644,8 @@ export default function OrderEntryEnhancedPage() {
                               <td
                                 className="px-1 py-1 border-r"
                                 style={{
-                                  backgroundColor: '#F3F4F6',
-                                  borderColor: '#D1D5DB',
+                                  backgroundColor: 'var(--muted)',
+                                  borderColor: 'var(--input)',
                                 }}
                               ></td>
                             )}
@@ -644,14 +670,17 @@ export default function OrderEntryEnhancedPage() {
                           disabled={!product.isIncluded}
                           className="w-full px-2 py-1 text-sm text-center rounded"
                           style={{
-                            border: '1px solid #D1D5DB',
-                            backgroundColor: product.isIncluded ? '#FFFBEB' : '#F3F4F6',
+                            border: '1px solid var(--input)',
+                            backgroundColor: product.isIncluded
+                              ? 'var(--dms-amber-tint)'
+                              : 'var(--dms-surface-muted)',
+                            color: 'var(--foreground)',
                           }}
                         />
                       </td>
                       <td
                         className="px-1 py-1 border-r"
-                        style={{ borderColor: '#D1D5DB' }}
+                        style={{ borderColor: 'var(--input)' }}
                       >
                         <input
                           type={product.allowDecimal ? 'text' : 'number'}
@@ -668,8 +697,11 @@ export default function OrderEntryEnhancedPage() {
                           disabled={!product.isIncluded}
                           className="w-full px-2 py-1 text-sm text-center rounded"
                           style={{
-                            border: '1px solid #D1D5DB',
-                            backgroundColor: product.isIncluded ? '#FFFBEB' : '#F3F4F6',
+                            border: '1px solid var(--input)',
+                            backgroundColor: product.isIncluded
+                              ? 'var(--dms-amber-tint)'
+                              : 'var(--dms-surface-muted)',
+                            color: 'var(--foreground)',
                           }}
                         />
                       </td>
@@ -677,13 +709,13 @@ export default function OrderEntryEnhancedPage() {
                       {/* Total columns */}
                       <td
                         className="px-3 py-2 text-center text-sm font-bold"
-                        style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                        style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                       >
                         {formatValue(calculateTotal(product.id, 'full'), product)}
                       </td>
                       <td
                         className="px-3 py-2 text-center text-sm font-bold"
-                        style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                        style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                       >
                         {formatValue(calculateTotal(product.id, 'mini'), product)}
                       </td>
@@ -693,7 +725,7 @@ export default function OrderEntryEnhancedPage() {
                         <>
                           <td
                             className="px-3 py-2 text-center text-sm font-bold"
-                            style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                            style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                           >
                             {formatValue(
                               calculateAvailableBalance(product.id, 'full'),
@@ -702,7 +734,7 @@ export default function OrderEntryEnhancedPage() {
                           </td>
                           <td
                             className="px-3 py-2 text-center text-sm font-bold"
-                            style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                            style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                           >
                             {formatValue(
                               calculateAvailableBalance(product.id, 'mini'),
@@ -723,40 +755,40 @@ export default function OrderEntryEnhancedPage() {
       {/* Legend */}
       <div
         className="p-4 rounded-lg space-y-2"
-        style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}
+        style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div
                 className="w-4 h-4 rounded"
-                style={{ backgroundColor: 'white', border: '1px solid #D1D5DB' }}
+                style={{ backgroundColor: 'var(--card)', border: '1px solid var(--input)' }}
               ></div>
-              <span className="text-sm" style={{ color: '#166534' }}>
+              <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
                 Included (Y)
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <div
                 className="w-4 h-4 rounded"
-                style={{ backgroundColor: '#F3F4F6' }}
+                style={{ backgroundColor: 'var(--muted)' }}
               ></div>
-              <span className="text-sm" style={{ color: '#166534' }}>
+              <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
                 Excluded (N) / Inactive Outlet
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <div
                 className="w-4 h-4 rounded"
-                style={{ backgroundColor: '#DBEAFE' }}
+                style={{ backgroundColor: 'var(--dms-blue)' }}
               ></div>
-              <span className="text-sm" style={{ color: '#166534' }}>
+              <span className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
                 Decimal Input (±2)
               </span>
             </div>
           </div>
         </div>
-        <p className="text-sm" style={{ color: '#166534' }}>
+        <p className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
           <strong>Features:</strong> Select delivery turn at top • Decimal input support •
           Section-based production • Freezer stock calculation • Outlet exclusion • Product
           exclusion • F = Full, M = Mini • BAL = Freezer Balance

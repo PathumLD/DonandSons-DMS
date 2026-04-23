@@ -127,7 +127,7 @@ export default function CategoryPage() {
           <button
             onClick={() => openEditModal(item)}
             className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Edit"
@@ -181,8 +181,8 @@ export default function CategoryPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Categories</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Categories</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Manage product categories ({filteredCategories.length} categories)
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function CategoryPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Category List</CardTitle>
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Search categories..."
@@ -210,7 +210,7 @@ export default function CategoryPage() {
                   setCurrentPage(1);
                 }}
                 className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                style={{ border: '1px solid #D1D5DB' }}
+                style={{ border: '1px solid var(--input)' }}
               />
             </div>
           </div>

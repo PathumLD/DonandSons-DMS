@@ -206,10 +206,10 @@ export default function ProductionPlannerEnhancedPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
             Production Planner
           </h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
             Section-wise production planning with customized order tracking
           </p>
         </div>
@@ -226,37 +226,37 @@ export default function ProductionPlannerEnhancedPage() {
         <CardContent className="p-4">
           <div className="grid grid-cols-5 gap-4">
             <div>
-              <p className="text-xs font-medium" style={{ color: '#6B7280' }}>
+              <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
                 Delivery Date
               </p>
               <div className="flex items-center mt-1">
                 <Calendar className="w-4 h-4 mr-2" style={{ color: '#C8102E' }} />
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
                   {selectedDate}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: '#6B7280' }}>
+              <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
                 Delivery Turn
               </p>
               <div className="flex items-center mt-1">
                 <Clock className="w-4 h-4 mr-2" style={{ color: '#C8102E' }} />
-                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
                   {selectedTurn}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: '#6B7280' }}>
+              <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
                 Day Type
               </p>
-              <Badge variant="secondary" className="mt-1">
+              <Badge variant="neutral" className="mt-1">
                 Weekday
               </Badge>
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: '#6B7280' }}>
+              <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
                 Customized Orders
               </p>
               <p className="text-lg font-bold mt-1" style={{ color: '#C8102E' }}>
@@ -294,26 +294,26 @@ export default function ProductionPlannerEnhancedPage() {
               <div
                 key={order.orderNo}
                 className="p-3 rounded-lg"
-                style={{ backgroundColor: '#FFF7ED', border: '1px solid #FED7AA' }}
+                style={{ backgroundColor: 'var(--dms-orange)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
                       <span
                         className="text-xs font-mono px-2 py-1 rounded"
-                        style={{ backgroundColor: '#FED7AA', color: '#9A3412' }}
+                        style={{ backgroundColor: 'var(--dms-orange-chip)', color: 'var(--dms-orange-chip-fg)' }}
                       >
                         {order.orderNo}
                       </span>
-                      <span className="text-sm font-semibold" style={{ color: '#9A3412' }}>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--dms-orange-fg)' }}>
                         {order.productCode} - {order.productName}
                       </span>
                     </div>
-                    <p className="text-xs mt-2" style={{ color: '#9A3412' }}>
+                    <p className="text-xs mt-2" style={{ color: 'var(--dms-orange-fg)' }}>
                       <strong>Outlet:</strong> {order.outletName} |{' '}
                       <strong>Quantity:</strong> {order.fullQty} Full, {order.miniQty} Mini
                     </p>
-                    <p className="text-xs mt-1 italic" style={{ color: '#C2410C' }}>
+                    <p className="text-xs mt-1 italic" style={{ color: 'var(--dms-amber-fg)' }}>
                       {order.customizationNotes}
                     </p>
                   </div>
@@ -340,10 +340,10 @@ export default function ProductionPlannerEnhancedPage() {
                 </div>
                 {sectionConfig && (
                   <div className="flex items-center space-x-4 text-sm">
-                    <span style={{ color: '#6B7280' }}>
+                    <span style={{ color: 'var(--muted-foreground)' }}>
                       Production Start: <strong>{sectionConfig.productionStartTime}</strong>
                     </span>
-                    <span style={{ color: '#6B7280' }}>
+                    <span style={{ color: 'var(--muted-foreground)' }}>
                       Delivery: <strong>{sectionConfig.effectiveDeliveryTime}</strong> (
                       {sectionConfig.effectiveDeliveryDate})
                     </span>
@@ -353,36 +353,36 @@ export default function ProductionPlannerEnhancedPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-                  <thead style={{ backgroundColor: '#F9FAFB' }}>
+                <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                  <thead style={{ backgroundColor: 'var(--muted)' }}>
                     <tr>
                       <th
                         className="px-3 py-2 text-left text-xs font-medium"
-                        style={{ color: '#6B7280' }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Exclude
                       </th>
                       <th
                         className="px-3 py-2 text-left text-xs font-medium"
-                        style={{ color: '#6B7280' }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Code
                       </th>
                       <th
                         className="px-3 py-2 text-left text-xs font-medium"
-                        style={{ color: '#6B7280' }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Product
                       </th>
                       <th
                         className="px-3 py-2 text-center text-xs font-medium"
-                        style={{ color: '#6B7280' }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Regular Full
                       </th>
                       <th
                         className="px-3 py-2 text-center text-xs font-medium"
-                        style={{ color: '#6B7280' }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Regular Mini
                       </th>
@@ -412,7 +412,7 @@ export default function ProductionPlannerEnhancedPage() {
                       </th>
                       <th
                         className="px-3 py-2 text-center text-xs font-medium"
-                        style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                        style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                       >
                         Grand Total
                       </th>
@@ -420,13 +420,13 @@ export default function ProductionPlannerEnhancedPage() {
                         <>
                           <th
                             className="px-3 py-2 text-center text-xs font-medium"
-                            style={{ color: '#6B7280' }}
+                            style={{ color: 'var(--muted-foreground)' }}
                           >
                             Freezer Stock
                           </th>
                           <th
                             className="px-3 py-2 text-center text-xs font-medium"
-                            style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                            style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                           >
                             Produce Qty
                           </th>
@@ -436,13 +436,15 @@ export default function ProductionPlannerEnhancedPage() {
                   </thead>
                   <tbody
                     className="divide-y"
-                    style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}
+                    style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                   >
                     {items.map((item) => (
                       <tr
                         key={item.productId}
                         style={{
-                          backgroundColor: item.isExcluded ? '#F3F4F6' : 'white',
+                          backgroundColor: item.isExcluded
+                            ? 'var(--dms-surface-muted)'
+                            : 'var(--dms-surface)',
                         }}
                       >
                         <td className="px-3 py-2 text-center">
@@ -455,13 +457,13 @@ export default function ProductionPlannerEnhancedPage() {
                         </td>
                         <td
                           className="px-3 py-2 text-sm font-mono"
-                          style={{ color: '#6B7280' }}
+                          style={{ color: 'var(--muted-foreground)' }}
                         >
                           {item.productCode}
                         </td>
                         <td
                           className="px-3 py-2 text-sm font-medium"
-                          style={{ color: '#111827' }}
+                          style={{ color: 'var(--foreground)' }}
                         >
                           {item.productName}
                         </td>
@@ -473,31 +475,31 @@ export default function ProductionPlannerEnhancedPage() {
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm font-semibold"
-                          style={{ color: '#F59E0B', backgroundColor: '#FFF7ED' }}
+                          style={{ color: 'var(--status-warning)', backgroundColor: 'var(--dms-orange)' }}
                         >
                           {item.customizedFullQty}
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm font-semibold"
-                          style={{ color: '#F59E0B', backgroundColor: '#FFF7ED' }}
+                          style={{ color: 'var(--status-warning)', backgroundColor: 'var(--dms-orange)' }}
                         >
                           {item.customizedMiniQty}
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm font-bold"
-                          style={{ color: '#C8102E' }}
+                          style={{ color: 'var(--dms-amber-fg)' }}
                         >
                           {item.totalFullQty}
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm font-bold"
-                          style={{ color: '#C8102E' }}
+                          style={{ color: 'var(--dms-amber-fg)' }}
                         >
                           {item.totalMiniQty}
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm font-bold"
-                          style={{ color: '#C8102E', backgroundColor: '#FEF3C4' }}
+                          style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                         >
                           {item.grandTotal}
                         </td>
@@ -508,7 +510,7 @@ export default function ProductionPlannerEnhancedPage() {
                             </td>
                             <td
                               className="px-3 py-2 text-center text-sm font-bold"
-                              style={{ color: '#1E40AF', backgroundColor: '#DBEAFE' }}
+                              style={{ color: 'var(--dms-blue-fg)', backgroundColor: 'var(--dms-blue)' }}
                             >
                               {item.produceQty}
                             </td>
@@ -527,9 +529,9 @@ export default function ProductionPlannerEnhancedPage() {
       {/* Legend */}
       <div
         className="p-4 rounded-lg"
-        style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}
+        style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}
       >
-        <p className="text-sm" style={{ color: '#166534' }}>
+        <p className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
           <strong>Note:</strong> Customized orders are displayed separately above and
           included in the total quantities. Each section shows only products relevant to
           that section. Production start times vary by section (e.g., Bakery starts at

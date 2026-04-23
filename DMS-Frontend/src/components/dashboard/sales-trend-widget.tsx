@@ -19,7 +19,7 @@ export function SalesTrendWidget() {
     <Card>
       <CardHeader>
         <CardTitle>Sales Trend for Last 7 Days</CardTitle>
-        <p className="text-sm mt-1" style={{ color: '#6B7280' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
           Total delivery sales value per day
         </p>
       </CardHeader>
@@ -32,26 +32,27 @@ export function SalesTrendWidget() {
                 <stop offset="95%" stopColor={brandColors.primary.DEFAULT} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis 
               dataKey="date" 
-              tick={{ fill: '#6B7280', fontSize: 12 }}
-              axisLine={{ stroke: '#E5E7EB' }}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+              axisLine={{ stroke: 'var(--border)' }}
             />
             <YAxis 
-              tick={{ fill: '#6B7280', fontSize: 12 }}
-              axisLine={{ stroke: '#E5E7EB' }}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+              axisLine={{ stroke: 'var(--border)' }}
               tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
             />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #E5E7EB',
+                backgroundColor: 'var(--popover)', 
+                border: '1px solid var(--border)',
                 borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                color: 'var(--popover-foreground)'
               }}
               formatter={(value: any) => [`Rs. ${value.toLocaleString()}`, 'Sales']}
-              labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+              labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
             />
             <Area 
               type="monotone" 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from '@/lib/theme/theme-context';
 import { useState, useEffect } from 'react';
 import { brandColors } from '@/lib/theme/colors';
+import ThemeToggle from '@/components/theme/theme-toggle';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -61,11 +62,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="flex-shrink-0 bg-white" style={{ borderBottom: '1px solid #E5E7EB' }}>
+    <header className="flex-shrink-0" style={{ backgroundColor: 'var(--card)', borderBottom: '1px solid var(--border)' }}>
       {/* News Ticker / Notification Bar */}
       <div 
         className="h-8 px-4 flex items-center justify-between text-white text-xs"
-        style={{ backgroundColor: pageColor }}
+        style={{ backgroundColor: brandColors.primary.DEFAULT }}
       >
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -100,13 +101,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 rounded-lg transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#111827';
-              e.currentTarget.style.backgroundColor = '#F3F4F6';
+              e.currentTarget.style.color = 'var(--foreground)';
+              e.currentTarget.style.backgroundColor = 'var(--muted)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#6B7280';
+              e.currentTarget.style.color = 'var(--muted-foreground)';
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
@@ -116,14 +117,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {/* Search */}
           <div className="flex-1 max-w-xl hidden sm:block">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: '#9CA3AF' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Search products, showrooms, orders..."
                 className="w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none text-sm"
                 style={{ 
-                  border: '1px solid #D1D5DB',
-                  color: '#111827'
+                  border: '1px solid var(--input)',
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--foreground)'
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.outline = `2px solid ${pageColor}`;
@@ -132,7 +134,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.outline = 'none';
-                  e.currentTarget.style.borderColor = '#D1D5DB';
+                  e.currentTarget.style.borderColor = 'var(--input)';
                 }}
               />
             </div>
@@ -144,29 +146,32 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {/* Search Icon for Mobile */}
           <button 
             className="sm:hidden p-2 rounded-lg transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#111827';
-              e.currentTarget.style.backgroundColor = '#F3F4F6';
+              e.currentTarget.style.color = 'var(--foreground)';
+              e.currentTarget.style.backgroundColor = 'var(--muted)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#6B7280';
+              e.currentTarget.style.color = 'var(--muted-foreground)';
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
             <Search className="w-5 h-5" />
           </button>
 
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications */}
           <button 
             className="relative p-2 rounded-lg transition-colors"
-            style={{ color: '#6B7280' }}
+            style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#111827';
-              e.currentTarget.style.backgroundColor = '#F3F4F6';
+              e.currentTarget.style.color = 'var(--foreground)';
+              e.currentTarget.style.backgroundColor = 'var(--muted)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#6B7280';
+              e.currentTarget.style.color = 'var(--muted-foreground)';
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
@@ -178,12 +183,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </button>
 
           {/* User Menu */}
-          <div className="relative flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4" style={{ borderLeft: '1px solid #E5E7EB' }}>
+          <div className="relative flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-4" style={{ borderLeft: '1px solid var(--border)' }}>
             <div className="text-right hidden md:block">
-              <p className="text-sm font-medium" style={{ color: '#111827' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>
+              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                 {user?.isSuperAdmin ? 'Super Admin' : user?.roles?.[0]?.name || 'User'}
               </p>
             </div>
@@ -205,12 +210,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   className="fixed inset-0 z-10" 
                   onClick={() => setShowUserMenu(false)}
                 ></div>
-                <div className="absolute right-0 top-12 w-56 bg-white rounded-lg shadow-lg py-2 z-20" style={{ border: '1px solid #E5E7EB' }}>
-                  <div className="px-4 py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
-                    <p className="text-sm font-medium" style={{ color: '#111827' }}>
+                <div className="absolute right-0 top-12 w-56 rounded-lg shadow-lg py-2 z-20" style={{ backgroundColor: 'var(--popover)', border: '1px solid var(--border)' }}>
+                  <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--popover-foreground)' }}>
                       {user?.firstName} {user?.lastName}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{user?.email}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>{user?.email}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -218,8 +223,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       router.push('/profile');
                     }}
                     className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2"
-                    style={{ color: '#374151' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                    style={{ color: 'var(--foreground)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <User className="w-4 h-4" />
@@ -231,14 +236,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       router.push('/settings');
                     }}
                     className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2"
-                    style={{ color: '#374151' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                    style={{ color: 'var(--foreground)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <SettingsIcon className="w-4 h-4" />
                     <span>Settings</span>
                   </button>
-                  <div className="mt-2 pt-2" style={{ borderTop: '1px solid #E5E7EB' }}>
+                  <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
                     <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2 text-left text-sm flex items-center space-x-2"

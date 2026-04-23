@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import { Lock, Unlock, AlertTriangle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Lock, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 
 interface DayLock {
   date: string;
@@ -15,109 +13,187 @@ interface DayLock {
 }
 
 export default function DayLockPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dayLocks] = useState<DayLock[]>([
-    { date: '2026-04-20', locked: true, lockedBy: 'Manager', lockedAt: '2026-04-20 23:45' },
-    { date: '2026-04-19', locked: true, lockedBy: 'Manager', lockedAt: '2026-04-19 23:30' },
-    { date: '2026-04-18', locked: true, lockedBy: 'Manager', lockedAt: '2026-04-18 23:50' },
-    { date: '2026-04-21', locked: false },
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 1)); // January 2026
+  const [dayLocks, setDayLocks] = useState<DayLock[]>([
+    { date: '2026-01-01', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-01 23:59' },
+    { date: '2026-01-02', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-02 23:59' },
+    { date: '2026-01-03', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-03 23:59' },
+    { date: '2026-01-04', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-04 23:59' },
+    { date: '2026-01-05', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-05 23:59' },
+    { date: '2026-01-06', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-06 23:59' },
+    { date: '2026-01-07', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-07 23:59' },
+    { date: '2026-01-08', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-08 23:59' },
+    { date: '2026-01-09', locked: true, lockedBy: 'Admin', lockedAt: '2026-01-09 23:59' },
   ]);
 
-  const currentLock = dayLocks.find(d => d.date === selectedDate);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  const handleLock = () => {
-    console.log('Locking day:', selectedDate);
-    alert(`Day ${selectedDate} has been locked. No further transactions can be made.`);
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const getDaysInMonth = () => {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Adjust so Monday is 0
+
+    const days: (number | null)[] = [];
+    
+    // Add empty slots for days before the month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add the days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    
+    return days;
   };
 
-  const handleUnlock = () => {
-    if (window.confirm('Are you sure you want to unlock this day? This will allow modifications to locked transactions.')) {
-      console.log('Unlocking day:', selectedDate);
-      alert(`Day ${selectedDate} has been unlocked.`);
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const handleDayClick = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const existingLock = dayLocks.find(l => l.date === dateStr);
+
+    if (existingLock) {
+      // Toggle lock status
+      if (window.confirm(`Are you sure you want to ${existingLock.locked ? 'unlock' : 'lock'} ${dateStr}?`)) {
+        setDayLocks(dayLocks.map(l => 
+          l.date === dateStr 
+            ? { ...l, locked: !l.locked, lockedBy: 'Admin', lockedAt: new Date().toLocaleString() }
+            : l
+        ));
+      }
+    } else {
+      // Lock new day
+      if (window.confirm(`Lock ${dateStr}? No entries will be allowed for this date.`)) {
+        setDayLocks([
+          ...dayLocks,
+          { date: dateStr, locked: true, lockedBy: 'Admin', lockedAt: new Date().toLocaleString() }
+        ]);
+      }
     }
   };
+
+  const isDateLocked = (day: number): boolean => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const lock = dayLocks.find(l => l.date === dateStr);
+    return lock?.locked ?? false;
+  };
+
+  const days = getDaysInMonth();
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Day Lock</h1>
-        <p className="mt-1" style={{ color: '#6B7280' }}>Lock/unlock daily transactions to prevent modifications</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+          <Lock className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+          Un/Lock Daily Operations
+        </h1>
+        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+          Lock or unlock specific days to prevent/allow data entry. Once locked, even Admin cannot make entries.
+        </p>
+      </div>
+
+      <div className="p-4 rounded-lg" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
+        <div className="flex items-start space-x-3">
+          <AlertTriangle className="w-5 h-5 mt-0.5" style={{ color: '#DC2626' }} />
+          <div>
+            <h4 className="font-medium mb-1" style={{ color: '#991B1B' }}>Critical Notice</h4>
+            <p className="text-sm" style={{ color: '#991B1B' }}>
+              Once a day is locked, <strong>NO entries can be made for that date</strong> - not even by Admin. Only unlock if absolutely necessary.
+            </p>
+          </div>
+        </div>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Lock Day</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Input
-              label="Select Date"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              fullWidth
-            />
+        <CardContent className="p-6">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="primary" size="sm" onClick={handlePrevMonth}>
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Prev
+            </Button>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>
+              {year} {monthNames[month]}
+            </h2>
+            <Button variant="primary" size="sm" onClick={handleNextMonth}>
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
 
-            {currentLock && (
-              <div className={`p-6 rounded-lg ${currentLock.locked ? 'bg-red-50' : 'bg-green-50'}`} style={{ border: `2px solid ${currentLock.locked ? '#FCA5A5' : '#86EFAC'}` }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-2">
-                      {currentLock.locked ? (
-                        <Lock className="w-6 h-6" style={{ color: '#DC2626' }} />
-                      ) : (
-                        <Unlock className="w-6 h-6" style={{ color: '#10B981' }} />
-                      )}
-                      <span className="text-xl font-bold" style={{ color: currentLock.locked ? '#991B1B' : '#166534' }}>
-                        {currentLock.locked ? 'Day is Locked' : 'Day is Unlocked'}
-                      </span>
-                    </div>
-                    {currentLock.locked && currentLock.lockedBy && (
-                      <p className="text-sm" style={{ color: '#991B1B' }}>
-                        Locked by {currentLock.lockedBy} on {currentLock.lockedAt}
-                      </p>
+          {/* Calendar Grid */}
+          <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+            {/* Day Names Header */}
+            <div className="grid grid-cols-7 bg-gray-50">
+              {dayNames.map((dayName) => (
+                <div
+                  key={dayName}
+                  className="p-3 text-center font-medium text-sm"
+                  style={{ color: 'var(--muted-foreground)', borderRight: '1px solid var(--border)' }}
+                >
+                  {dayName}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7">
+              {days.map((day, index) => {
+                const isLocked = day !== null && isDateLocked(day);
+                const isToday = day !== null && 
+                  day === new Date().getDate() && 
+                  month === new Date().getMonth() && 
+                  year === new Date().getFullYear();
+
+                return (
+                  <div
+                    key={index}
+                    className={`relative p-4 h-20 border-r border-b cursor-pointer transition-colors ${
+                      day === null ? 'bg-gray-100' : isLocked ? 'bg-gray-200' : 'hover:bg-blue-50'
+                    }`}
+                    style={{ 
+                      borderColor: 'var(--border)',
+                      backgroundColor: day === null ? '#F3F4F6' : isLocked ? '#E5E7EB' : isToday ? '#DBEAFE' : 'white'
+                    }}
+                    onClick={() => day !== null && handleDayClick(day)}
+                  >
+                    {day !== null && (
+                      <>
+                        <div className="flex items-start justify-between">
+                          <span 
+                            className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-700'}`}
+                            style={{ color: isToday ? '#2563EB' : '#374151' }}
+                          >
+                            {day}
+                          </span>
+                          {isLocked && (
+                            <Lock className="w-4 h-4" style={{ color: '#F59E0B' }} />
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
-                  {currentLock.locked ? (
-                    <Button variant="danger" size="md" onClick={handleUnlock}>
-                      <Unlock className="w-4 h-4 mr-2" />Unlock Day
-                    </Button>
-                  ) : (
-                    <Button variant="primary" size="md" onClick={handleLock}>
-                      <Lock className="w-4 h-4 mr-2" />Lock Day
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="p-4 rounded-lg" style={{ backgroundColor: '#FEF3C4', border: '1px solid #FFD100' }}>
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-5 h-5 mt-0.5" style={{ color: '#92400E' }} />
-                <div>
-                  <h4 className="font-medium mb-1" style={{ color: '#78350F' }}>Important Notice</h4>
-                  <p className="text-sm" style={{ color: '#92400E' }}>
-                    Locking a day will prevent any modifications to transactions on that date. Only administrators can unlock days.
-                  </p>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Recent Locked Days</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {dayLocks.filter(d => d.locked).map((lock, index) => (
-              <div key={index} className="flex items-center justify-between p-4 rounded-lg" style={{ border: '1px solid #E5E7EB' }}>
-                <div>
-                  <p className="font-medium" style={{ color: '#111827' }}>{new Date(lock.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <p className="text-sm" style={{ color: '#6B7280' }}>Locked by {lock.lockedBy} • {lock.lockedAt}</p>
-                </div>
-                <Badge variant="danger" size="sm"><Lock className="w-3 h-3 mr-1" />Locked</Badge>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-center mt-4" style={{ color: 'var(--muted-foreground)' }}>
+            Click on date to Un/Lock daily operations
+          </p>
         </CardContent>
       </Card>
     </div>

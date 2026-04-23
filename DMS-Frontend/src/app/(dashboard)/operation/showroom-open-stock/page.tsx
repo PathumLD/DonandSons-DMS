@@ -1,195 +1,245 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import { Store, Plus, Search, Edit, Save } from 'lucide-react';
-import { mockShowrooms } from '@/lib/mock-data/showrooms';
-import { mockProducts } from '@/lib/mock-data/products';
+import { Edit, Save, AlertCircle, Calendar } from 'lucide-react';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { isAdminUser } from '@/lib/date-restrictions';
+
+/**
+ * 4.viii Showroom Open Stock
+ *
+ * Per spec:
+ *  - Page shows each showroom with its "Last Stock BF Date" (Stock as at date).
+ *  - Admin (only) can EDIT the Last Stock BF Date so that a Stock BF entered
+ *    earlier (e.g. 01/01/2026) becomes the Opening Balance for a future date
+ *    (e.g. 04/01/2026) when intermediate days were closed.
+ *  - Non-admins can only view this page; the Edit Date control is hidden.
+ */
 
 interface ShowroomOpenStock {
   id: number;
   showroomId: number;
-  showroom: string;
-  productId: number;
-  productCode: string;
-  productName: string;
-  openingStock: number;
-  lastUpdated: string;
+  showroomCode: string;
+  stockAsAt: string; // Last Stock BF Date
 }
 
-const mockOpenStock: ShowroomOpenStock[] = [
-  { id: 1, showroomId: 1, showroom: 'Dalmeny', productId: 1, productCode: 'BR2', productName: 'Sandwich Bread Large', openingStock: 50, lastUpdated: '2026-04-21 06:00' },
-  { id: 2, showroomId: 1, showroom: 'Dalmeny', productId: 6, productCode: 'BU12', productName: 'Fish Bun', openingStock: 40, lastUpdated: '2026-04-21 06:00' },
-  { id: 3, showroomId: 2, showroom: 'Ragama', productId: 1, productCode: 'BR2', productName: 'Sandwich Bread Large', openingStock: 45, lastUpdated: '2026-04-21 06:15' },
+const mockShowroomOpenStock: ShowroomOpenStock[] = [
+  { id: 1, showroomId: 1, showroomCode: 'BC', stockAsAt: '2026-01-10' },
+  { id: 2, showroomId: 2, showroomCode: 'BW', stockAsAt: '2026-01-10' },
+  { id: 3, showroomId: 3, showroomCode: 'DAL', stockAsAt: '2026-01-10' },
+  { id: 4, showroomId: 4, showroomCode: 'DBG', stockAsAt: '2026-01-10' },
+  { id: 5, showroomId: 5, showroomCode: 'KAD', stockAsAt: '2026-01-10' },
+  { id: 6, showroomId: 6, showroomCode: 'KEL', stockAsAt: '2026-01-10' },
+  { id: 7, showroomId: 7, showroomCode: 'KML', stockAsAt: '2026-01-10' },
+  { id: 8, showroomId: 8, showroomCode: 'RAG', stockAsAt: '2026-01-10' },
+  { id: 9, showroomId: 9, showroomCode: 'RAN', stockAsAt: '2026-01-10' },
+  { id: 10, showroomId: 10, showroomCode: 'SGK', stockAsAt: '2026-01-10' },
+  { id: 11, showroomId: 11, showroomCode: 'SLE', stockAsAt: '2026-01-09' },
+  { id: 12, showroomId: 12, showroomCode: 'WED', stockAsAt: '2026-01-10' },
+  { id: 13, showroomId: 13, showroomCode: 'YRK', stockAsAt: '2026-01-10' },
 ];
 
 export default function ShowroomOpenStockPage() {
-  const [openStocks, setOpenStocks] = useState<ShowroomOpenStock[]>(mockOpenStock);
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = isAdminUser(user);
+
+  const [showrooms, setShowrooms] = useState<ShowroomOpenStock[]>(mockShowroomOpenStock);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showroomFilter, setShowroomFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedStock, setSelectedStock] = useState<ShowroomOpenStock | null>(null);
-  
-  const [formData, setFormData] = useState({
-    showroomId: '',
-    productId: '',
-    openingStock: '',
-  });
 
-  const filteredStocks = useMemo(() => {
-    return openStocks.filter(s => {
-      const matchesSearch = 
-        s.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.productName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesShowroom = !showroomFilter || String(s.showroomId) === showroomFilter;
-      return matchesSearch && matchesShowroom;
+  const [showEditDateModal, setShowEditDateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selected, setSelected] = useState<ShowroomOpenStock | null>(null);
+  const [newStockAsAt, setNewStockAsAt] = useState('');
+
+  const filtered = useMemo(() => {
+    return showrooms.filter((s) => {
+      const matchesSearch = s.showroomCode.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
     });
-  }, [openStocks, searchTerm, showroomFilter]);
+  }, [showrooms, searchTerm]);
 
-  const totalPages = Math.ceil(filteredStocks.length / pageSize);
-  const paginatedStocks = filteredStocks.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const handleAdd = () => {
-    const product = mockProducts.find(p => p.id === Number(formData.productId));
-    const showroom = mockShowrooms.find(s => s.id === Number(formData.showroomId));
-    const newStock: ShowroomOpenStock = {
-      id: Math.max(...openStocks.map(s => s.id)) + 1,
-      showroomId: Number(formData.showroomId),
-      showroom: showroom?.name || '',
-      productId: Number(formData.productId),
-      productCode: product?.code || '',
-      productName: product?.description || '',
-      openingStock: Number(formData.openingStock),
-      lastUpdated: new Date().toLocaleString(),
-    };
-    setOpenStocks([newStock, ...openStocks]);
-    setShowAddModal(false);
-    resetForm();
+  const openEditDate = (showroom: ShowroomOpenStock) => {
+    setSelected(showroom);
+    setNewStockAsAt(showroom.stockAsAt);
+    setShowEditDateModal(true);
   };
 
-  const handleEdit = () => {
-    if (selectedStock) {
-      setOpenStocks(openStocks.map(s =>
-        s.id === selectedStock.id
-          ? { ...s, openingStock: Number(formData.openingStock), lastUpdated: new Date().toLocaleString() }
-          : s
-      ));
-      setShowEditModal(false);
-      setSelectedStock(null);
-      resetForm();
+  const openView = (showroom: ShowroomOpenStock) => {
+    setSelected(showroom);
+    setShowViewModal(true);
+  };
+
+  const saveEditDate = () => {
+    if (!selected) return;
+    if (!newStockAsAt) {
+      alert('Please select a stock as at date');
+      return;
     }
+    setShowrooms((prev) =>
+      prev.map((s) =>
+        s.id === selected.id ? { ...s, stockAsAt: newStockAsAt } : s
+      )
+    );
+    setShowEditDateModal(false);
+    setSelected(null);
   };
-
-  const resetForm = () => {
-    setFormData({ showroomId: '', productId: '', openingStock: '' });
-  };
-
-  const openEditModal = (stock: ShowroomOpenStock) => {
-    setSelectedStock(stock);
-    setFormData({
-      showroomId: String(stock.showroomId),
-      productId: String(stock.productId),
-      openingStock: String(stock.openingStock),
-    });
-    setShowEditModal(true);
-  };
-
-  const columns = [
-    {
-      key: 'showroom',
-      label: 'Showroom',
-      render: (item: ShowroomOpenStock) => <span className="font-medium">{item.showroom}</span>,
-    },
-    {
-      key: 'productCode',
-      label: 'Product Code',
-      render: (item: ShowroomOpenStock) => <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>{item.productCode}</span>,
-    },
-    {
-      key: 'productName',
-      label: 'Product Name',
-    },
-    {
-      key: 'openingStock',
-      label: 'Opening Stock',
-      render: (item: ShowroomOpenStock) => <span className="font-semibold text-lg">{item.openingStock}</span>,
-    },
-    {
-      key: 'lastUpdated',
-      label: 'Last Updated',
-      render: (item: ShowroomOpenStock) => <span className="text-sm" style={{ color: '#6B7280' }}>{item.lastUpdated}</span>,
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (item: ShowroomOpenStock) => (
-        <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit">
-          <Edit className="w-4 h-4" />
-        </button>
-      ),
-    },
-  ];
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Showroom Opening Stock</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Manage daily opening stock for showrooms ({filteredStocks.length} entries)</p>
-        </div>
-        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}>
-          <Plus className="w-4 h-4 mr-2" />Add Opening Stock
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+          Showroom Open Stock
+        </h1>
+        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+          {isAdmin
+            ? 'Admin: You can edit the Last Stock BF Date for each showroom.'
+            : 'View-only access. Admin can edit the Stock BF dates.'}
+        </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Opening Stock List</CardTitle>
-            <div className="flex items-center space-x-3">
-              <Select value={showroomFilter} onChange={(e) => { setShowroomFilter(e.target.value); setCurrentPage(1); }} options={[{ value: '', label: 'All Showrooms' }, ...mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: s.name }))]} />
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-                <input type="text" placeholder="Search products..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
-              </div>
-            </div>
-          </div>
+          <CardTitle>Showroom Open Stock</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable data={paginatedStocks} columns={columns} currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ backgroundColor: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>
+                  <th className="text-left py-3 px-4" style={{ color: 'var(--muted-foreground)', fontWeight: 600, fontSize: '0.875rem' }}>Showroom</th>
+                  <th className="text-left py-3 px-4" style={{ color: 'var(--muted-foreground)', fontWeight: 600, fontSize: '0.875rem' }}>Stock as at</th>
+                  <th className="py-3 px-4"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((showroom, index) => (
+                  <tr 
+                    key={showroom.id}
+                    style={{ 
+                      borderBottom: index < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                      backgroundColor: 'var(--card)'
+                    }}
+                  >
+                    <td className="py-3 px-4">
+                      <span className="font-medium text-base">{showroom.showroomCode}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="font-medium">{new Date(showroom.stockAsAt).toLocaleDateString()}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-2 justify-end">
+                        {isAdmin && (
+                          <button
+                            onClick={() => openEditDate(showroom)}
+                            className="p-1.5 rounded transition-colors"
+                            style={{ color: '#3B82F6' }}
+                            onMouseEnter={(ev) => (ev.currentTarget.style.backgroundColor = '#EFF6FF')}
+                            onMouseLeave={(ev) => (ev.currentTarget.style.backgroundColor = 'transparent')}
+                            title="Edit Stock BF Date"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openView(showroom)}
+                          className="p-1.5 rounded transition-colors"
+                          style={{ color: '#3B82F6' }}
+                          onMouseEnter={(ev) => (ev.currentTarget.style.backgroundColor = '#EFF6FF')}
+                          onMouseLeave={(ev) => (ev.currentTarget.style.backgroundColor = 'transparent')}
+                          title="View Details"
+                        >
+                          <AlertCircle className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Opening Stock" size="md">
-        <div className="space-y-4">
-          <Select label="Showroom" value={formData.showroomId} onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })} options={mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: `${s.code} - ${s.name}` }))} placeholder="Select showroom" fullWidth required />
-          <Select label="Product" value={formData.productId} onChange={(e) => setFormData({ ...formData, productId: e.target.value })} options={mockProducts.filter(p => p.active && p.requireOpenStock).map(p => ({ value: p.id, label: `${p.code} - ${p.description}` }))} placeholder="Select product" fullWidth required />
-          <Input label="Opening Stock Quantity" type="number" value={formData.openingStock} onChange={(e) => setFormData({ ...formData, openingStock: e.target.value })} placeholder="0" fullWidth required />
-        </div>
+      {/* Admin Edit Date Modal */}
+      <Modal
+        isOpen={showEditDateModal}
+        onClose={() => { setShowEditDateModal(false); setSelected(null); }}
+        title="Edit Stock BF Date"
+        size="md"
+      >
+        {selected && (
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--muted)', border: '1px solid var(--border)' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+                Showroom: <strong>{selected.showroomCode}</strong>
+              </div>
+              <div className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
+                Current Stock BF Date: <strong>{new Date(selected.stockAsAt).toLocaleDateString()}</strong>
+              </div>
+            </div>
+
+            <Input
+              label="Stock as at Date"
+              type="date"
+              value={newStockAsAt}
+              onChange={(e) => setNewStockAsAt(e.target.value)}
+              helperText="Edit this date if the showroom was closed for one or more days. This will affect the opening balance date."
+              fullWidth
+              required
+            />
+
+            <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FFD100' }}>
+              <Calendar className="w-4 h-4 mt-0.5" style={{ color: '#92400E' }} />
+              <div className="text-xs" style={{ color: '#92400E' }}>
+                <strong>Example:</strong> Showroom Last Stock BF Date = 01/01/2026. Showroom closed at 02/01/2026 & 03/01/2026. Admin can edit to 04/01/2026, making that the opening balance date.
+              </div>
+            </div>
+          </div>
+        )}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" />Add Stock</Button>
+          <Button variant="ghost" onClick={() => { setShowEditDateModal(false); setSelected(null); }}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={saveEditDate}>
+            <Save className="w-4 h-4 mr-2" />Save
+          </Button>
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedStock(null); resetForm(); }} title="Edit Opening Stock" size="md">
-        <div className="space-y-4">
-          <Input label="Opening Stock Quantity" type="number" value={formData.openingStock} onChange={(e) => setFormData({ ...formData, openingStock: e.target.value })} fullWidth required />
-        </div>
+      {/* View Details Modal */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => { setShowViewModal(false); setSelected(null); }}
+        title="Showroom Stock Details"
+        size="md"
+      >
+        {selected && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Showroom</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selected.showroomCode}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Stock as at</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selected.stockAsAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#EFF6FF', border: '1px solid #DBEAFE' }}>
+              <p className="text-sm" style={{ color: '#1E40AF' }}>
+                This represents the last Stock BF (Brought Forward) date for this showroom. Only Admin can edit this date.
+              </p>
+            </div>
+          </div>
+        )}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowEditModal(false); setSelectedStock(null); resetForm(); }}>Cancel</Button>
-          <Button variant="primary" onClick={handleEdit}><Save className="w-4 h-4 mr-2" />Save Changes</Button>
+          <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelected(null); }}>
+            Close
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

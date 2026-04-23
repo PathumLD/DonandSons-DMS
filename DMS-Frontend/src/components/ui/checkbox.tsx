@@ -25,8 +25,8 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           <div 
             className="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all peer-checked:border-0"
             style={{
-              borderColor: error ? '#DC2626' : '#D1D5DB',
-              backgroundColor: props.checked ? pageColor : 'white',
+              borderColor: error ? '#DC2626' : 'var(--input)',
+              backgroundColor: props.checked ? pageColor : 'var(--background)',
             }}
           >
             {props.checked && <Check className="w-4 h-4 text-white" />}
@@ -34,7 +34,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         </div>
         {label && (
           <div className="ml-3">
-            <label className="text-sm cursor-pointer" style={{ color: '#374151' }}>
+            <label className="text-sm cursor-pointer" style={{ color: 'var(--foreground)' }}>
               {label}
             </label>
             {error && (

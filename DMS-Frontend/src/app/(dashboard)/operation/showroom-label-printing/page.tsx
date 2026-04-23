@@ -3,92 +3,151 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
+import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Printer, Download } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { mockShowrooms } from '@/lib/mock-data/showrooms';
 
+/**
+ * 4.ix Showroom Label Printing
+ *
+ * Per spec:
+ *  - Print Showroom Code Name as a label.
+ *  - User selects showroom from dropdown and can add custom text.
+ */
+
 export default function ShowroomLabelPrintingPage() {
+  const activeShowrooms = mockShowrooms.filter((s) => s.active);
+
   const [formData, setFormData] = useState({
-    showroomId: '',
-    labelType: 'qr',
-    includeAddress: true,
-    includePhone: true,
-    quantity: '1',
+    showroomCode: '',
+    text1: '',
+    text2: '',
+    labelCount: '1',
   });
 
-  const handlePrint = () => {
-    console.log('Printing showroom labels:', formData);
-    alert(`Printing ${formData.quantity} showroom label(s)`);
+  const handleSubmit = () => {
+    if (!formData.showroomCode) {
+      alert('Please select a showroom code');
+      return;
+    }
+    if (!formData.labelCount || Number(formData.labelCount) < 1) {
+      alert('Please enter a valid label count');
+      return;
+    }
+    alert(`Submitting label print request for ${formData.showroomCode} - ${formData.labelCount} label(s)`);
+    // Reset form after submit
+    setFormData({
+      showroomCode: '',
+      text1: '',
+      text2: '',
+      labelCount: '1',
+    });
   };
+
+  const selectedShowroom = activeShowrooms.find(s => String(s.id) === formData.showroomCode);
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Showroom Label Printing</h1>
-        <p className="mt-1" style={{ color: '#6B7280' }}>Generate and print showroom identification labels</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>New Showroom Label Print Request</h1>
+        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+          Print Showroom Code Name labels. Select showroom and customize label text.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-2xl">
         <Card>
-          <CardHeader><CardTitle>Label Configuration</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Label Configuration</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <Select label="Showroom" value={formData.showroomId} onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })} options={mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: `${s.code} - ${s.name}` }))} placeholder="Select showroom" fullWidth required />
-              <Select label="Label Type" value={formData.labelType} onChange={(e) => setFormData({ ...formData, labelType: e.target.value })} options={[{ value: 'qr', label: 'QR Code Label' }, { value: 'barcode', label: 'Barcode Label' }, { value: 'simple', label: 'Simple Text Label' }]} fullWidth required />
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <input type="checkbox" checked={formData.includeAddress} onChange={(e) => setFormData({ ...formData, includeAddress: e.target.checked })} className="rounded" />
-                  <span className="text-sm" style={{ color: '#374151' }}>Include Address</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input type="checkbox" checked={formData.includePhone} onChange={(e) => setFormData({ ...formData, includePhone: e.target.checked })} className="rounded" />
-                  <span className="text-sm" style={{ color: '#374151' }}>Include Phone Number</span>
-                </label>
+              <Select
+                label="Showroom Code"
+                value={formData.showroomCode}
+                onChange={(e) => setFormData({ ...formData, showroomCode: e.target.value })}
+                options={activeShowrooms.map((s) => ({ 
+                  value: s.id, 
+                  label: `${s.code} - ${s.name}` 
+                }))}
+                placeholder="Select showroom"
+                fullWidth
+                required
+              />
+
+              <Input
+                label="Text 1"
+                value={formData.text1}
+                onChange={(e) => setFormData({ ...formData, text1: e.target.value })}
+                placeholder={selectedShowroom?.code || 'Text 1'}
+                fullWidth
+              />
+
+              <Input
+                label="Text 2"
+                value={formData.text2}
+                onChange={(e) => setFormData({ ...formData, text2: e.target.value })}
+                placeholder="Text 2"
+                fullWidth
+              />
+
+              <Input
+                label="Label Count"
+                type="number"
+                min="1"
+                value={formData.labelCount}
+                onChange={(e) => setFormData({ ...formData, labelCount: e.target.value })}
+                placeholder="Label Count"
+                fullWidth
+                required
+              />
+
+              <div className="pt-4 flex justify-end">
+                <Button 
+                  variant="primary" 
+                  size="md" 
+                  onClick={handleSubmit}
+                  disabled={!formData.showroomCode || !formData.labelCount}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Submit
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle>Label Preview</CardTitle></CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed rounded-lg p-8" style={{ borderColor: '#D1D5DB' }}>
-              {formData.showroomId ? (
-                <div className="p-6 bg-white rounded-lg shadow-md text-center space-y-2" style={{ border: '2px solid #C8102E' }}>
-                  <div className="text-xs font-semibold" style={{ color: '#6B7280' }}>DON & SONS</div>
-                  <div className="text-2xl font-bold" style={{ color: '#111827' }}>
-                    {mockShowrooms.find(s => s.id === Number(formData.showroomId))?.name}
+        {/* Preview */}
+        {formData.showroomCode && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Label Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-center">
+                <div className="p-6 bg-white rounded-lg shadow-md text-center space-y-2" style={{ border: '2px solid #C8102E', minWidth: '250px' }}>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>DON & SONS</div>
+                  <div className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>
+                    {selectedShowroom?.name || 'Showroom'}
                   </div>
-                  <div className="text-sm font-mono font-semibold" style={{ color: '#C8102E' }}>
-                    {mockShowrooms.find(s => s.id === Number(formData.showroomId))?.code}
+                  <div className="text-base font-mono font-semibold" style={{ color: '#C8102E' }}>
+                    {selectedShowroom?.code || ''}
                   </div>
-                  {formData.includeAddress && (
-                    <div className="text-xs" style={{ color: '#6B7280' }}>
-                      {mockShowrooms.find(s => s.id === Number(formData.showroomId))?.location}
-                    </div>
+                  {formData.text1 && (
+                    <div className="text-sm" style={{ color: 'var(--foreground)' }}>{formData.text1}</div>
                   )}
-                  {formData.includePhone && (
-                    <div className="text-xs" style={{ color: '#6B7280' }}>
-                      {mockShowrooms.find(s => s.id === Number(formData.showroomId))?.phone}
-                    </div>
+                  {formData.text2 && (
+                    <div className="text-sm" style={{ color: 'var(--foreground)' }}>{formData.text2}</div>
                   )}
-                  {formData.labelType === 'qr' && (
-                    <div className="w-24 h-24 mx-auto mt-4 bg-gray-200 rounded"></div>
-                  )}
+                  <div className="text-xs pt-2" style={{ color: 'var(--muted-foreground)' }}>
+                    Quantity: {formData.labelCount}
+                  </div>
                 </div>
-              ) : (
-                <div className="py-12 text-center">
-                  <Printer className="w-16 h-16 mx-auto mb-4" style={{ color: '#D1D5DB' }} />
-                  <p className="text-sm" style={{ color: '#9CA3AF' }}>Select a showroom to preview the label</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 space-y-3">
-              <Button variant="primary" size="md" onClick={handlePrint} disabled={!formData.showroomId} fullWidth><Printer className="w-4 h-4 mr-2" />Print Label</Button>
-              <Button variant="secondary" size="md" disabled={!formData.showroomId} fullWidth><Download className="w-4 h-4 mr-2" />Download as PDF</Button>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

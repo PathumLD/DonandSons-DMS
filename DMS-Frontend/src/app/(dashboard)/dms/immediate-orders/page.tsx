@@ -96,11 +96,11 @@ export default function ImmediateOrdersPage() {
     { key: 'product', label: 'Product', render: (item: ImmediateOrder) => <span>{item.productCode} - {item.productName}</span> },
     { key: 'qtyFull', label: 'Qty Full', render: (item: ImmediateOrder) => <span className="font-semibold">{item.qtyFull}</span> },
     { key: 'qtyMini', label: 'Qty Mini', render: (item: ImmediateOrder) => <span className="font-semibold">{item.qtyMini}</span> },
-    { key: 'isCustomized', label: 'Customized', render: (item: ImmediateOrder) => item.isCustomized ? <Badge variant="warning" size="sm">★ Custom</Badge> : <span className="text-xs" style={{ color: '#9CA3AF' }}>Standard</span> },
+    { key: 'isCustomized', label: 'Customized', render: (item: ImmediateOrder) => item.isCustomized ? <Badge variant="warning" size="sm">★ Custom</Badge> : <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Standard</span> },
     { key: 'status', label: 'Status', render: (item: ImmediateOrder) => getStatusBadge(item.status) },
     { key: 'actions', label: 'Actions', render: (item: ImmediateOrder) => (
       <div className="flex items-center space-x-2">
-        <button onClick={() => { setSelectedOrder(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
+        <button onClick={() => { setSelectedOrder(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: 'var(--muted-foreground)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
       </div>
     )},
   ];
@@ -109,8 +109,8 @@ export default function ImmediateOrdersPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Immediate Orders</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Quick order management for urgent requests ({filteredOrders.length} orders)</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Immediate Orders</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Quick order management for urgent requests ({filteredOrders.length} orders)</p>
         </div>
         <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}><Plus className="w-4 h-4 mr-2" />Add Order</Button>
       </div>
@@ -122,8 +122,8 @@ export default function ImmediateOrdersPage() {
             <div className="flex items-center space-x-3">
               <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} options={[{ value: '', label: 'All Status' }, { value: 'Pending', label: 'Pending' }, { value: 'Confirmed', label: 'Confirmed' }, { value: 'Cancelled', label: 'Cancelled' }]} />
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-                <input type="text" placeholder="Search orders..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <input type="text" placeholder="Search orders..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--input)' }} />
               </div>
             </div>
           </div>
@@ -144,30 +144,30 @@ export default function ImmediateOrdersPage() {
             <Input label="Quantity Mini" type="number" min="0" value={formData.qtyMini} onChange={(e) => setFormData({ ...formData, qtyMini: e.target.value })} placeholder="0" fullWidth />
           </div>
           
-          <Checkbox checked={formData.isCustomized} onChange={(checked) => setFormData({ ...formData, isCustomized: checked })} label="Is Customized Order" />
+          <Checkbox checked={formData.isCustomized} onChange={(e) => setFormData({ ...formData, isCustomized: e.target.checked })} label="Is Customized Order" />
           
           {formData.isCustomized && (
             <div className="w-full">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>Customization Notes</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Customization Notes</label>
               <textarea
                 value={formData.customizationNotes}
                 onChange={(e) => setFormData({ ...formData, customizationNotes: e.target.value })}
                 placeholder="Special instructions or customizations..."
                 rows={3}
                 className="w-full rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none"
-                style={{ border: '1px solid #D1D5DB', color: '#111827' }}
+                style={{ border: '1px solid var(--input)', color: 'var(--foreground)' }}
               />
             </div>
           )}
           
           <Select label="Link to Delivery Plan (Optional)" value={formData.deliveryPlanId} onChange={(e) => setFormData({ ...formData, deliveryPlanId: e.target.value })} options={[{ value: '', label: 'Standalone Order' }, ...mockDeliveryPlans.filter(p => p.status !== 'Delivered').map(p => ({ value: p.id, label: `${p.planNo} - ${p.dayType} ${p.deliveryTurn}` }))]} fullWidth />
           
-          <div className="p-4 rounded-lg" style={{ backgroundColor: '#FEF3C4', border: '1px solid #FFD100' }}>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-warn-box)', border: '1px solid var(--dms-warn-box-border)' }}>
             <div className="flex items-start space-x-2">
-              <Zap className="w-5 h-5 mt-0.5" style={{ color: '#C8102E' }} />
+              <Zap className="w-5 h-5 mt-0.5" style={{ color: 'var(--brand-primary)' }} />
               <div>
-                <p className="text-sm font-medium mb-1" style={{ color: '#78350F' }}>Immediate Order</p>
-                <p className="text-sm" style={{ color: '#92400E' }}>
+                <p className="text-sm font-medium mb-1" style={{ color: 'var(--dms-notes-title)' }}>Immediate Order</p>
+                <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
                   Quantities from this order will be included in the Grand Total and will be produced immediately.
                 </p>
               </div>
@@ -184,21 +184,21 @@ export default function ImmediateOrdersPage() {
         {selectedOrder && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Order No</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedOrder.orderNo}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Status</p>{getStatusBadge(selectedOrder.status)}</div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Order No</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.orderNo}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>{getStatusBadge(selectedOrder.status)}</div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Product</p><p className="text-sm" style={{ color: '#111827' }}>{selectedOrder.productCode} - {selectedOrder.productName}</p></div>
+            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.productCode} - {selectedOrder.productName}</p></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Quantity Full</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedOrder.qtyFull}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Quantity Mini</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedOrder.qtyMini}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity Full</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.qtyFull}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity Mini</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.qtyMini}</p></div>
             </div>
             {selectedOrder.isCustomized && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#FFFBEB' }}>
-                <p className="text-xs font-medium mb-1" style={{ color: '#78350F' }}>★ Customization Notes</p>
-                <p className="text-sm" style={{ color: '#92400E' }}>{selectedOrder.customizationNotes}</p>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--dms-amber-tint)' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--dms-notes-title)' }}>★ Customization Notes</p>
+                <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>{selectedOrder.customizationNotes}</p>
               </div>
             )}
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Requested By</p><p className="text-sm" style={{ color: '#111827' }}>{selectedOrder.requestedBy}</p></div>
+            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested By</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.requestedBy}</p></div>
           </div>
         )}
         <ModalFooter>

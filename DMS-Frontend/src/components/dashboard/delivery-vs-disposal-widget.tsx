@@ -11,7 +11,7 @@ const mockData = [
   { category: 'Pastry', delivery: 290, disposal: 25 },
   { category: 'Pizza', delivery: 180, disposal: 18 },
   { category: 'Sandwich', delivery: 240, disposal: 22 },
-  { category: 'Rotty', category: 'Rotty', delivery: 160, disposal: 15 },
+  { category: 'Rotty', delivery: 160, disposal: 15 },
   { category: 'Biscuit', delivery: 150, disposal: 12 },
 ];
 

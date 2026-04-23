@@ -36,7 +36,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className={fullWidth ? 'w-full' : ''}>
         {label && (
-          <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
             {label}
           </label>
         )}
@@ -46,9 +46,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             fullWidth ? 'w-full' : ''
           } ${className}`}
           style={{
-            border: `1px solid ${error ? '#DC2626' : '#D1D5DB'}`,
-            backgroundColor: 'white',
-            color: '#111827',
+            border: `1px solid ${error ? '#DC2626' : 'var(--input)'}`,
+            backgroundColor: 'var(--background)',
+            color: 'var(--foreground)',
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = pageColor;
@@ -56,7 +56,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             e.currentTarget.style.outlineOffset = '2px';
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = error ? '#DC2626' : '#D1D5DB';
+            e.currentTarget.style.borderColor = error ? '#DC2626' : 'var(--input)';
             e.currentTarget.style.outline = 'none';
           }}
           {...props}
@@ -78,7 +78,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </p>
         )}
         {helperText && !error && (
-          <p className="mt-1.5 text-sm" style={{ color: '#6B7280' }}>
+          <p className="mt-1.5 text-sm" style={{ color: 'var(--muted-foreground)' }}>
             {helperText}
           </p>
         )}

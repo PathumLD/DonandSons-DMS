@@ -62,8 +62,8 @@ export default function DefaultQuantitiesPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Default Quantities Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Configure default outlet quantities per day type</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Default Quantities Management</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Configure default outlet quantities per day type</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="ghost" size="md" onClick={handleReset}><RotateCcw className="w-4 h-4 mr-2" />Reset</Button>
@@ -78,9 +78,9 @@ export default function DefaultQuantitiesPage() {
             onClick={() => setSelectedDayType(dayType)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
-              backgroundColor: selectedDayType === dayType ? '#C8102E' : 'white',
-              color: selectedDayType === dayType ? 'white' : '#111827',
-              border: `2px solid ${selectedDayType === dayType ? '#C8102E' : '#E5E7EB'}`,
+              backgroundColor: selectedDayType === dayType ? 'var(--brand-primary)' : 'var(--dms-pill-off-bg)',
+              color: selectedDayType === dayType ? '#ffffff' : 'var(--dms-pill-off-fg)',
+              border: `2px solid ${selectedDayType === dayType ? 'var(--brand-primary)' : 'var(--dms-pill-off-border)'}`,
             }}
           >
             {dayType}
@@ -94,33 +94,33 @@ export default function DefaultQuantitiesPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y" style={{ borderColor: '#E5E7EB' }}>
-              <thead style={{ backgroundColor: '#F9FAFB' }}>
+            <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+              <thead style={{ backgroundColor: 'var(--muted)' }}>
                 <tr>
-                  <th className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium" style={{ backgroundColor: '#F9FAFB', color: '#6B7280', minWidth: '200px' }}>Product</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: '#6B7280', minWidth: '80px' }}>Code</th>
+                  <th className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-medium" style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', minWidth: '200px' }}>Product</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)', minWidth: '80px' }}>Code</th>
                   
                   {outlets.map(outlet => (
-                    <th key={outlet.id} colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: '#6B7280', borderColor: '#D1D5DB', minWidth: '120px' }}>
+                    <th key={outlet.id} colSpan={2} className="px-3 py-3 text-center text-xs font-medium border-l" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)', minWidth: '120px' }}>
                       {outlet.name}
                     </th>
                   ))}
                 </tr>
-                <tr style={{ backgroundColor: '#F9FAFB' }}>
+                <tr style={{ backgroundColor: 'var(--muted)' }}>
                   <th colSpan={2}></th>
                   {outlets.map(outlet => (
                     <>
-                      <th key={`${outlet.id}-f`} className="px-2 py-2 text-center text-xs" style={{ color: '#6B7280' }}>Full</th>
-                      <th key={`${outlet.id}-m`} className="px-2 py-2 text-center text-xs border-r" style={{ color: '#6B7280', borderColor: '#D1D5DB' }}>Mini</th>
+                      <th key={`${outlet.id}-f`} className="px-2 py-2 text-center text-xs" style={{ color: 'var(--muted-foreground)' }}>Full</th>
+                      <th key={`${outlet.id}-m`} className="px-2 py-2 text-center text-xs border-r" style={{ color: 'var(--muted-foreground)', borderColor: 'var(--input)' }}>Mini</th>
                     </>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}>
+              <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
                 {products.map((product) => (
                   <tr key={product.id}>
-                    <td className="sticky left-0 z-10 px-4 py-2 text-sm font-medium" style={{ color: '#111827', backgroundColor: 'white' }}>{product.name}</td>
-                    <td className="px-3 py-2 text-sm font-mono" style={{ color: '#6B7280' }}>{product.code}</td>
+                    <td className="sticky left-0 z-10 px-4 py-2 text-sm font-medium" style={{ color: 'var(--foreground)', backgroundColor: 'var(--card)' }}>{product.name}</td>
+                    <td className="px-3 py-2 text-sm font-mono" style={{ color: 'var(--muted-foreground)' }}>{product.code}</td>
                     
                     {outlets.map(outlet => (
                       <>
@@ -131,17 +131,17 @@ export default function DefaultQuantitiesPage() {
                             value={quantities[product.id]?.[outlet.id]?.full || 0}
                             onChange={(e) => handleQuantityChange(product.id, outlet.id, 'full', e.target.value)}
                             className="w-full px-2 py-1 text-sm text-center rounded"
-                            style={{ border: '1px solid #D1D5DB' }}
+                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
                           />
                         </td>
-                        <td key={`${product.id}-${outlet.id}-m`} className="px-1 py-1 border-r" style={{ borderColor: '#D1D5DB' }}>
+                        <td key={`${product.id}-${outlet.id}-m`} className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)' }}>
                           <input
                             type="number"
                             min="0"
                             value={quantities[product.id]?.[outlet.id]?.mini || 0}
                             onChange={(e) => handleQuantityChange(product.id, outlet.id, 'mini', e.target.value)}
                             className="w-full px-2 py-1 text-sm text-center rounded"
-                            style={{ border: '1px solid #D1D5DB' }}
+                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
                           />
                         </td>
                       </>
@@ -154,9 +154,9 @@ export default function DefaultQuantitiesPage() {
         </CardContent>
       </Card>
 
-      <div className="p-4 rounded-lg" style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}>
-        <p className="text-sm font-medium mb-2" style={{ color: '#166534' }}>How it works:</p>
-        <ul className="text-sm space-y-1" style={{ color: '#166534' }}>
+      <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}>
+        <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-success-text)' }}>How it works:</p>
+        <ul className="text-sm space-y-1" style={{ color: 'var(--dms-success-text)' }}>
           <li>• Configure default quantities for each day type (Weekday, Saturday, Sunday, Holiday)</li>
           <li>• When creating a delivery plan, quantities will auto-load based on the selected day type</li>
           <li>• You can still modify quantities after auto-loading in the Order Entry Grid</li>

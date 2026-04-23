@@ -84,60 +84,39 @@ export default function RolesPage() {
 
   const columns = [
     {
-      key: 'code',
-      label: 'Role Code',
+      key: 'name',
+      label: '',
       render: (item: Role) => (
-        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
-          {item.code}
+        <span className="font-medium" style={{ color: 'var(--foreground)' }}>
+          <Shield className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
+          {item.name}
         </span>
       ),
     },
     {
-      key: 'name',
-      label: 'Role Name',
-      render: (item: Role) => (
-        <span className="font-medium">{item.name}</span>
-      ),
-    },
-    {
-      key: 'description',
-      label: 'Description',
-    },
-    {
-      key: 'active',
-      label: 'Status',
-      render: (item: Role) => (
-        item.active ? (
-          <Badge variant="success" size="sm">Active</Badge>
-        ) : (
-          <Badge variant="danger" size="sm">Inactive</Badge>
-        )
-      ),
-    },
-    {
       key: 'actions',
-      label: 'Actions',
+      label: '',
       render: (item: Role) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-end space-x-2">
           <button
             onClick={() => openEditModal(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: '#6B7280' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DBEAFE'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleToggleActive(item.id)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: item.active ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.active ? '#FEF2F2' : '#F0FDF4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.active ? 'Deactivate' : 'Activate'}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: '#DC2626', backgroundColor: '#FEF2F2' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+            title={item.active ? 'Delete' : 'Restore'}
           >
-            {item.active ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            <X className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -183,9 +162,12 @@ export default function RolesPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Role Management</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>
-            Manage user roles and access levels ({filteredRoles.length} roles)
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Shield className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Roles & Capabilities
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Manage user roles, capabilities and permission groups. Only Admin can create and assign.
           </p>
         </div>
         <Button variant="primary" size="md" onClick={() => {
@@ -193,16 +175,18 @@ export default function RolesPage() {
           setShowAddModal(true);
         }}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Role
+          Add New
         </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Role List</CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="danger" size="sm">Roles and Capabilities</Badge>
+            </div>
             <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Search roles..."
@@ -212,7 +196,7 @@ export default function RolesPage() {
                   setCurrentPage(1);
                 }}
                 className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                style={{ border: '1px solid #D1D5DB' }}
+                style={{ border: '1px solid var(--input)' }}
               />
             </div>
           </div>

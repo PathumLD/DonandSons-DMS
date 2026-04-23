@@ -8,28 +8,34 @@ import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
 import { Toggle } from '@/components/ui/toggle';
-import { Users, Plus, Search, Edit, Eye } from 'lucide-react';
+import { Calendar, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockShowrooms } from '@/lib/mock-data/showrooms';
 
 interface ShowroomEmployee {
   id: number;
-  employeeNo: string;
+  employeeId: string;
   name: string;
-  position: string;
+  jobTitle: string;
   showroomId: number;
   showroom: string;
   phone: string;
   email: string;
-  joinDate: string;
+  approved: boolean;
   active: boolean;
 }
 
 const mockEmployees: ShowroomEmployee[] = [
-  { id: 1, employeeNo: 'EMP001', name: 'Mary Fernando', position: 'Cashier', showroomId: 1, showroom: 'Dalmeny', phone: '0771234567', email: 'mary@donandson.com', joinDate: '2024-01-15', active: true },
-  { id: 2, employeeNo: 'EMP002', name: 'John Silva', position: 'Cashier', showroomId: 2, showroom: 'Ragama', phone: '0772345678', email: 'john@donandson.com', joinDate: '2024-02-20', active: true },
-  { id: 3, employeeNo: 'EMP003', name: 'Sarah Perera', position: 'Sales Assistant', showroomId: 1, showroom: 'Dalmeny', phone: '0773456789', email: 'sarah@donandson.com', joinDate: '2024-03-10', active: true },
-  { id: 4, employeeNo: 'EMP004', name: 'David Kumar', position: 'Manager', showroomId: 3, showroom: 'Ranala', phone: '0774567890', email: 'david@donandson.com', joinDate: '2023-11-05', active: false },
+  { id: 1, employeeId: '001', name: 'Don', jobTitle: 'Cashier', showroomId: 1, showroom: 'Other', phone: '0771234567', email: 'don@donandson.com', approved: true, active: true },
+  { id: 2, employeeId: '002', name: 'Other', jobTitle: 'Cashier', showroomId: 1, showroom: 'Other', phone: '0772345678', email: 'other@donandson.com', approved: true, active: true },
+  { id: 3, employeeId: '002', name: 'N.A. Sarah', jobTitle: 'Cashier', showroomId: 2, showroom: 'Malabe', phone: '0773456789', email: 'sarah@donandson.com', approved: true, active: true },
+  { id: 4, employeeId: '025', name: 'M.U.Ashoka Predeep', jobTitle: 'Cashier', showroomId: 3, showroom: 'Bandarawela', phone: '0774567890', email: 'ashoka@donandson.com', approved: true, active: true },
+  { id: 5, employeeId: '04', name: 'K.R. Thilaksurathne', jobTitle: 'Cashier', showroomId: 4, showroom: 'Katanya', phone: '0775678901', email: 'thilak@donandson.com', approved: true, active: true },
+  { id: 6, employeeId: '1216', name: 'A.M. Ganansha Kumara', jobTitle: 'Cashier', showroomId: 5, showroom: 'Dakgama', phone: '0776789012', email: 'ganansha@donandson.com', approved: true, active: true },
+  { id: 7, employeeId: '1256', name: 'W. M. Laxmi Pradeep Kumara', jobTitle: 'Cashier', showroomId: 6, showroom: 'Dakgama BRG', phone: '0777890123', email: 'laxmi@donandson.com', approved: true, active: true },
+  { id: 8, employeeId: '1210', name: 'Hansini Manjula Weerakkody', jobTitle: 'Cashier', showroomId: 7, showroom: 'Dakgama BRG', phone: '0778901234', email: 'hansini@donandson.com', approved: true, active: true },
+  { id: 9, employeeId: '1320', name: 'P. Reethinika Udantha Jayarathna Ariyarathna', jobTitle: 'Cashier', showroomId: 8, showroom: 'Katanya', phone: '0779012345', email: 'reethinika@donandson.com', approved: true, active: true },
+  { id: 10, employeeId: '1046', name: 'W. P. Harshana Wiharaga', jobTitle: 'Cashier', showroomId: 9, showroom: 'Kaduruwela', phone: '0770123456', email: 'harshana@donandson.com', approved: true, active: true },
 ];
 
 export default function ShowroomEmployeePage() {
@@ -44,13 +50,13 @@ export default function ShowroomEmployeePage() {
   const [selectedEmployee, setSelectedEmployee] = useState<ShowroomEmployee | null>(null);
   
   const [formData, setFormData] = useState({
-    employeeNo: '',
+    employeeId: '',
     name: '',
-    position: '',
+    jobTitle: '',
     showroomId: '',
     phone: '',
     email: '',
-    joinDate: new Date().toISOString().split('T')[0],
+    approved: true,
     active: true,
   });
 
@@ -58,8 +64,8 @@ export default function ShowroomEmployeePage() {
     return employees.filter(e => {
       const matchesSearch = 
         e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.employeeNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.position.toLowerCase().includes(searchTerm.toLowerCase());
+        e.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesShowroom = !showroomFilter || String(e.showroomId) === showroomFilter;
       return matchesSearch && matchesShowroom;
     });
@@ -72,14 +78,14 @@ export default function ShowroomEmployeePage() {
     const showroom = mockShowrooms.find(s => s.id === Number(formData.showroomId));
     const newEmployee: ShowroomEmployee = {
       id: Math.max(...employees.map(e => e.id)) + 1,
-      employeeNo: formData.employeeNo,
+      employeeId: formData.employeeId,
       name: formData.name,
-      position: formData.position,
+      jobTitle: formData.jobTitle,
       showroomId: Number(formData.showroomId),
       showroom: showroom?.name || '',
       phone: formData.phone,
       email: formData.email,
-      joinDate: formData.joinDate,
+      approved: formData.approved,
       active: formData.active,
     };
     setEmployees([newEmployee, ...employees]);
@@ -107,13 +113,13 @@ export default function ShowroomEmployeePage() {
 
   const resetForm = () => {
     setFormData({
-      employeeNo: '',
+      employeeId: '',
       name: '',
-      position: '',
+      jobTitle: '',
       showroomId: '',
       phone: '',
       email: '',
-      joinDate: new Date().toISOString().split('T')[0],
+      approved: true,
       active: true,
     });
   };
@@ -121,34 +127,36 @@ export default function ShowroomEmployeePage() {
   const openEditModal = (employee: ShowroomEmployee) => {
     setSelectedEmployee(employee);
     setFormData({
-      employeeNo: employee.employeeNo,
+      employeeId: employee.employeeId,
       name: employee.name,
-      position: employee.position,
+      jobTitle: employee.jobTitle,
       showroomId: String(employee.showroomId),
       phone: employee.phone,
       email: employee.email,
-      joinDate: employee.joinDate,
+      approved: employee.approved,
       active: employee.active,
     });
     setShowEditModal(true);
   };
 
+  const handleDelete = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      setEmployees(employees.filter(e => e.id !== id));
+    }
+  };
+
   const columns = [
-    { key: 'employeeNo', label: 'Employee No', render: (item: ShowroomEmployee) => <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>{item.employeeNo}</span> },
-    { key: 'name', label: 'Name', render: (item: ShowroomEmployee) => <span className="font-medium">{item.name}</span> },
-    { key: 'position', label: 'Position' },
-    { key: 'showroom', label: 'Showroom' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'email', label: 'Email' },
-    { key: 'active', label: 'Status', render: (item: ShowroomEmployee) => (
-      <button onClick={() => handleToggleActive(item.id)}>
-        {item.active ? <Badge variant="success" size="sm">Active</Badge> : <Badge variant="neutral" size="sm">Inactive</Badge>}
-      </button>
+    { key: 'employeeId', label: 'Employee ID', render: (item: ShowroomEmployee) => <span className="font-mono" style={{ color: 'var(--muted-foreground)' }}>{item.employeeId}</span> },
+    { key: 'name', label: 'Employee Name', render: (item: ShowroomEmployee) => <span className="font-medium" style={{ color: 'var(--foreground)' }}>{item.name}</span> },
+    { key: 'showroom', label: 'Showroom', render: (item: ShowroomEmployee) => <span style={{ color: 'var(--muted-foreground)' }}>{item.showroom}</span> },
+    { key: 'jobTitle', label: 'Job Title', render: (item: ShowroomEmployee) => <span style={{ color: 'var(--muted-foreground)' }}>{item.jobTitle}</span> },
+    { key: 'approved', label: 'Approved', render: (item: ShowroomEmployee) => (
+      <span style={{ color: '#10B981' }}>Approved</span>
     )},
-    { key: 'actions', label: 'Actions', render: (item: ShowroomEmployee) => (
-      <div className="flex items-center space-x-2">
-        <button onClick={() => { setSelectedEmployee(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
-        <button onClick={() => openEditModal(item)} className="p-1.5 rounded transition-colors" style={{ color: '#6B7280' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="Edit"><Edit className="w-4 h-4" /></button>
+    { key: 'actions', label: '', render: (item: ShowroomEmployee) => (
+      <div className="flex items-center justify-end space-x-2">
+        <button onClick={() => openEditModal(item)} className="p-1.5 rounded-full transition-colors" style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DBEAFE'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'} title="Edit"><Edit className="w-4 h-4" /></button>
+        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-full transition-colors" style={{ color: '#DC2626', backgroundColor: '#FEF2F2' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'} title="Delete"><Trash2 className="w-4 h-4" /></button>
       </div>
     )},
   ];
@@ -157,21 +165,33 @@ export default function ShowroomEmployeePage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Showroom Employees</h1>
-          <p className="mt-1" style={{ color: '#6B7280' }}>Manage showroom staff members ({filteredEmployees.length} employees)</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Calendar className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Showroom Calender
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Employee Information - List of showroom's employees
+          </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}><Plus className="w-4 h-4 mr-2" />Add Employee</Button>
+        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add New
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Employee List</CardTitle>
+            <div className="flex items-center gap-4">
+              <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                Showing 1 to 10 of {filteredEmployees.length} entries
+              </span>
+            </div>
             <div className="flex items-center space-x-3">
               <Select value={showroomFilter} onChange={(e) => { setShowroomFilter(e.target.value); setCurrentPage(1); }} options={[{ value: '', label: 'All Showrooms' }, ...mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: s.name }))]} />
               <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-                <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid #D1D5DB' }} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--input)' }} />
               </div>
             </div>
           </div>
@@ -184,19 +204,21 @@ export default function ShowroomEmployeePage() {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Employee" size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Employee No" value={formData.employeeNo} onChange={(e) => setFormData({ ...formData, employeeNo: e.target.value })} placeholder="EMP001" fullWidth required />
+            <Input label="Employee ID" value={formData.employeeId} onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })} placeholder="001" fullWidth required />
             <Input label="Full Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Full name" fullWidth required />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Position" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} placeholder="Cashier" fullWidth required />
+            <Input label="Job Title" value={formData.jobTitle} onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })} placeholder="Cashier" fullWidth required />
             <Select label="Showroom" value={formData.showroomId} onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })} options={mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: `${s.code} - ${s.name}` }))} placeholder="Select showroom" fullWidth required />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="0771234567" fullWidth required />
-            <Input label="Email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="employee@donandson.com" fullWidth required />
+            <Input label="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="0771234567" fullWidth />
+            <Input label="Email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="employee@donandson.com" fullWidth />
           </div>
-          <Input label="Join Date" type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} fullWidth required />
-          <Toggle checked={formData.active} onChange={(checked) => setFormData({ ...formData, active: checked })} label="Active" />
+          <div className="grid grid-cols-2 gap-4">
+            <Toggle checked={formData.approved} onChange={(checked) => setFormData({ ...formData, approved: checked })} label="Approved" />
+            <Toggle checked={formData.active} onChange={(checked) => setFormData({ ...formData, active: checked })} label="Active" />
+          </div>
         </div>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
@@ -206,16 +228,20 @@ export default function ShowroomEmployeePage() {
 
       <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedEmployee(null); resetForm(); }} title="Edit Employee" size="lg">
         <div className="space-y-4">
+          <Input label="Employee ID" value={formData.employeeId} onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })} fullWidth disabled />
           <Input label="Full Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Position" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} fullWidth />
+            <Input label="Job Title" value={formData.jobTitle} onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })} fullWidth />
             <Select label="Showroom" value={formData.showroomId} onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })} options={mockShowrooms.filter(s => s.active).map(s => ({ value: s.id, label: s.name }))} fullWidth />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} fullWidth />
             <Input label="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} fullWidth />
           </div>
-          <Toggle checked={formData.active} onChange={(checked) => setFormData({ ...formData, active: checked })} label="Active" />
+          <div className="grid grid-cols-2 gap-4">
+            <Toggle checked={formData.approved} onChange={(checked) => setFormData({ ...formData, approved: checked })} label="Approved" />
+            <Toggle checked={formData.active} onChange={(checked) => setFormData({ ...formData, active: checked })} label="Active" />
+          </div>
         </div>
         <ModalFooter>
           <Button variant="ghost" onClick={() => { setShowEditModal(false); setSelectedEmployee(null); resetForm(); }}>Cancel</Button>
@@ -227,19 +253,19 @@ export default function ShowroomEmployeePage() {
         {selectedEmployee && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Employee No</p><p className="text-sm font-semibold" style={{ color: '#111827' }}>{selectedEmployee.employeeNo}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Status</p>{selectedEmployee.active ? <Badge variant="success" size="sm">Active</Badge> : <Badge variant="neutral" size="sm">Inactive</Badge>}</div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Employee ID</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedEmployee.employeeId}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>{selectedEmployee.approved ? <Badge variant="success" size="sm">Approved</Badge> : <Badge variant="neutral" size="sm">Pending</Badge>}</div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Full Name</p><p className="text-sm" style={{ color: '#111827' }}>{selectedEmployee.name}</p></div>
+            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Full Name</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedEmployee.name}</p></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Position</p><p className="text-sm" style={{ color: '#111827' }}>{selectedEmployee.position}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Showroom</p><p className="text-sm" style={{ color: '#111827' }}>{selectedEmployee.showroom}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Job Title</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedEmployee.jobTitle}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Showroom</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedEmployee.showroom}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Phone</p><p className="text-sm" style={{ color: '#111827' }}>{selectedEmployee.phone}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Email</p><p className="text-sm" style={{ color: '#111827' }}>{selectedEmployee.email}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Phone</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedEmployee.phone}</p></div>
+              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Email</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedEmployee.email}</p></div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: '#6B7280' }}>Join Date</p><p className="text-sm" style={{ color: '#111827' }}>{new Date(selectedEmployee.joinDate).toLocaleDateString()}</p></div>
+            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Active</p>{selectedEmployee.active ? <Badge variant="success" size="sm">Active</Badge> : <Badge variant="neutral" size="sm">Inactive</Badge>}</div>
           </div>
         )}
         <ModalFooter>

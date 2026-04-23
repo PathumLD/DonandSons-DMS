@@ -54,29 +54,30 @@ export function Modal({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} transform transition-all`}
+          className={`relative rounded-lg shadow-xl w-full ${sizeClasses[size]} transform transition-all`}
+          style={{ backgroundColor: 'var(--card)' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div 
             className="flex items-center justify-between px-6 py-4"
-            style={{ borderBottom: '1px solid #E5E7EB' }}
+            style={{ borderBottom: '1px solid var(--border)' }}
           >
-            <h3 className="text-lg font-semibold" style={{ color: '#111827' }}>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>
               {title}
             </h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
                 className="p-1 rounded-lg transition-colors"
-                style={{ color: '#6B7280' }}
+                style={{ color: 'var(--muted-foreground)' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F9FAFB';
-                  e.currentTarget.style.color = '#111827';
+                  e.currentTarget.style.backgroundColor = 'var(--muted)';
+                  e.currentTarget.style.color = 'var(--foreground)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#6B7280';
+                  e.currentTarget.style.color = 'var(--muted-foreground)';
                 }}
               >
                 <X className="w-5 h-5" />
@@ -102,7 +103,7 @@ export function ModalFooter({ children }: ModalFooterProps) {
   return (
     <div 
       className="flex items-center justify-end space-x-3 px-6 py-4 mt-4"
-      style={{ borderTop: '1px solid #E5E7EB' }}
+      style={{ borderTop: '1px solid var(--border)' }}
     >
       {children}
     </div>
