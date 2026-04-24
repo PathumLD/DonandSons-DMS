@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -10,10 +10,14 @@ import Select from '@/components/ui/select';
 import { Toggle } from '@/components/ui/toggle';
 import { Users, Plus, Search, Edit, X, Check, Key } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockUsers, mockRoles, type User } from '@/lib/mock-data/users';
+import { usersApi, type User, type CreateUserRequest, type UpdateUserRequest } from '@/lib/api/users';
+import { rolesApi, type Role } from '@/lib/api/roles';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -21,120 +25,214 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    username: '',
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    roleId: '',
+    roleIds: [] as string[],
     phone: '',
     password: '',
     confirmPassword: '',
-    active: true,
+    isActive: true,
   });
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(u =>
-      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [users, searchTerm]);
+  // Fetch users from API
+  useEffect(() => {
+    loadUsers();
+    loadRoles();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const handleToggleActive = (id: number) => {
-    setUsers(users.map(u =>
-      u.id === id ? { ...u, active: !u.active } : u
-    ));
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await usersApi.getAll(currentPage, pageSize, searchTerm);
+      setUsers(response.users);
+      setTotalCount(response.totalCount);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddUser = () => {
-    const newUser: User = {
-      id: Math.max(...users.map(u => u.id)) + 1,
-      username: formData.username,
-      fullName: formData.fullName,
-      email: formData.email,
-      roleId: Number(formData.roleId),
-      role: mockRoles.find(r => r.id === Number(formData.roleId))?.name || '',
-      phone: formData.phone,
-      active: formData.active,
-    };
-    setUsers([newUser, ...users]);
-    setShowAddModal(false);
-    resetForm();
+  const loadRoles = async () => {
+    try {
+      const response = await rolesApi.getAll(1, 100, '', true);
+      setRoles(response.roles);
+    } catch (error) {
+      console.error('Failed to load roles:', error);
+    }
   };
 
-  const handleEditUser = () => {
-    if (selectedUser) {
-      setUsers(users.map(u =>
-        u.id === selectedUser.id
-          ? {
-              ...u,
-              username: formData.username,
-              fullName: formData.fullName,
-              email: formData.email,
-              roleId: Number(formData.roleId),
-              role: mockRoles.find(r => r.id === Number(formData.roleId))?.name || '',
-              phone: formData.phone,
-              active: formData.active,
-            }
-          : u
-      ));
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  const handleToggleActive = async (user: User) => {
+    try {
+      const updateData: UpdateUserRequest = {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        isActive: !user.isActive,
+      };
+      await usersApi.update(user.id, updateData);
+      await loadUsers();
+    } catch (error) {
+      console.error('Failed to toggle user status:', error);
+      alert('Failed to update user status');
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const createData: CreateUserRequest = {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        password: formData.password,
+        isActive: formData.isActive,
+        roleIds: formData.roleIds,
+      };
+      await usersApi.create(createData);
+      setShowAddModal(false);
+      resetForm();
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Failed to create user:', error);
+      alert(error.response?.data?.error?.message || 'Failed to create user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateUserRequest = {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        isActive: formData.isActive,
+      };
+      await usersApi.update(selectedUser.id, updateData);
+      
+      // Update roles if changed
+      if (formData.roleIds.length > 0) {
+        await usersApi.assignRoles(selectedUser.id, formData.roleIds);
+      }
+
       setShowEditModal(false);
       setSelectedUser(null);
       resetForm();
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Failed to update user:', error);
+      alert(error.response?.data?.error?.message || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser) return;
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await usersApi.resetPassword(selectedUser.id, formData.password);
+      setShowResetPasswordModal(false);
+      setSelectedUser(null);
+      resetForm();
+      alert('Password reset successfully');
+    } catch (error: any) {
+      console.error('Failed to reset password:', error);
+      alert(error.response?.data?.error?.message || 'Failed to reset password');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      username: '',
-      fullName: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      roleId: '',
+      roleIds: [],
       phone: '',
       password: '',
       confirmPassword: '',
-      active: true,
+      isActive: true,
     });
   };
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
     setFormData({
-      username: user.username,
-      fullName: user.fullName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      roleId: String(user.roleId),
-      phone: user.phone,
+      roleIds: user.roles.map(r => r.id),
+      phone: user.phone || '',
       password: '',
       confirmPassword: '',
-      active: user.active,
+      isActive: user.isActive,
     });
     setShowEditModal(true);
   };
 
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUser(user);
+    resetForm();
+    setShowResetPasswordModal(true);
+  };
+
   const columns = [
     {
-      key: 'username',
+      key: 'fullName',
       label: 'User Name',
       render: (item: User) => (
-        <span className="font-medium" style={{ color: 'var(--foreground)' }}>
-          <Users className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
-          {item.username}
-        </span>
+        <div>
+          <div className="font-medium" style={{ color: 'var(--foreground)' }}>
+            <Users className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
+            {item.fullName}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.email}</div>
+        </div>
       ),
     },
     {
-      key: 'role',
-      label: 'User Role',
+      key: 'roles',
+      label: 'User Roles',
       render: (item: User) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.role}</span>
+        <div className="flex flex-wrap gap-1">
+          {item.roles.map(role => (
+            <Badge key={role.id} variant="info" size="sm">{role.name}</Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (item: User) => (
+        <Badge variant={item.isActive ? 'success' : 'danger'} size="sm">
+          {item.isActive ? 'Active' : 'Inactive'}
+        </Badge>
       ),
     },
     {
@@ -153,12 +251,22 @@ export default function UsersPage() {
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleToggleActive(item.id)}
+            onClick={() => openResetPasswordModal(item)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: '#F59E0B', backgroundColor: '#FEF3C7' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FDE68A'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF3C7'}
+            title="Reset Password"
+          >
+            <Key className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleActive(item)}
             className="p-1.5 rounded-full transition-colors"
             style={{ color: '#DC2626', backgroundColor: '#FEF2F2' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-            title={item.active ? 'Delete' : 'Restore'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -171,19 +279,18 @@ export default function UsersPage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
-          label="Username"
-          value={formData.username}
-          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-          placeholder="username"
+          label="First Name"
+          value={formData.firstName}
+          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+          placeholder="John"
           fullWidth
           required
-          disabled={isEdit}
         />
         <Input
-          label="Full Name"
-          value={formData.fullName}
-          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          placeholder="Full name"
+          label="Last Name"
+          value={formData.lastName}
+          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+          placeholder="Doe"
           fullWidth
           required
         />
@@ -205,19 +312,33 @@ export default function UsersPage() {
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           placeholder="077-1234567"
           fullWidth
-          required
         />
       </div>
 
-      <Select
-        label="Role"
-        value={formData.roleId}
-        onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-        options={mockRoles.filter(r => r.active).map(r => ({ value: r.id, label: r.name }))}
-        placeholder="Select role"
-        fullWidth
-        required
-      />
+      <div>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+          Roles
+        </label>
+        <div className="space-y-2">
+          {roles.map(role => (
+            <label key={role.id} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.roleIds.includes(role.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFormData({ ...formData, roleIds: [...formData.roleIds, role.id] });
+                  } else {
+                    setFormData({ ...formData, roleIds: formData.roleIds.filter(id => id !== role.id) });
+                  }
+                }}
+                className="rounded"
+              />
+              <span>{role.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       {!isEdit && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,8 +365,8 @@ export default function UsersPage() {
 
       <div className="pt-2">
         <Toggle
-          checked={formData.active}
-          onChange={(checked) => setFormData({ ...formData, active: checked })}
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
           label="Active Status"
         />
       </div>
@@ -279,7 +400,7 @@ export default function UsersPage() {
             <div className="flex items-center gap-2">
               <Badge variant="danger" size="sm">Users</Badge>
               <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                Showing 1 to 10 of 57 entries
+                {loading ? 'Loading...' : `Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalCount)} of ${totalCount} entries`}
               </span>
             </div>
             <div className="relative w-full sm:w-auto">
@@ -299,18 +420,24 @@ export default function UsersPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedUsers}
-            columns={columns}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
+          {loading ? (
+            <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+              Loading users...
+            </div>
+          ) : (
+            <DataTable
+              data={users}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -323,12 +450,12 @@ export default function UsersPage() {
       >
         {renderUserForm(false)}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddUser}>
+          <Button variant="primary" onClick={handleAddUser} disabled={submitting}>
             <Plus className="w-4 h-4 mr-2" />
-            Add User
+            {submitting ? 'Adding...' : 'Add User'}
           </Button>
         </ModalFooter>
       </Modal>
@@ -350,11 +477,11 @@ export default function UsersPage() {
             setShowEditModal(false);
             setSelectedUser(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditUser}>
-            Save Changes
+          <Button variant="primary" onClick={handleEditUser} disabled={submitting}>
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>
@@ -402,17 +529,12 @@ export default function UsersPage() {
             setShowResetPasswordModal(false);
             setSelectedUser(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => {
-            console.log('Resetting password for:', selectedUser);
-            setShowResetPasswordModal(false);
-            setSelectedUser(null);
-            resetForm();
-          }}>
+          <Button variant="primary" onClick={handleResetPassword} disabled={submitting}>
             <Key className="w-4 h-4 mr-2" />
-            Reset Password
+            {submitting ? 'Resetting...' : 'Reset Password'}
           </Button>
         </ModalFooter>
       </Modal>
