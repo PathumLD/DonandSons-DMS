@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -9,88 +9,178 @@ import Input from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { Shield, Plus, Search, Edit, X, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockRoles, type Role } from '@/lib/mock-data/users';
+import { rolesApi, type Role, type CreateRoleRequest, type UpdateRoleRequest } from '@/lib/api/roles';
+import { permissionsApi, type Permission } from '@/lib/api/permissions';
 
 export default function RolesPage() {
-  const [roles, setRoles] = useState<Role[]>(mockRoles);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    code: '',
     name: '',
     description: '',
-    active: true,
+    isActive: true,
+    permissionIds: [] as string[],
   });
 
-  const filteredRoles = useMemo(() => {
-    return roles.filter(r =>
-      r.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [roles, searchTerm]);
+  useEffect(() => {
+    loadRoles();
+    loadPermissions();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const totalPages = Math.ceil(filteredRoles.length / pageSize);
-  const paginatedRoles = filteredRoles.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const handleToggleActive = (id: number) => {
-    setRoles(roles.map(r =>
-      r.id === id ? { ...r, active: !r.active } : r
-    ));
+  const loadRoles = async () => {
+    try {
+      setLoading(true);
+      const response = await rolesApi.getAll(currentPage, pageSize, searchTerm);
+      setRoles(response.roles);
+      setTotalCount(response.totalCount);
+    } catch (error) {
+      console.error('Failed to load roles:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddRole = () => {
-    const newRole: Role = {
-      id: Math.max(...roles.map(r => r.id)) + 1,
-      ...formData,
-    };
-    setRoles([newRole, ...roles]);
-    setShowAddModal(false);
-    resetForm();
+  const loadPermissions = async () => {
+    try {
+      const perms = await permissionsApi.getAll(true);
+      setPermissions(perms);
+    } catch (error) {
+      console.error('Failed to load permissions:', error);
+    }
   };
 
-  const handleEditRole = () => {
-    if (selectedRole) {
-      setRoles(roles.map(r =>
-        r.id === selectedRole.id ? { ...r, ...formData } : r
-      ));
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  const handleToggleActive = async (role: Role) => {
+    try {
+      const updateData: UpdateRoleRequest = {
+        name: role.name,
+        description: role.description,
+        isActive: !role.isActive,
+      };
+      await rolesApi.update(role.id, updateData);
+      await loadRoles();
+    } catch (error: any) {
+      console.error('Failed to toggle role status:', error);
+      alert(error.response?.data?.error?.message || 'Failed to update role status');
+    }
+  };
+
+  const handleAddRole = async () => {
+    try {
+      setSubmitting(true);
+      const createData: CreateRoleRequest = {
+        name: formData.name,
+        description: formData.description,
+        isActive: formData.isActive,
+        permissionIds: formData.permissionIds,
+      };
+      await rolesApi.create(createData);
+      setShowAddModal(false);
+      resetForm();
+      await loadRoles();
+    } catch (error: any) {
+      console.error('Failed to create role:', error);
+      alert(error.response?.data?.error?.message || 'Failed to create role');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditRole = async () => {
+    if (!selectedRole) return;
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateRoleRequest = {
+        name: formData.name,
+        description: formData.description,
+        isActive: formData.isActive,
+      };
+      await rolesApi.update(selectedRole.id, updateData);
+
+      if (formData.permissionIds.length > 0) {
+        await rolesApi.assignPermissions(selectedRole.id, formData.permissionIds);
+      }
+
       setShowEditModal(false);
       setSelectedRole(null);
       resetForm();
+      await loadRoles();
+    } catch (error: any) {
+      console.error('Failed to update role:', error);
+      alert(error.response?.data?.error?.message || 'Failed to update role');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      code: '',
       name: '',
       description: '',
-      active: true,
+      isActive: true,
+      permissionIds: [],
     });
   };
 
-  const openEditModal = (role: Role) => {
+  const openEditModal = async (role: Role) => {
     setSelectedRole(role);
-    setFormData(role);
-    setShowEditModal(true);
+    
+    // Fetch full role details with permissions
+    try {
+      const fullRole = await rolesApi.getById(role.id);
+      setFormData({
+        name: fullRole.name,
+        description: fullRole.description,
+        isActive: fullRole.isActive,
+        permissionIds: fullRole.permissions?.map(p => p.id) || [],
+      });
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Failed to load role details:', error);
+      alert('Failed to load role details');
+    }
   };
 
   const columns = [
     {
       key: 'name',
-      label: '',
+      label: 'Role Name',
       render: (item: Role) => (
-        <span className="font-medium" style={{ color: 'var(--foreground)' }}>
-          <Shield className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
-          {item.name}
-        </span>
+        <div>
+          <div className="font-medium" style={{ color: 'var(--foreground)' }}>
+            <Shield className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
+            {item.name}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.description}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      render: (item: Role) => (
+        <Badge variant="info" size="sm">{item.permissionCount || 0} permissions</Badge>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (item: Role) => (
+        <Badge variant={item.isActive ? 'success' : 'danger'} size="sm">
+          {item.isActive ? 'Active' : 'Inactive'}
+        </Badge>
       ),
     },
     {
@@ -109,12 +199,12 @@ export default function RolesPage() {
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleToggleActive(item.id)}
+            onClick={() => handleToggleActive(item)}
             className="p-1.5 rounded-full transition-colors"
             style={{ color: '#DC2626', backgroundColor: '#FEF2F2' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-            title={item.active ? 'Delete' : 'Restore'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -126,18 +216,10 @@ export default function RolesPage() {
   const renderRoleForm = () => (
     <div className="space-y-4">
       <Input
-        label="Role Code"
-        value={formData.code}
-        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-        placeholder="e.g., ADMIN, MANAGER"
-        fullWidth
-        required
-      />
-      <Input
         label="Role Name"
         value={formData.name}
         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        placeholder="Full role name"
+        placeholder="e.g., Sales Manager, Production Manager"
         fullWidth
         required
       />
@@ -148,10 +230,38 @@ export default function RolesPage() {
         placeholder="Brief description of role"
         fullWidth
       />
+      
+      <div>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+          Permissions
+        </label>
+        <div className="max-h-64 overflow-y-auto space-y-2 p-2 rounded-lg" style={{ border: '1px solid var(--input)' }}>
+          {permissions.map(perm => (
+            <label key={perm.id} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.permissionIds.includes(perm.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFormData({ ...formData, permissionIds: [...formData.permissionIds, perm.id] });
+                  } else {
+                    setFormData({ ...formData, permissionIds: formData.permissionIds.filter(id => id !== perm.id) });
+                  }
+                }}
+                className="rounded"
+              />
+              <span className="text-sm">
+                <strong>{perm.code}</strong> - {perm.description}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div className="pt-2">
         <Toggle
-          checked={formData.active}
-          onChange={(checked) => setFormData({ ...formData, active: checked })}
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
           label="Active Status"
         />
       </div>
@@ -202,18 +312,24 @@ export default function RolesPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedRoles}
-            columns={columns}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
+          {loading ? (
+            <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+              Loading roles...
+            </div>
+          ) : (
+            <DataTable
+              data={roles}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -226,12 +342,12 @@ export default function RolesPage() {
       >
         {renderRoleForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddRole}>
+          <Button variant="primary" onClick={handleAddRole} disabled={submitting}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Role
+            {submitting ? 'Adding...' : 'Add Role'}
           </Button>
         </ModalFooter>
       </Modal>
@@ -253,11 +369,11 @@ export default function RolesPage() {
             setShowEditModal(false);
             setSelectedRole(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditRole}>
-            Save Changes
+          <Button variant="primary" onClick={handleEditRole} disabled={submitting}>
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>
