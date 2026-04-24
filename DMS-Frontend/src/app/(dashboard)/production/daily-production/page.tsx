@@ -59,7 +59,9 @@ export default function DailyProductionPage() {
       }
       
       // For non-admin users, filter by date range (3 days back if not showing previous records)
-      const matchesUser = p.editUser === user?.username || p.editUser === user?.email;
+      const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
+      const matchesUser =
+        user != null && (p.editUser === user.email || p.editUser === userFullName);
       if (!matchesUser) return false;
       
       if (!showPreviousRecords) {
@@ -93,12 +95,12 @@ export default function DailyProductionPage() {
       producedQty: Number(formData.producedQty),
       status: 'Pending',
       shift: formData.shift,
-      editUser: user?.username || 'Unknown',
+      editUser: user ? `${user.firstName} ${user.lastName}`.trim() || user.email : 'Unknown',
       editDate: new Date().toLocaleString('en-US', { 
-        month: '1-digit', 
-        day: '1-digit', 
+        month: 'numeric', 
+        day: 'numeric', 
         year: 'numeric', 
-        hour: '1-digit', 
+        hour: 'numeric', 
         minute: '2-digit', 
         second: '2-digit',
         hour12: true 

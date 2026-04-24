@@ -49,7 +49,9 @@ export default function StockAdjustmentPage() {
       }
       
       // For non-admin users, filter by date range (3 days back if not showing previous records)
-      const matchesUser = a.editUser === user?.username || a.editUser === user?.email;
+      const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
+      const matchesUser =
+        user != null && (a.editUser === user.email || a.editUser === userFullName);
       if (!matchesUser) return false;
       
       if (!showPreviousRecords) {
@@ -83,12 +85,12 @@ export default function StockAdjustmentPage() {
       quantity: Number(formData.quantity),
       reason: formData.reason,
       status: 'Pending',
-      editUser: user?.username || 'Unknown',
+      editUser: user ? `${user.firstName} ${user.lastName}`.trim() || user.email : 'Unknown',
       editDate: new Date().toLocaleString('en-US', { 
-        month: '1-digit', 
-        day: '1-digit', 
+        month: 'numeric', 
+        day: 'numeric', 
         year: 'numeric', 
-        hour: '1-digit', 
+        hour: 'numeric', 
         minute: '2-digit', 
         second: '2-digit',
         hour12: true 

@@ -98,6 +98,18 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IDayLockService, DayLockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Inventory services
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IUnitOfMeasureService, UnitOfMeasureService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+
+// Phase 4: Admin Master Data services
+builder.Services.AddScoped<IOutletService, OutletService>();
+
+// Admin Master Data services
+builder.Services.AddScoped<IOutletService, OutletService>();
+
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 
@@ -114,12 +126,21 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.AddService<AuditActionFilter>();
     options.Filters.AddService<DayLockGuardFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Add AutoMapper
+// Note: Using AutoMapper 12.0.1 (last free version)
+// Known vulnerability GHSA-rvv3-g6hj-g44x requires 25,000+ nested levels to exploit
+// Our business domain (products, orders, inventory) doesn't have deep object graphs
+// Suppressed in .csproj - consider migrating to Mapperly in future
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 builder.Services.AddOpenApi();

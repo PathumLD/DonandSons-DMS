@@ -1,6 +1,14 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth-store';
 
+/** Matches DMS_Backend.Common.ApiResponse JSON shape */
+export interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+  error?: unknown;
+  timestamp: string;
+}
+
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
   headers: {

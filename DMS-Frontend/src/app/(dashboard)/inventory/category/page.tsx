@@ -1,84 +1,110 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
-import { FolderTree, Plus, Search, Edit, X, Check } from 'lucide-react';
+import { FolderTree, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockCategories } from '@/lib/mock-data/products';
-
-interface Category {
-  id: number;
-  code: string;
-  name: string;
-  active: boolean;
-}
+import { categoriesApi, Category } from '@/lib/api/categories';
+import toast from 'react-hot-toast';
 
 export default function CategoryPage() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    active: true,
+    description: '',
+    sortOrder: 0,
+    isActive: true,
   });
 
-  const filteredCategories = useMemo(() => {
-    return categories.filter(cat =>
-      cat.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [categories, searchTerm]);
+  useEffect(() => {
+    loadCategories();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const totalPages = Math.ceil(filteredCategories.length / pageSize);
-  const paginatedCategories = filteredCategories.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const handleToggleActive = (id: number) => {
-    setCategories(categories.map(c =>
-      c.id === id ? { ...c, active: !c.active } : c
-    ));
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await categoriesApi.getAll(currentPage, pageSize, searchTerm, undefined);
+      setCategories(response.categories);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddCategory = () => {
-    const newCategory: Category = {
-      id: Math.max(...categories.map(c => c.id)) + 1,
-      code: formData.code,
-      name: formData.name,
-      active: formData.active,
-    };
-    setCategories([newCategory, ...categories]);
-    setShowAddModal(false);
-    resetForm();
+  const handleToggleActive = async (category: Category) => {
+    try {
+      const updated = await categoriesApi.update(category.id, {
+        ...category,
+        isActive: !category.isActive,
+      });
+      toast.success(`Category ${updated.isActive ? 'activated' : 'deactivated'}`);
+      loadCategories();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update category');
+    }
   };
 
-  const handleEditCategory = () => {
-    if (selectedCategory) {
-      setCategories(categories.map(c =>
-        c.id === selectedCategory.id
-          ? { ...c, code: formData.code, name: formData.name, active: formData.active }
-          : c
-      ));
+  const handleAddCategory = async () => {
+    if (!formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await categoriesApi.create(formData);
+      toast.success('Category created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadCategories();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create category');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditCategory = async () => {
+    if (!selectedCategory || !formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await categoriesApi.update(selectedCategory.id, formData);
+      toast.success('Category updated successfully');
       setShowEditModal(false);
       setSelectedCategory(null);
       resetForm();
+      loadCategories();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update category');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
-    setFormData({ code: '', name: '', active: true });
+    setFormData({ code: '', name: '', description: '', sortOrder: 0, isActive: true });
   };
 
   const openEditModal = (category: Category) => {
@@ -86,7 +112,9 @@ export default function CategoryPage() {
     setFormData({
       code: category.code,
       name: category.name,
-      active: category.active,
+      description: category.description || '',
+      sortOrder: category.sortOrder,
+      isActive: category.isActive,
     });
     setShowEditModal(true);
   };
@@ -109,10 +137,17 @@ export default function CategoryPage() {
       ),
     },
     {
-      key: 'active',
+      key: 'productCount',
+      label: 'Products',
+      render: (item: Category) => (
+        <Badge variant="neutral" size="sm">{item.productCount}</Badge>
+      ),
+    },
+    {
+      key: 'isActive',
       label: 'Status',
       render: (item: Category) => (
-        item.active ? (
+        item.isActive ? (
           <Badge variant="success" size="sm">Active</Badge>
         ) : (
           <Badge variant="danger" size="sm">Inactive</Badge>
@@ -135,14 +170,14 @@ export default function CategoryPage() {
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleToggleActive(item.id)}
+            onClick={() => handleToggleActive(item)}
             className="p-1.5 rounded transition-colors"
-            style={{ color: item.active ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.active ? '#FEF2F2' : '#F0FDF4'}
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.active ? 'Deactivate' : 'Activate'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
-            {item.active ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
           </button>
         </div>
       ),
@@ -167,15 +202,31 @@ export default function CategoryPage() {
         fullWidth
         required
       />
+      <Input
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Optional description"
+        fullWidth
+      />
+      <Input
+        label="Sort Order"
+        type="number"
+        value={(formData.sortOrder ?? 0).toString()}
+        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+        fullWidth
+      />
       <div className="pt-2">
         <Toggle
-          checked={formData.active}
-          onChange={(checked) => setFormData({ ...formData, active: checked })}
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
           label="Active Status"
         />
       </div>
     </div>
   );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 space-y-6">
@@ -183,7 +234,7 @@ export default function CategoryPage() {
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Categories</h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Manage product categories ({filteredCategories.length} categories)
+            Manage product categories ({totalCount} categories)
           </p>
         </div>
         <Button variant="primary" size="md" onClick={() => {
@@ -216,18 +267,24 @@ export default function CategoryPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedCategories}
-            columns={columns}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
+            </div>
+          ) : (
+            <DataTable
+              data={categories}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -240,11 +297,11 @@ export default function CategoryPage() {
       >
         {renderCategoryForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddCategory}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button variant="primary" onClick={handleAddCategory} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
             Add Category
           </Button>
         </ModalFooter>
@@ -267,10 +324,11 @@ export default function CategoryPage() {
             setShowEditModal(false);
             setSelectedCategory(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditCategory}>
+          <Button variant="primary" onClick={handleEditCategory} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
         </ModalFooter>

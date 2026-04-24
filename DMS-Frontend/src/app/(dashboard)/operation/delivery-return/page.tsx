@@ -331,7 +331,7 @@ export default function DeliveryReturnPage() {
         )}
         <ModalFooter>
           {selectedReturn?.status === 'Pending' && isAdmin && (
-            <Button variant="success" onClick={() => { handleApprove(selectedReturn.id); setShowViewModal(false); setSelectedReturn(null); }}>Approve</Button>
+            <Button variant="primary" onClick={() => { handleApprove(selectedReturn.id); setShowViewModal(false); setSelectedReturn(null); }}>Approve</Button>
           )}
           <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelectedReturn(null); }}>Close</Button>
         </ModalFooter>
