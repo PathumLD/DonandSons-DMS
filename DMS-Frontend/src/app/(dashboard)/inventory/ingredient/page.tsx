@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -10,87 +10,221 @@ import Select from '@/components/ui/select';
 import { Toggle } from '@/components/ui/toggle';
 import { Beaker, Plus, Search, Edit, X, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockIngredients, mockUOMs, type Ingredient } from '@/lib/mock-data/products';
+import { ingredientsApi, type Ingredient, type CreateIngredientDto, type UpdateIngredientDto } from '@/lib/api/ingredients';
+import { categoriesApi, type Category } from '@/lib/api/categories';
+import { uomsApi, type UnitOfMeasure } from '@/lib/api/uoms';
+import toast from 'react-hot-toast';
 
 export default function IngredientPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(mockIngredients);
+  // Data states
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [uoms, setUOMs] = useState<UnitOfMeasure[]>([]);
+  
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Pagination and search
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  
+  // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   
-  const [formData, setFormData] = useState({
+  // Form state
+  const [formData, setFormData] = useState<Partial<CreateIngredientDto>>({
     code: '',
+    name: '',
     description: '',
-    uomId: '',
-    reorderLevel: '',
-    active: true,
+    categoryId: '',
+    unitOfMeasureId: '',
+    ingredientType: 'Raw',
+    isSemiFinishedItem: false,
+    extraPercentageApplicable: false,
+    extraPercentage: 0,
+    allowDecimal: false,
+    decimalPlaces: 2,
+    unitPrice: 0,
+    sortOrder: 0,
+    isActive: true,
   });
 
-  const filteredIngredients = useMemo(() => {
-    return ingredients.filter(ing =>
-      ing.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ing.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [ingredients, searchTerm]);
+  // Fetch ingredients on mount and when filters change
+  useEffect(() => {
+    fetchIngredients();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const totalPages = Math.ceil(filteredIngredients.length / pageSize);
-  const paginatedIngredients = filteredIngredients.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Fetch categories and UOMs on mount
+  useEffect(() => {
+    fetchCategories();
+    fetchUOMs();
+  }, []);
 
-  const handleToggleActive = (id: number) => {
-    setIngredients(ingredients.map(i =>
-      i.id === id ? { ...i, active: !i.active } : i
-    ));
+  const fetchIngredients = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await ingredientsApi.getAll(
+        currentPage,
+        pageSize,
+        searchTerm || undefined,
+        undefined,
+        undefined,
+        undefined
+      );
+      
+      setIngredients(response.ingredients);
+      setTotalPages(response.totalPages);
+      setTotalCount(response.totalCount);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to load ingredients';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddIngredient = () => {
-    const newIngredient: Ingredient = {
-      id: Math.max(...ingredients.map(i => i.id)) + 1,
-      code: formData.code,
-      description: formData.description,
-      uomId: Number(formData.uomId),
-      uom: mockUOMs.find(u => u.id === Number(formData.uomId))?.code || '',
-      reorderLevel: Number(formData.reorderLevel),
-      active: formData.active,
-    };
-    setIngredients([newIngredient, ...ingredients]);
-    setShowAddModal(false);
-    resetForm();
+  const fetchCategories = async () => {
+    try {
+      const response = await categoriesApi.getAll(1, 100, undefined, true);
+      setCategories(response.categories);
+    } catch (err: any) {
+      console.error('Failed to load categories:', err);
+    }
   };
 
-  const handleEditIngredient = () => {
-    if (selectedIngredient) {
-      setIngredients(ingredients.map(i =>
-        i.id === selectedIngredient.id
-          ? {
-              ...i,
-              code: formData.code,
-              description: formData.description,
-              uomId: Number(formData.uomId),
-              uom: mockUOMs.find(u => u.id === Number(formData.uomId))?.code || '',
-              reorderLevel: Number(formData.reorderLevel),
-              active: formData.active,
-            }
-          : i
-      ));
+  const fetchUOMs = async () => {
+    try {
+      const response = await uomsApi.getAll(1, 100, undefined, true);
+      setUOMs(response.unitOfMeasures);
+    } catch (err: any) {
+      console.error('Failed to load UOMs:', err);
+    }
+  };
+
+  const handleToggleActive = async (ingredient: Ingredient) => {
+    try {
+      await ingredientsApi.update(ingredient.id, {
+        code: ingredient.code,
+        name: ingredient.name,
+        description: ingredient.description,
+        categoryId: ingredient.categoryId,
+        unitOfMeasureId: ingredient.unitOfMeasureId,
+        ingredientType: ingredient.ingredientType,
+        isSemiFinishedItem: ingredient.isSemiFinishedItem,
+        extraPercentageApplicable: ingredient.extraPercentageApplicable,
+        extraPercentage: ingredient.extraPercentage,
+        allowDecimal: ingredient.allowDecimal,
+        decimalPlaces: ingredient.decimalPlaces,
+        unitPrice: ingredient.unitPrice,
+        sortOrder: ingredient.sortOrder,
+        isActive: !ingredient.isActive,
+      });
+      
+      toast.success(`Ingredient ${ingredient.isActive ? 'deactivated' : 'activated'} successfully`);
+      fetchIngredients();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to toggle ingredient status';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleAddIngredient = async () => {
+    try {
+      setSubmitting(true);
+      
+      const dto: CreateIngredientDto = {
+        code: formData.code!,
+        name: formData.name!,
+        description: formData.description,
+        categoryId: formData.categoryId!,
+        unitOfMeasureId: formData.unitOfMeasureId!,
+        ingredientType: formData.ingredientType!,
+        isSemiFinishedItem: formData.isSemiFinishedItem!,
+        extraPercentageApplicable: formData.extraPercentageApplicable!,
+        extraPercentage: Number(formData.extraPercentage),
+        allowDecimal: formData.allowDecimal!,
+        decimalPlaces: Number(formData.decimalPlaces),
+        unitPrice: Number(formData.unitPrice),
+        sortOrder: Number(formData.sortOrder),
+        isActive: formData.isActive!,
+      };
+      
+      await ingredientsApi.create(dto);
+      toast.success('Ingredient created successfully');
+      setShowAddModal(false);
+      resetForm();
+      fetchIngredients();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to create ingredient';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditIngredient = async () => {
+    if (!selectedIngredient) return;
+    
+    try {
+      setSubmitting(true);
+      
+      const dto: UpdateIngredientDto = {
+        code: formData.code!,
+        name: formData.name!,
+        description: formData.description,
+        categoryId: formData.categoryId!,
+        unitOfMeasureId: formData.unitOfMeasureId!,
+        ingredientType: formData.ingredientType!,
+        isSemiFinishedItem: formData.isSemiFinishedItem!,
+        extraPercentageApplicable: formData.extraPercentageApplicable!,
+        extraPercentage: Number(formData.extraPercentage),
+        allowDecimal: formData.allowDecimal!,
+        decimalPlaces: Number(formData.decimalPlaces),
+        unitPrice: Number(formData.unitPrice),
+        sortOrder: Number(formData.sortOrder),
+        isActive: formData.isActive!,
+      };
+      
+      await ingredientsApi.update(selectedIngredient.id, dto);
+      toast.success('Ingredient updated successfully');
       setShowEditModal(false);
       setSelectedIngredient(null);
       resetForm();
+      fetchIngredients();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to update ingredient';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setFormData({
       code: '',
+      name: '',
       description: '',
-      uomId: '',
-      reorderLevel: '',
-      active: true,
+      categoryId: '',
+      unitOfMeasureId: '',
+      ingredientType: 'Raw',
+      isSemiFinishedItem: false,
+      extraPercentageApplicable: false,
+      extraPercentage: 0,
+      allowDecimal: false,
+      decimalPlaces: 2,
+      unitPrice: 0,
+      sortOrder: 0,
+      isActive: true,
     });
   };
 
@@ -98,10 +232,19 @@ export default function IngredientPage() {
     setSelectedIngredient(ingredient);
     setFormData({
       code: ingredient.code,
+      name: ingredient.name,
       description: ingredient.description,
-      uomId: String(ingredient.uomId),
-      reorderLevel: String(ingredient.reorderLevel),
-      active: ingredient.active,
+      categoryId: ingredient.categoryId,
+      unitOfMeasureId: ingredient.unitOfMeasureId,
+      ingredientType: ingredient.ingredientType,
+      isSemiFinishedItem: ingredient.isSemiFinishedItem,
+      extraPercentageApplicable: ingredient.extraPercentageApplicable,
+      extraPercentage: ingredient.extraPercentage,
+      allowDecimal: ingredient.allowDecimal,
+      decimalPlaces: ingredient.decimalPlaces,
+      unitPrice: ingredient.unitPrice,
+      sortOrder: ingredient.sortOrder,
+      isActive: ingredient.isActive,
     });
     setShowEditModal(true);
   };
@@ -117,28 +260,34 @@ export default function IngredientPage() {
       ),
     },
     {
-      key: 'description',
-      label: 'Description',
+      key: 'name',
+      label: 'Name',
       render: (item: Ingredient) => (
-        <span className="font-medium">{item.description}</span>
+        <span className="font-medium">{item.name}</span>
       ),
     },
     {
-      key: 'uom',
+      key: 'categoryName',
+      label: 'Category',
+    },
+    {
+      key: 'unitOfMeasure',
       label: 'UOM',
     },
     {
-      key: 'reorderLevel',
-      label: 'Reorder Level',
+      key: 'ingredientType',
+      label: 'Type',
       render: (item: Ingredient) => (
-        <span className="font-semibold">{item.reorderLevel}</span>
+        <Badge variant={item.ingredientType === 'Raw' ? 'primary' : 'warning'} size="sm">
+          {item.ingredientType}
+        </Badge>
       ),
     },
     {
-      key: 'active',
+      key: 'isActive',
       label: 'Status',
       render: (item: Ingredient) => (
-        item.active ? (
+        item.isActive ? (
           <Badge variant="success" size="sm">Active</Badge>
         ) : (
           <Badge variant="danger" size="sm">Inactive</Badge>
@@ -161,14 +310,14 @@ export default function IngredientPage() {
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleToggleActive(item.id)}
+            onClick={() => handleToggleActive(item)}
             className="p-1.5 rounded transition-colors"
-            style={{ color: item.active ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.active ? '#FEF2F2' : '#F0FDF4'}
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.active ? 'Deactivate' : 'Activate'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
-            {item.active ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
           </button>
         </div>
       ),
@@ -180,17 +329,46 @@ export default function IngredientPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Ingredient Code"
-          value={formData.code}
+          value={formData.code || ''}
           onChange={(e) => setFormData({ ...formData, code: e.target.value })}
           placeholder="e.g., FLOUR, SUGAR"
           fullWidth
           required
         />
         <Input
-          label="Description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          label="Ingredient Name"
+          value={formData.name || ''}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Full ingredient name"
+          fullWidth
+          required
+        />
+      </div>
+
+      <Input
+        label="Description"
+        value={formData.description || ''}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Ingredient description (optional)"
+        fullWidth
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Select
+          label="Category"
+          value={formData.categoryId || ''}
+          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+          options={categories.map(c => ({ value: c.id, label: c.name }))}
+          placeholder="Select category"
+          fullWidth
+          required
+        />
+        <Select
+          label="Unit of Measure"
+          value={formData.unitOfMeasureId || ''}
+          onChange={(e) => setFormData({ ...formData, unitOfMeasureId: e.target.value })}
+          options={uoms.map(u => ({ value: u.id, label: `${u.code} - ${u.description}` }))}
+          placeholder="Select UOM"
           fullWidth
           required
         />
@@ -198,34 +376,48 @@ export default function IngredientPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
-          label="Unit of Measure"
-          value={formData.uomId}
-          onChange={(e) => setFormData({ ...formData, uomId: e.target.value })}
-          options={mockUOMs.map(u => ({ value: u.id, label: `${u.code} - ${u.description}` }))}
-          placeholder="Select UOM"
+          label="Ingredient Type"
+          value={formData.ingredientType || 'Raw'}
+          onChange={(e) => setFormData({ ...formData, ingredientType: e.target.value })}
+          options={[
+            { value: 'Raw', label: 'Raw Material' },
+            { value: 'Semi-Finished', label: 'Semi-Finished' }
+          ]}
           fullWidth
           required
         />
         <Input
-          label="Reorder Level"
+          label="Unit Price (Rs.)"
           type="number"
-          value={formData.reorderLevel}
-          onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
-          placeholder="Minimum stock quantity"
+          step="0.01"
+          value={formData.unitPrice?.toString() || '0'}
+          onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
+          placeholder="0.00"
           fullWidth
-          required
         />
       </div>
 
       <div className="pt-2">
         <Toggle
-          checked={formData.active}
-          onChange={(checked) => setFormData({ ...formData, active: checked })}
+          checked={formData.isActive || false}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
           label="Active Status"
         />
       </div>
     </div>
   );
+
+  // Loading state
+  if (loading && ingredients.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading ingredients...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -233,7 +425,7 @@ export default function IngredientPage() {
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Ingredients</h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Manage raw materials and ingredients ({filteredIngredients.length} items)
+            Manage raw materials and ingredients ({totalCount} items)
           </p>
         </div>
         <Button variant="primary" size="md" onClick={() => {
@@ -244,6 +436,13 @@ export default function IngredientPage() {
           Add Ingredient
         </Button>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -266,18 +465,27 @@ export default function IngredientPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedIngredients}
-            columns={columns}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
+          {ingredients.length === 0 && !loading ? (
+            <div className="text-center py-12">
+              <Beaker className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--muted-foreground)' }} />
+              <p style={{ color: 'var(--muted-foreground)' }}>
+                No ingredients found. Create your first ingredient!
+              </p>
+            </div>
+          ) : (
+            <DataTable
+              data={ingredients}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -290,12 +498,16 @@ export default function IngredientPage() {
       >
         {renderIngredientForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddIngredient}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Ingredient
+          <Button variant="primary" onClick={handleAddIngredient} disabled={submitting}>
+            {submitting ? 'Creating...' : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Ingredient
+              </>
+            )}
           </Button>
         </ModalFooter>
       </Modal>
@@ -317,11 +529,11 @@ export default function IngredientPage() {
             setShowEditModal(false);
             setSelectedIngredient(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditIngredient}>
-            Save Changes
+          <Button variant="primary" onClick={handleEditIngredient} disabled={submitting}>
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>

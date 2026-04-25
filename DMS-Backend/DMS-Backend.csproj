@@ -25,6 +25,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Suppress AutoMapper 12.0.1 vulnerability warning GHSA-rvv3-g6hj-g44x -->
+    <!-- This DoS vulnerability requires 25,000+ nested object levels to exploit -->
+    <!-- Our business domain doesn't have such deep nesting -->
+    <!-- Patched versions (15.1.1, 16.1.1) require paid license -->
+    <!-- TODO: Consider migrating to Mapperly (free, source-generated mapper) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include=".config\" />
     <Folder Include="Controllers\" />
     <Folder Include="Data\" />

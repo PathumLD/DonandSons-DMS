@@ -10,8 +10,9 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'typ
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, error, className = '', ...props }, ref) => {
+  ({ label, error, className = '', id, ...props }, ref) => {
     const { pageColor } = useTheme();
+    const checkboxId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <div className={`flex items-start ${className}`}>
@@ -19,10 +20,12 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           <input
             ref={ref}
             type="checkbox"
+            id={checkboxId}
             className="sr-only peer"
             {...props}
           />
-          <div 
+          <label
+            htmlFor={checkboxId}
             className="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all peer-checked:border-0"
             style={{
               borderColor: error ? '#DC2626' : 'var(--input)',
@@ -30,11 +33,11 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             }}
           >
             {props.checked && <Check className="w-4 h-4 text-white" />}
-          </div>
+          </label>
         </div>
         {label && (
           <div className="ml-3">
-            <label className="text-sm cursor-pointer" style={{ color: 'var(--foreground)' }}>
+            <label htmlFor={checkboxId} className="text-sm cursor-pointer" style={{ color: 'var(--foreground)' }}>
               {label}
             </label>
             {error && (

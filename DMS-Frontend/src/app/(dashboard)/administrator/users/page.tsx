@@ -500,7 +500,7 @@ export default function UsersPage() {
         {selectedUser && (
           <div className="space-y-4">
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              Reset password for <strong>{selectedUser.fullName}</strong> (@{selectedUser.username})
+              Reset password for <strong>{selectedUser.fullName}</strong> ({selectedUser.email})
             </p>
             <div className="grid grid-cols-1 gap-4">
               <Input

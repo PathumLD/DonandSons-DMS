@@ -23,6 +23,22 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<DayLock> DayLocks => Set<DayLock>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
+    // Inventory entities
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<UnitOfMeasure> UnitOfMeasures => Set<UnitOfMeasure>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Ingredient> Ingredients => Set<Ingredient>();
+
+    // Phase 4: Admin Master Data entities
+    public DbSet<Outlet> Outlets => Set<Outlet>();
+    public DbSet<OutletEmployee> OutletEmployees => Set<OutletEmployee>();
+    public DbSet<DeliveryTurn> DeliveryTurns => Set<DeliveryTurn>();
+    public DbSet<DayType> DayTypes => Set<DayType>();
+    public DbSet<ProductionSection> ProductionSections => Set<ProductionSection>();
+    public DbSet<SectionConsumable> SectionConsumables => Set<SectionConsumable>();
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<ApprovalQueue> ApprovalQueues => Set<ApprovalQueue>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -265,6 +281,102 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Token).IsUnique();
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => new { e.ExpiresAt, e.IsUsed });
+        });
+
+        // Category entity configuration
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.ToTable("categories");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // UnitOfMeasure entity configuration
+        modelBuilder.Entity<UnitOfMeasure>(entity =>
+        {
+            entity.ToTable("unit_of_measures");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // Product entity configuration
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.ToTable("products");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(e => e.ProductType).HasMaxLength(50);
+            entity.Property(e => e.ProductionSection).HasMaxLength(100);
+            entity.Property(e => e.DefaultDeliveryTurns).HasColumnType("jsonb");
+            entity.Property(e => e.AvailableInTurns).HasColumnType("jsonb");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UnitOfMeasure)
+                .WithMany(u => u.Products)
+                .HasForeignKey(e => e.UnitOfMeasureId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.CategoryId);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.SortOrder);
+        });
+
+        // Ingredient entity configuration
+        modelBuilder.Entity<Ingredient>(entity =>
+        {
+            entity.ToTable("ingredients");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IngredientType).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(e => e.ExtraPercentage).HasColumnType("decimal(18,2)").HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UnitOfMeasure)
+                .WithMany(u => u.Ingredients)
+                .HasForeignKey(e => e.UnitOfMeasureId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.CategoryId);
+            entity.HasIndex(e => e.IngredientType);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.SortOrder);
         });
     }
 }

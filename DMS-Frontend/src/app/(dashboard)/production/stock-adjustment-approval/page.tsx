@@ -33,14 +33,14 @@ export default function StockAdjustmentApprovalPage() {
   );
 
   const handleApprove = (id: number) => {
-    const approvedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: '1-digit', day: '1-digit', year: 'numeric' })}`;
+    const approvedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}`;
     setAdjustments(adjustments.map(a =>
       a.id === id ? { ...a, status: 'Approved', approvedBy: approvedByText } : a
     ));
   };
 
   const handleReject = (id: number) => {
-    const rejectedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: '1-digit', day: '1-digit', year: 'numeric' })}`;
+    const rejectedByText = `Vins - ${new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}`;
     setAdjustments(adjustments.map(a =>
       a.id === id ? { ...a, status: 'Rejected', approvedBy: rejectedByText } : a
     ));

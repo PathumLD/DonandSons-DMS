@@ -32,7 +32,7 @@ export interface ThemeStore {
   // Page-specific color coding
   pageThemes: Record<string, PageTheme>;
   setPageTheme: (pageKey: string, theme: PageTheme) => void;
-  getPageTheme: (pageKey: string) => PageTheme | null;
+  getPageTheme: (pageKey: string) => PageTheme;
   resetPageTheme: (pageKey: string) => void;
   resetAllThemes: () => void;
   
@@ -85,7 +85,7 @@ export const useThemeStore = create<ThemeStore>()(
 
       getPageTheme: (pageKey: string) => {
         const theme = get().pageThemes[pageKey];
-        return theme || null;
+        return theme ?? DEFAULT_THEMES[pageKey] ?? DEFAULT_THEMES.delivery;
       },
 
       resetPageTheme: (pageKey: string) => {

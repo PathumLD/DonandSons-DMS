@@ -359,7 +359,7 @@ export default function CancellationPage() {
         <ModalFooter>
           {selectedCancellation?.status === 'Pending' && isAdmin && (
             <>
-              <Button variant="success" onClick={() => { handleApprove(selectedCancellation.id); setShowViewModal(false); setSelectedCancellation(null); }}>Approve</Button>
+              <Button variant="primary" onClick={() => { handleApprove(selectedCancellation.id); setShowViewModal(false); setSelectedCancellation(null); }}>Approve</Button>
               <Button variant="danger" onClick={() => { handleReject(selectedCancellation.id); setShowViewModal(false); setSelectedCancellation(null); }}>Reject</Button>
             </>
           )}
