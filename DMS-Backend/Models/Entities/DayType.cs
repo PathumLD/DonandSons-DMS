@@ -61,4 +61,6 @@ public class DayType : BaseEntity
     /// </summary>
     [Column("is_system_type")]
     public bool IsSystemType { get; set; } = false;
+
+    public decimal Multiplier => QuantityMultiplier;
 }

@@ -106,6 +106,13 @@ builder.Services.AddScoped<IIngredientService, IngredientService>();
 
 // Phase 4: Admin Master Data services
 builder.Services.AddScoped<IOutletService, OutletService>();
+builder.Services.AddScoped<IDeliveryTurnService, DeliveryTurnService>();
+builder.Services.AddScoped<IDayTypeService, DayTypeService>();
+builder.Services.AddScoped<IProductionSectionService, ProductionSectionService>();
+builder.Services.AddScoped<ISectionConsumableService, SectionConsumableService>();
+builder.Services.AddScoped<IOutletEmployeeService, OutletEmployeeService>();
+builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
+builder.Services.AddScoped<IApprovalQueueService, ApprovalQueueService>();
 
 // Admin Master Data services
 builder.Services.AddScoped<IOutletService, OutletService>();

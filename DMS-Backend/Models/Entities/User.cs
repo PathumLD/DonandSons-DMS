@@ -15,4 +15,6 @@ public sealed class User
     public DateTimeOffset UpdatedAt { get; set; }
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    public string FullName => $"{FirstName} {LastName}".Trim();
 }

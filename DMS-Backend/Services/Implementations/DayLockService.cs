@@ -108,4 +108,50 @@ public sealed class DayLockService : IDayLockService
             .Select(dl => dl.LockDate)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<dynamic> LockDayAsync(DateTime date, Guid? lockedBy, CancellationToken cancellationToken = default)
+    {
+        var lockDate = date.Date;
+        var existingLock = await _context.DayLocks
+            .FirstOrDefaultAsync(dl => dl.LockDate == lockDate, cancellationToken);
+
+        DayLock dayLock;
+        if (existingLock != null)
+        {
+            existingLock.IsLocked = true;
+            existingLock.LockedBy = lockedBy;
+            existingLock.LockedAt = DateTime.UtcNow;
+            existingLock.UpdatedAt = DateTime.UtcNow;
+            dayLock = existingLock;
+        }
+        else
+        {
+            dayLock = new DayLock
+            {
+                Id = Guid.NewGuid(),
+                LockDate = lockDate,
+                IsLocked = true,
+                LockedBy = lockedBy,
+                LockedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.DayLocks.Add(dayLock);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Date {Date} locked by user {UserId}", lockDate, lockedBy);
+
+        return dayLock;
+    }
+
+    public async Task<DateTime?> GetLastLockedDateAsync(CancellationToken cancellationToken = default)
+    {
+        return await GetLastDayEndDateAsync(cancellationToken);
+    }
+
+    public async Task<bool> IsDayLockedAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        return await IsDateLockedAsync(date, cancellationToken);
+    }
 }

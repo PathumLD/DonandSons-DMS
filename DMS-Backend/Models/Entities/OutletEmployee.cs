@@ -15,6 +15,10 @@ public class OutletEmployee : BaseEntity
     public Guid OutletId { get; set; }
 
     [Required]
+    [Column("user_id")]
+    public Guid UserId { get; set; }
+
+    [Required]
     [MaxLength(100)]
     [Column("employee_code")]
     public string EmployeeCode { get; set; } = string.Empty;
@@ -79,4 +83,7 @@ public class OutletEmployee : BaseEntity
     // Navigation properties
     [ForeignKey("OutletId")]
     public virtual Outlet Outlet { get; set; } = null!;
+
+    [ForeignKey("UserId")]
+    public virtual User User { get; set; } = null!;
 }

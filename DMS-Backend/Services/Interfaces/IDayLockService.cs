@@ -34,4 +34,19 @@ public interface IDayLockService
     /// Get all locked dates in a range
     /// </summary>
     Task<List<DateTime>> GetLockedDatesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lock a day (alias for LockDateAsync)
+    /// </summary>
+    Task<dynamic> LockDayAsync(DateTime date, Guid? lockedBy, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the last locked date
+    /// </summary>
+    Task<DateTime?> GetLastLockedDateAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if a day is locked (alias for IsDateLockedAsync)
+    /// </summary>
+    Task<bool> IsDayLockedAsync(DateTime date, CancellationToken cancellationToken = default);
 }

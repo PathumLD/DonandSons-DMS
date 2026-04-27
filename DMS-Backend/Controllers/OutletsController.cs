@@ -122,7 +122,7 @@ public class OutletsController : ControllerBase
             await _outletService.DeleteAsync(id, cancellationToken);
             return Ok(ApiResponse<object>.SuccessResponse(new { Message = "Outlet deleted successfully" }));
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(
                 Error.NotFound("Outlet", id.ToString())));

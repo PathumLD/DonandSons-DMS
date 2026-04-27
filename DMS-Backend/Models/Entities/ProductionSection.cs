@@ -51,6 +51,8 @@ public class ProductionSection : BaseEntity
     [Column("department")]
     public string? Department { get; set; }
 
+    public string? Location => Department;
+
     /// <summary>
     /// Manager or supervisor of this section.
     /// </summary>
@@ -78,4 +80,6 @@ public class ProductionSection : BaseEntity
 
     // Navigation properties
     public virtual ICollection<SectionConsumable> SectionConsumables { get; set; } = new List<SectionConsumable>();
+
+    public int DisplayOrder => SortOrder;
 }
