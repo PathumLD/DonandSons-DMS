@@ -569,6 +569,77 @@ namespace DMS_Backend.Migrations
                     b.ToTable("delivery_turns");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.GridConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ColumnSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("column_settings");
+
+                    b.Property<string>("ConfigurationName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("configuration_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FilterSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("filter_settings");
+
+                    b.Property<string>("GridName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("grid_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<bool>("IsShared")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_shared");
+
+                    b.Property<int?>("PageSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("page_size");
+
+                    b.Property<string>("SortSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("sort_settings");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("grid_configurations");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Ingredient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -664,6 +735,156 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("ingredients", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.LabelSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSystemSetting")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system_setting");
+
+                    b.Property<string>("SettingKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("setting_key");
+
+                    b.Property<string>("SettingName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("setting_name");
+
+                    b.Property<string>("SettingValue")
+                        .HasColumnType("text")
+                        .HasColumnName("setting_value");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("value_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("label_settings");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.LabelTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Fields")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("fields");
+
+                    b.Property<string>("FontSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("font_settings");
+
+                    b.Property<decimal>("HeightMm")
+                        .HasColumnType("numeric")
+                        .HasColumnName("height_mm");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("LayoutDesign")
+                        .HasColumnType("text")
+                        .HasColumnName("layout_design");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("TemplateType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("template_type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("WidthMm")
+                        .HasColumnType("numeric")
+                        .HasColumnName("width_mm");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("label_templates");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Outlet", b =>
@@ -853,6 +1074,10 @@ namespace DMS_Backend.Migrations
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
@@ -860,6 +1085,8 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("OutletId");
 
                     b.HasIndex("UpdatedById");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("outlet_employees");
                 });
@@ -948,6 +1175,138 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("Module");
 
                     b.ToTable("permissions", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.PriceList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PriceListType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("price_list_type");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer")
+                        .HasColumnName("priority");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("price_lists");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.PriceListItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("DiscountPercentage")
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("discount_percentage");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("max_quantity");
+
+                    b.Property<decimal?>("MinQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("min_quantity");
+
+                    b.Property<Guid>("PriceListId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("price_list_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("PriceListId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("price_list_items");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Product", b =>
@@ -1223,6 +1582,89 @@ namespace DMS_Backend.Migrations
                     b.ToTable("role_permissions", (string)null);
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.RoundingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AppliesTo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("applies_to");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DecimalPlaces")
+                        .HasColumnType("integer")
+                        .HasColumnName("decimal_places");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<decimal?>("MaxValue")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("max_value");
+
+                    b.Property<decimal?>("MinValue")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("min_value");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<decimal>("RoundingIncrement")
+                        .HasColumnType("decimal(10,4)")
+                        .HasColumnName("rounding_increment");
+
+                    b.Property<string>("RoundingMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("rounding_method");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("rounding_rules");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.SectionConsumable", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1284,6 +1726,90 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("section_consumables");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.SecurityPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnforced")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_enforced");
+
+                    b.Property<bool>("IsSystemPolicy")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system_policy");
+
+                    b.Property<DateTime?>("LastReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_reviewed_at");
+
+                    b.Property<string>("PolicyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("policy_key");
+
+                    b.Property<string>("PolicyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("policy_name");
+
+                    b.Property<string>("PolicyValue")
+                        .HasColumnType("text")
+                        .HasColumnName("policy_value");
+
+                    b.Property<string>("SeverityLevel")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("severity_level");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("value_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("security_policies");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.SystemLog", b =>
@@ -1547,6 +2073,97 @@ namespace DMS_Backend.Migrations
                     b.ToTable("user_roles", (string)null);
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.WorkflowConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ApprovalLevels")
+                        .HasColumnType("integer")
+                        .HasColumnName("approval_levels");
+
+                    b.Property<string>("ApprovalSteps")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("approval_steps");
+
+                    b.Property<decimal?>("AutoApproveThreshold")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("auto_approve_threshold");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<string>("EscalationConfig")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("escalation_config");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_enabled");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NotificationSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("notification_settings");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_approval");
+
+                    b.Property<int?>("TimeoutHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("timeout_hours");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkflowType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("workflow_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("workflow_configs");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ApprovalQueue", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedBy")
@@ -1641,6 +2258,27 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.GridConfiguration", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Ingredient", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.Category", "Category")
@@ -1668,6 +2306,36 @@ namespace DMS_Backend.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("UnitOfMeasure");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.LabelSetting", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.LabelTemplate", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -1709,11 +2377,19 @@ namespace DMS_Backend.Migrations
                         .WithMany()
                         .HasForeignKey("UpdatedById");
 
+                    b.HasOne("DMS_Backend.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Outlet");
 
                     b.Navigation("UpdatedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.PasswordResetToken", b =>
@@ -1725,6 +2401,52 @@ namespace DMS_Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.PriceList", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.PriceListItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.PriceList", "PriceList")
+                        .WithMany("PriceListItems")
+                        .HasForeignKey("PriceListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("PriceList");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Product", b =>
@@ -1802,6 +2524,21 @@ namespace DMS_Backend.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.RoundingRule", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.SectionConsumable", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
@@ -1829,6 +2566,21 @@ namespace DMS_Backend.Migrations
                     b.Navigation("Ingredient");
 
                     b.Navigation("ProductionSection");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.SecurityPolicy", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -1889,6 +2641,21 @@ namespace DMS_Backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.WorkflowConfig", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Category", b =>
                 {
                     b.Navigation("Products");
@@ -1907,6 +2674,11 @@ namespace DMS_Backend.Migrations
             modelBuilder.Entity("DMS_Backend.Models.Entities.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.PriceList", b =>
+                {
+                    b.Navigation("PriceListItems");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionSection", b =>

@@ -1,163 +1,510 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import { Save, Filter } from 'lucide-react';
-import { allProducts, getBakeryRoundingProducts } from '@/lib/mock-data/products-full';
-import { ProductionSection } from '@/lib/mock-data/enhanced-models';
+import { DataTable } from '@/components/ui/data-table';
+import { Modal, ModalFooter } from '@/components/ui/modal';
+import Input from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
+import { Calculator, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { roundingRulesApi, type RoundingRule, type CreateRoundingRuleDto, type UpdateRoundingRuleDto } from '@/lib/api/rounding-rules';
+import toast from 'react-hot-toast';
 
 export default function RoundingRulesPage() {
-  const [selectedSection, setSelectedSection] = useState<string>('all');
-  const [previewMode, setPreviewMode] = useState(false);
-  const [bulkRoundingValue, setBulkRoundingValue] = useState<number>(1);
+  const [roundingRules, setRoundingRules] = useState<RoundingRule[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<RoundingRule | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    appliesTo: 'Product',
+    roundingMethod: 'Nearest',
+    decimalPlaces: 2,
+    roundingIncrement: 1,
+    minValue: undefined as number | undefined,
+    maxValue: undefined as number | undefined,
+    sortOrder: 0,
+    isDefault: false,
+    isActive: true,
+  });
 
-  const sections: (ProductionSection | 'all')[] = [
-    'all',
-    'Bakery 1',
-    'Bakery 2',
-    'Filling Section',
-    'Plain Roll Section',
-    'Pastry Section',
-    'Short-Eats 1',
-    'Rotty Section'
-  ];
+  useEffect(() => {
+    loadRoundingRules();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const filteredProducts = selectedSection === 'all' 
-    ? allProducts 
-    : allProducts.filter(p => p.section === selectedSection);
-
-  const handleBulkApply = () => {
-    if (confirm(`Apply rounding value ${bulkRoundingValue} to ${filteredProducts.length} products?`)) {
-      setPreviewMode(false);
-      alert('Bulk rounding rules applied successfully!');
+  const loadRoundingRules = async () => {
+    try {
+      setLoading(true);
+      const response = await roundingRulesApi.getAll(currentPage, pageSize, searchTerm, undefined, undefined);
+      setRoundingRules(response.roundingRules);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load rounding rules');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleToggleActive = async (rule: RoundingRule) => {
+    try {
+      const updateData: UpdateRoundingRuleDto = {
+        code: rule.code,
+        name: rule.name,
+        description: rule.description,
+        appliesTo: rule.appliesTo,
+        roundingMethod: rule.roundingMethod,
+        decimalPlaces: rule.decimalPlaces,
+        roundingIncrement: rule.roundingIncrement,
+        minValue: rule.minValue,
+        maxValue: rule.maxValue,
+        sortOrder: rule.sortOrder,
+        isDefault: rule.isDefault,
+        isActive: !rule.isActive,
+      };
+      await roundingRulesApi.update(rule.id, updateData);
+      toast.success(`Rounding rule ${rule.isActive ? 'deactivated' : 'activated'}`);
+      loadRoundingRules();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update rounding rule');
+    }
+  };
+
+  const handleAddRule = async () => {
+    if (!formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const createData: CreateRoundingRuleDto = {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        appliesTo: formData.appliesTo,
+        roundingMethod: formData.roundingMethod,
+        decimalPlaces: formData.decimalPlaces,
+        roundingIncrement: formData.roundingIncrement,
+        minValue: formData.minValue,
+        maxValue: formData.maxValue,
+        sortOrder: formData.sortOrder,
+        isDefault: formData.isDefault,
+        isActive: formData.isActive,
+      };
+      await roundingRulesApi.create(createData);
+      toast.success('Rounding rule created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadRoundingRules();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create rounding rule');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditRule = async () => {
+    if (!selectedRule || !formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateRoundingRuleDto = {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        appliesTo: formData.appliesTo,
+        roundingMethod: formData.roundingMethod,
+        decimalPlaces: formData.decimalPlaces,
+        roundingIncrement: formData.roundingIncrement,
+        minValue: formData.minValue,
+        maxValue: formData.maxValue,
+        sortOrder: formData.sortOrder,
+        isDefault: formData.isDefault,
+        isActive: formData.isActive,
+      };
+      await roundingRulesApi.update(selectedRule.id, updateData);
+      toast.success('Rounding rule updated successfully');
+      setShowEditModal(false);
+      setSelectedRule(null);
+      resetForm();
+      loadRoundingRules();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update rounding rule');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      description: '',
+      appliesTo: 'Product',
+      roundingMethod: 'Nearest',
+      decimalPlaces: 2,
+      roundingIncrement: 1,
+      minValue: undefined,
+      maxValue: undefined,
+      sortOrder: 0,
+      isDefault: false,
+      isActive: true,
+    });
+  };
+
+  const openEditModal = (rule: RoundingRule) => {
+    setSelectedRule(rule);
+    setFormData({
+      code: rule.code,
+      name: rule.name,
+      description: rule.description || '',
+      appliesTo: rule.appliesTo,
+      roundingMethod: rule.roundingMethod,
+      decimalPlaces: rule.decimalPlaces,
+      roundingIncrement: rule.roundingIncrement,
+      minValue: rule.minValue,
+      maxValue: rule.maxValue,
+      sortOrder: rule.sortOrder,
+      isDefault: rule.isDefault,
+      isActive: rule.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const columns = [
+    {
+      key: 'code',
+      label: 'Code',
+      render: (item: RoundingRule) => (
+        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+          {item.code}
+        </span>
+      ),
+    },
+    {
+      key: 'name',
+      label: 'Rule Name',
+      render: (item: RoundingRule) => (
+        <div>
+          <span className="font-medium">{item.name}</span>
+          {item.description && (
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              {item.description}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'appliesTo',
+      label: 'Applies To',
+      render: (item: RoundingRule) => (
+        <Badge variant="neutral" size="sm">{item.appliesTo}</Badge>
+      ),
+    },
+    {
+      key: 'roundingMethod',
+      label: 'Method',
+      render: (item: RoundingRule) => (
+        <span className="text-sm">{item.roundingMethod}</span>
+      ),
+    },
+    {
+      key: 'increment',
+      label: 'Increment',
+      render: (item: RoundingRule) => (
+        <span className="text-sm font-mono">{item.roundingIncrement}</span>
+      ),
+    },
+    {
+      key: 'isDefault',
+      label: 'Default',
+      render: (item: RoundingRule) => (
+        item.isDefault ? <Badge variant="info" size="sm">Default</Badge> : null
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (item: RoundingRule) => (
+        item.isActive ? (
+          <Badge variant="success" size="sm">Active</Badge>
+        ) : (
+          <Badge variant="danger" size="sm">Inactive</Badge>
+        )
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item: RoundingRule) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => openEditModal(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleActive(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
+          >
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const renderForm = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Rule Code"
+          value={formData.code}
+          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+          placeholder="e.g., RND001"
+          fullWidth
+          required
+        />
+        <Input
+          label="Rule Name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="Standard Rounding"
+          fullWidth
+          required
+        />
+      </div>
+      <Input
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Optional description"
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Applies To <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.appliesTo}
+            onChange={(e) => setFormData({ ...formData, appliesTo: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg text-sm"
+            style={{ border: '1px solid var(--input)' }}
+          >
+            <option value="Product">Product</option>
+            <option value="Price">Price</option>
+            <option value="Quantity">Quantity</option>
+            <option value="Total">Total</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Rounding Method <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.roundingMethod}
+            onChange={(e) => setFormData({ ...formData, roundingMethod: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg text-sm"
+            style={{ border: '1px solid var(--input)' }}
+          >
+            <option value="Nearest">Nearest</option>
+            <option value="Up">Up</option>
+            <option value="Down">Down</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Decimal Places"
+          type="number"
+          value={formData.decimalPlaces.toString()}
+          onChange={(e) => setFormData({ ...formData, decimalPlaces: parseInt(e.target.value) || 0 })}
+          fullWidth
+          required
+        />
+        <Input
+          label="Rounding Increment"
+          type="number"
+          step="0.01"
+          value={formData.roundingIncrement.toString()}
+          onChange={(e) => setFormData({ ...formData, roundingIncrement: parseFloat(e.target.value) || 1 })}
+          fullWidth
+          required
+        />
+        <Input
+          label="Sort Order"
+          type="number"
+          value={formData.sortOrder.toString()}
+          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+          fullWidth
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Min Value (Optional)"
+          type="number"
+          step="0.01"
+          value={formData.minValue?.toString() || ''}
+          onChange={(e) => setFormData({ ...formData, minValue: e.target.value ? parseFloat(e.target.value) : undefined })}
+          fullWidth
+        />
+        <Input
+          label="Max Value (Optional)"
+          type="number"
+          step="0.01"
+          value={formData.maxValue?.toString() || ''}
+          onChange={(e) => setFormData({ ...formData, maxValue: e.target.value ? parseFloat(e.target.value) : undefined })}
+          fullWidth
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        <Toggle
+          checked={formData.isDefault}
+          onChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+          label="Set as Default"
+        />
+        <Toggle
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          label="Active Status"
+        />
+      </div>
+    </div>
+  );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Rounding Rules Manager</h1>
-        <p className="text-gray-600 mt-1">
-          Bulk manage rounding values for products by section
-        </p>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Calculator className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Rounding Rules
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Manage rounding rules for prices and quantities ({totalCount} rules)
+          </p>
+        </div>
+        <Button variant="primary" size="md" onClick={() => {
+          resetForm();
+          setShowAddModal(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Rounding Rule
+        </Button>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-2">Section</label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                {sections.map(section => (
-                  <option key={section} value={section}>
-                    {section === 'all' ? 'All Sections' : section}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="w-48">
-              <label className="block text-sm font-medium mb-2">Bulk Rounding Value</label>
-              <select
-                value={bulkRoundingValue}
-                onChange={(e) => setBulkRoundingValue(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                <option value={1}>Round to 1</option>
-                <option value={5}>Round to 5</option>
-                <option value={10}>Round to 10</option>
-                <option value={0.25}>Round to 0.25</option>
-              </select>
-            </div>
-            <Button
-              onClick={() => setPreviewMode(true)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Preview ({filteredProducts.length} items)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview */}
-      {previewMode && (
-        <Card className="mb-6 border-2 border-blue-500">
-          <CardHeader className="bg-blue-50">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-blue-900">Preview Changes</CardTitle>
-              <div className="flex gap-2">
-                <Button onClick={handleBulkApply} variant="primary">
-                  <Save className="w-4 h-4 mr-2" />
-                  Apply to {filteredProducts.length} Products
-                </Button>
-                <Button onClick={() => setPreviewMode(false)} variant="outline">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Products Table */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            Products ({filteredProducts.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 text-sm font-semibold">Code</th>
-                  <th className="text-left p-2 text-sm font-semibold">Product Name</th>
-                  <th className="text-left p-2 text-sm font-semibold">Section</th>
-                  <th className="text-center p-2 text-sm font-semibold">Current Rounding</th>
-                  <th className="text-center p-2 text-sm font-semibold">
-                    {previewMode ? 'New Rounding' : 'New Value'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map(product => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-mono text-sm">{product.code}</td>
-                    <td className="p-2">{product.name}</td>
-                    <td className="p-2 text-sm text-gray-600">{product.section}</td>
-                    <td className="p-2 text-center">
-                      <span className="px-2 py-1 bg-gray-100 rounded text-sm font-semibold">
-                        {product.roundingValue}
-                      </span>
-                    </td>
-                    <td className="p-2 text-center">
-                      {previewMode ? (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold">
-                          {bulkRoundingValue}
-                        </span>
-                      ) : (
-                        <input
-                          type="number"
-                          step="0.25"
-                          defaultValue={product.roundingValue}
-                          className="w-20 px-2 py-1 border rounded text-center"
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>Rounding Rules List</CardTitle>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input
+                type="text"
+                placeholder="Search rounding rules..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
+              />
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
+            </div>
+          ) : (
+            <DataTable
+              data={roundingRules}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
+
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add Rounding Rule"
+        size="lg"
+      >
+        {renderForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddRule} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Rule'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedRule(null);
+          resetForm();
+        }}
+        title="Edit Rounding Rule"
+        size="lg"
+      >
+        {renderForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => {
+            setShowEditModal(false);
+            setSelectedRule(null);
+            resetForm();
+          }} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleEditRule} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

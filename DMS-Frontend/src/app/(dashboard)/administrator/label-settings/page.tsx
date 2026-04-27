@@ -1,420 +1,398 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
+import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
-import { Save, Shield, Edit2, Plus, Trash2 } from 'lucide-react';
+import Input from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
+import { Settings, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useAuthStore } from '@/lib/stores/auth-store';
-import { isAdminUser } from '@/lib/date-restrictions';
-
-interface LabelPrinter {
-  id: number;
-  printerName: string;
-}
-
-interface TemplateMapping {
-  id: number;
-  templateName: string;
-  printerName: string;
-}
-
-interface PrintingComment {
-  id: number;
-  comment: string;
-}
+import { labelSettingsApi, type LabelSetting, type CreateLabelSettingDto, type UpdateLabelSettingDto } from '@/lib/api/label-settings';
+import toast from 'react-hot-toast';
 
 export default function LabelSettingsPage() {
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = isAdminUser(user);
+  const [settings, setSettings] = useState<LabelSetting[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSetting, setSelectedSetting] = useState<LabelSetting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    settingKey: '',
+    settingName: '',
+    settingValue: '',
+    description: '',
+    category: '',
+    valueType: 'string',
+    sortOrder: 0,
+    isSystemSetting: false,
+    isActive: true,
+  });
 
-  // Defined Label Printers
-  const [printers, setPrinters] = useState<LabelPrinter[]>([
-    { id: 1, printerName: 'Datamax (GOA) BPL' },
-    { id: 2, printerName: 'Datamax (Gold-Shop) DA' },
-    { id: 3, printerName: 'Datamax (Galle BFL)' },
-    { id: 4, printerName: 'Datamax (YT) label - test' },
-  ]);
+  useEffect(() => {
+    loadSettings();
+  }, [currentPage, pageSize, searchTerm]);
 
-  // Set Template to Printer
-  const [templateMappings, setTemplateMappings] = useState<TemplateMapping[]>([
-    { id: 1, templateName: 'label 1 zone', printerName: '' },
-    { id: 2, templateName: 'label 2 with Code', printerName: '' },
-    { id: 3, templateName: 'BONK sandwich', printerName: '' },
-    { id: 4, templateName: 'bread', printerName: '' },
-    { id: 5, templateName: 'bread 2', printerName: '' },
-    { id: 6, templateName: 'Grain Stock & Gmo', printerName: '' },
-    { id: 7, templateName: 'Label -adrees 12pc', printerName: '' },
-    { id: 8, templateName: 'Medium Label For New shop', printerName: '' },
-    { id: 9, templateName: 'medium label-old', printerName: '' },
-    { id: 10, templateName: 'Madium Size 12pc (Best seller)', printerName: '' },
-    { id: 11, templateName: 'grain All Stock label', printerName: '' },
-    { id: 12, templateName: 'Small For new shop-Label', printerName: '' },
-  ]);
-
-  // Defined Label Printing Comments
-  const [comments, setComments] = useState<PrintingComment[]>([
-    { id: 1, comment: 'NO ADDED PRESERVATIVES' },
-    { id: 2, comment: '100% NATURAL PRODUCT' },
-    { id: 3, comment: 'award Winer' },
-    { id: 4, comment: 'Fresh' },
-    { id: 5, comment: 'CHICKEN' },
-  ]);
-
-  // Modal states
-  const [showAddPrinterModal, setShowAddPrinterModal] = useState(false);
-  const [showEditPrinterModal, setShowEditPrinterModal] = useState(false);
-  const [showEditMappingModal, setShowEditMappingModal] = useState(false);
-  const [showAddCommentModal, setShowAddCommentModal] = useState(false);
-
-  const [editingPrinter, setEditingPrinter] = useState<LabelPrinter | null>(null);
-  const [editingMapping, setEditingMapping] = useState<TemplateMapping | null>(null);
-  const [newPrinterName, setNewPrinterName] = useState('');
-  const [newComment, setNewComment] = useState('');
-
-  // Handlers
-  const handleAddPrinter = () => {
-    if (!newPrinterName.trim()) return;
-    setPrinters([...printers, { id: Math.max(...printers.map(p => p.id), 0) + 1, printerName: newPrinterName }]);
-    setNewPrinterName('');
-    setShowAddPrinterModal(false);
-  };
-
-  const handleEditPrinter = () => {
-    if (!editingPrinter || !editingPrinter.printerName.trim()) return;
-    setPrinters(printers.map(p => p.id === editingPrinter.id ? editingPrinter : p));
-    setEditingPrinter(null);
-    setShowEditPrinterModal(false);
-  };
-
-  const handleDeletePrinter = (id: number) => {
-    if (confirm('Are you sure you want to delete this printer?')) {
-      setPrinters(printers.filter(p => p.id !== id));
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await labelSettingsApi.getAll(currentPage, pageSize, searchTerm, undefined, undefined);
+      setSettings(response.labelSettings);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load label settings');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditMapping = () => {
-    if (!editingMapping) return;
-    setTemplateMappings(templateMappings.map(m => m.id === editingMapping.id ? editingMapping : m));
-    setEditingMapping(null);
-    setShowEditMappingModal(false);
-  };
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments([...comments, { id: Math.max(...comments.map(c => c.id), 0) + 1, comment: newComment }]);
-    setNewComment('');
-    setShowAddCommentModal(false);
-  };
-
-  const handleDeleteComment = (id: number) => {
-    if (confirm('Are you sure you want to delete this comment?')) {
-      setComments(comments.filter(c => c.id !== id));
+  const handleToggleActive = async (setting: LabelSetting) => {
+    try {
+      const updateData: UpdateLabelSettingDto = {
+        ...setting,
+        isActive: !setting.isActive,
+      };
+      await labelSettingsApi.update(setting.id, updateData);
+      toast.success(`Setting ${setting.isActive ? 'deactivated' : 'activated'}`);
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update setting');
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Shield className="w-12 h-12 mx-auto mb-4" style={{ color: '#DC2626' }} />
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Admin Access Required</h2>
-            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              Label Settings are only visible to administrators (per requirement 6.iv).
-            </p>
-          </CardContent>
-        </Card>
+  const handleAddSetting = async () => {
+    if (!formData.settingKey || !formData.settingName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await labelSettingsApi.create(formData);
+      toast.success('Setting created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create setting');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditSetting = async () => {
+    if (!selectedSetting || !formData.settingKey || !formData.settingName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await labelSettingsApi.update(selectedSetting.id, formData);
+      toast.success('Setting updated successfully');
+      setShowEditModal(false);
+      setSelectedSetting(null);
+      resetForm();
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update setting');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      settingKey: '',
+      settingName: '',
+      settingValue: '',
+      description: '',
+      category: '',
+      valueType: 'string',
+      sortOrder: 0,
+      isSystemSetting: false,
+      isActive: true,
+    });
+  };
+
+  const openEditModal = (setting: LabelSetting) => {
+    setSelectedSetting(setting);
+    setFormData({
+      settingKey: setting.settingKey,
+      settingName: setting.settingName,
+      settingValue: setting.settingValue || '',
+      description: setting.description || '',
+      category: setting.category || '',
+      valueType: setting.valueType,
+      sortOrder: setting.sortOrder,
+      isSystemSetting: setting.isSystemSetting,
+      isActive: setting.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const columns = [
+    {
+      key: 'settingKey',
+      label: 'Setting Key',
+      render: (item: LabelSetting) => (
+        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+          {item.settingKey}
+        </span>
+      ),
+    },
+    {
+      key: 'settingName',
+      label: 'Setting Name',
+      render: (item: LabelSetting) => (
+        <div>
+          <span className="font-medium">{item.settingName}</span>
+          {item.description && (
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              {item.description}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'settingValue',
+      label: 'Value',
+      render: (item: LabelSetting) => (
+        <span className="text-sm font-mono">{item.settingValue || '-'}</span>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (item: LabelSetting) => (
+        item.category ? <Badge variant="neutral" size="sm">{item.category}</Badge> : null
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (item: LabelSetting) => (
+        item.isActive ? (
+          <Badge variant="success" size="sm">Active</Badge>
+        ) : (
+          <Badge variant="danger" size="sm">Inactive</Badge>
+        )
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item: LabelSetting) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => openEditModal(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          {!item.isSystemSetting && (
+            <button
+              onClick={() => handleToggleActive(item)}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title={item.isActive ? 'Deactivate' : 'Activate'}
+            >
+              {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const renderForm = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Setting Key"
+          value={formData.settingKey}
+          onChange={(e) => setFormData({ ...formData, settingKey: e.target.value })}
+          placeholder="e.g., LABEL_FONT_SIZE"
+          fullWidth
+          required
+          disabled={selectedSetting?.isSystemSetting}
+        />
+        <Input
+          label="Setting Name"
+          value={formData.settingName}
+          onChange={(e) => setFormData({ ...formData, settingName: e.target.value })}
+          placeholder="Label Font Size"
+          fullWidth
+          required
+        />
       </div>
-    );
-  }
+      <Input
+        label="Setting Value"
+        value={formData.settingValue}
+        onChange={(e) => setFormData({ ...formData, settingValue: e.target.value })}
+        placeholder="Value"
+        fullWidth
+      />
+      <Input
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Optional description"
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Category"
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          placeholder="e.g., Display"
+          fullWidth
+        />
+        <Input
+          label="Value Type"
+          value={formData.valueType}
+          onChange={(e) => setFormData({ ...formData, valueType: e.target.value })}
+          placeholder="string, number, boolean"
+          fullWidth
+        />
+        <Input
+          label="Sort Order"
+          type="number"
+          value={formData.sortOrder.toString()}
+          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+          fullWidth
+        />
+      </div>
+      <div className="pt-2">
+        <Toggle
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          label="Active Status"
+          disabled={selectedSetting?.isSystemSetting}
+        />
+      </div>
+    </div>
+  );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Label Settings</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Settings className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Label Settings
+          </h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Configure label printers, template mappings, and printing comments
+            Configure label printing settings and preferences ({totalCount} settings)
           </p>
-          <div className="mt-2">
-            <Badge variant="primary" size="sm">
-              <Shield className="w-3 h-3 mr-1" />
-              Admin only
-            </Badge>
-          </div>
         </div>
+        <Button variant="primary" size="md" onClick={() => {
+          resetForm();
+          setShowAddModal(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Setting
+        </Button>
       </div>
 
-      {/* Defined Label Printers */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Defined Label Printers</CardTitle>
-            <Button variant="primary" size="sm" onClick={() => setShowAddPrinterModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Printer
-            </Button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>Label Settings List</CardTitle>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input
+                type="text"
+                placeholder="Search settings..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
+              />
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-            <table className="w-full text-sm">
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Printer Name</th>
-                  <th className="text-center px-4 py-3 font-medium" style={{ color: 'var(--foreground)', width: '120px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {printers.length === 0 ? (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center" style={{ color: 'var(--muted-foreground)' }}>
-                      No printers defined.
-                    </td>
-                  </tr>
-                ) : (
-                  printers.map((printer) => (
-                    <tr key={printer.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                      <td className="px-4 py-3" style={{ color: 'var(--foreground)' }}>{printer.printerName}</td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => { setEditingPrinter(printer); setShowEditPrinterModal(true); }}
-                            className="p-1.5 rounded transition-colors"
-                            style={{ color: '#3B82F6' }}
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePrinter(printer.id)}
-                            className="p-1.5 rounded transition-colors"
-                            style={{ color: '#DC2626' }}
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
+            </div>
+          ) : (
+            <DataTable
+              data={settings}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Set Template to Printer */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Set Template to Printer</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-            <table className="w-full text-sm">
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Template Name</th>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Printer Name</th>
-                  <th className="text-center px-4 py-3 font-medium" style={{ color: 'var(--foreground)', width: '100px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {templateMappings.map((mapping) => (
-                  <tr key={mapping.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <td className="px-4 py-3" style={{ color: 'var(--foreground)' }}>{mapping.templateName}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--muted-foreground)' }}>
-                      {mapping.printerName || <span style={{ color: '#D1D5DB' }}>Not assigned</span>}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => { setEditingMapping(mapping); setShowEditMappingModal(true); }}
-                        className="p-1.5 rounded transition-colors"
-                        style={{ color: '#3B82F6' }}
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Defined Label Printing Comments */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Defined Label Printing Comments</CardTitle>
-            <Button variant="primary" size="sm" onClick={() => setShowAddCommentModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Comment
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-            <table className="w-full text-sm">
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Comments</th>
-                  <th className="text-center px-4 py-3 font-medium" style={{ color: 'var(--foreground)', width: '100px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comments.length === 0 ? (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center" style={{ color: 'var(--muted-foreground)' }}>
-                      No comments defined.
-                    </td>
-                  </tr>
-                ) : (
-                  comments.map((comment) => (
-                    <tr key={comment.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                      <td className="px-4 py-3" style={{ color: 'var(--foreground)' }}>{comment.comment}</td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="p-1.5 rounded transition-colors"
-                          style={{ color: '#DC2626' }}
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Add Printer Modal */}
       <Modal
-        isOpen={showAddPrinterModal}
-        onClose={() => { setShowAddPrinterModal(false); setNewPrinterName(''); }}
-        title="Add Label Printer"
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add Label Setting"
         size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Printer Name"
-            value={newPrinterName}
-            onChange={(e) => setNewPrinterName(e.target.value)}
-            placeholder="Enter printer name"
-            fullWidth
-          />
-        </div>
+        {renderForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowAddPrinterModal(false); setNewPrinterName(''); }}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddPrinter}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Printer
+          <Button variant="primary" onClick={handleAddSetting} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Setting'}
           </Button>
         </ModalFooter>
       </Modal>
 
-      {/* Edit Printer Modal */}
       <Modal
-        isOpen={showEditPrinterModal}
-        onClose={() => { setShowEditPrinterModal(false); setEditingPrinter(null); }}
-        title="Edit Label Printer"
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedSetting(null);
+          resetForm();
+        }}
+        title="Edit Label Setting"
         size="md"
       >
-        {editingPrinter && (
-          <div className="space-y-4">
-            <Input
-              label="Printer Name"
-              value={editingPrinter.printerName}
-              onChange={(e) => setEditingPrinter({ ...editingPrinter, printerName: e.target.value })}
-              fullWidth
-            />
-          </div>
-        )}
+        {renderForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowEditPrinterModal(false); setEditingPrinter(null); }}>
+          <Button variant="ghost" onClick={() => {
+            setShowEditModal(false);
+            setSelectedSetting(null);
+            resetForm();
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditPrinter}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Changes
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Template Mapping Modal */}
-      <Modal
-        isOpen={showEditMappingModal}
-        onClose={() => { setShowEditMappingModal(false); setEditingMapping(null); }}
-        title="Set Template to Printer"
-        size="md"
-      >
-        {editingMapping && (
-          <div className="space-y-4">
-            <Input
-              label="Template Name"
-              value={editingMapping.templateName}
-              disabled
-              fullWidth
-            />
-            <Select
-              label="Printer Name"
-              value={editingMapping.printerName}
-              onChange={(e) => setEditingMapping({ ...editingMapping, printerName: e.target.value })}
-              options={[
-                { value: '', label: '-- Select Printer --' },
-                ...printers.map(p => ({ value: p.printerName, label: p.printerName }))
-              ]}
-              fullWidth
-            />
-          </div>
-        )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowEditMappingModal(false); setEditingMapping(null); }}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditMapping}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Mapping
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Add Comment Modal */}
-      <Modal
-        isOpen={showAddCommentModal}
-        onClose={() => { setShowAddCommentModal(false); setNewComment(''); }}
-        title="Add Printing Comment"
-        size="md"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Comment"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Enter printing comment"
-            fullWidth
-          />
-        </div>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowAddCommentModal(false); setNewComment(''); }}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddComment}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Comment
+          <Button variant="primary" onClick={handleEditSetting} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>

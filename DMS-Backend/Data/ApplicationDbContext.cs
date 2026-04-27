@@ -39,6 +39,16 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<ApprovalQueue> ApprovalQueues => Set<ApprovalQueue>();
 
+    // Phase 4: Label, Pricing, Grid, Workflow, Security entities
+    public DbSet<LabelTemplate> LabelTemplates => Set<LabelTemplate>();
+    public DbSet<LabelSetting> LabelSettings => Set<LabelSetting>();
+    public DbSet<RoundingRule> RoundingRules => Set<RoundingRule>();
+    public DbSet<PriceList> PriceLists => Set<PriceList>();
+    public DbSet<PriceListItem> PriceListItems => Set<PriceListItem>();
+    public DbSet<GridConfiguration> GridConfigurations => Set<GridConfiguration>();
+    public DbSet<WorkflowConfig> WorkflowConfigs => Set<WorkflowConfig>();
+    public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

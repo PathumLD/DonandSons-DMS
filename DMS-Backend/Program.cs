@@ -114,8 +114,14 @@ builder.Services.AddScoped<IOutletEmployeeService, OutletEmployeeService>();
 builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 builder.Services.AddScoped<IApprovalQueueService, ApprovalQueueService>();
 
-// Admin Master Data services
-builder.Services.AddScoped<IOutletService, OutletService>();
+// Phase 4: Label, Pricing, Grid, Workflow, Security services
+builder.Services.AddScoped<ILabelTemplateService, LabelTemplateService>();
+builder.Services.AddScoped<ILabelSettingService, LabelSettingService>();
+builder.Services.AddScoped<IRoundingRuleService, RoundingRuleService>();
+builder.Services.AddScoped<IPriceListService, PriceListService>();
+builder.Services.AddScoped<IGridConfigurationService, GridConfigurationService>();
+builder.Services.AddScoped<IWorkflowConfigService, WorkflowConfigService>();
+builder.Services.AddScoped<ISecurityPolicyService, SecurityPolicyService>();
 
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));

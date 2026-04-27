@@ -48,7 +48,7 @@ public sealed class DeliveryTurnService : IDeliveryTurnService
         var totalCount = await query.CountAsync(cancellationToken);
 
         var deliveryTurns = await query
-            .OrderBy(dt => dt.DisplayOrder)
+            .OrderBy(dt => dt.SortOrder)
             .ThenBy(dt => dt.DeliveryTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

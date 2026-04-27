@@ -1,721 +1,466 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import { Toggle } from '@/components/ui/toggle';
+import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
-import { Save, RefreshCw, Shield, Lock, Unlock, Plus, Trash2, AlertTriangle, Settings2, Info } from 'lucide-react';
+import Input from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
+import { Settings, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useAuthStore } from '@/lib/stores/auth-store';
-import { useThemeStore } from '@/lib/stores/theme-store';
-import { isAdminUser } from '@/lib/date-restrictions';
-
-interface UserDateRange {
-  id: number;
-  username: string;
-  module: 'Delivery' | 'Disposal' | 'Transfer' | 'Stock BF' | 'Cancellation' | 'Delivery Return' | 'Label Printing';
-  backDays: number;
-  futureDays: number;
-}
-
-interface DayLockEntry {
-  id: number;
-  date: string;
-  reason: string;
-  lockedBy: string;
-  lockedAt: string;
-}
-
-interface SystemAdminSetting {
-  name: string;
-  value: number;
-  description: string;
-}
+import { systemSettingsApi, type SystemSetting, type CreateSystemSettingDto, type UpdateSystemSettingDto } from '@/lib/api/system-settings';
+import toast from 'react-hot-toast';
 
 export default function SystemSettingsPage() {
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = isAdminUser(user);
-  const { pageThemes, setPageTheme, resetPageTheme } = useThemeStore();
-
-  const [userDateRanges, setUserDateRanges] = useState<UserDateRange[]>([
-    { id: 1, username: 'manager.colombo', module: 'Delivery', backDays: 7, futureDays: 14 },
-    { id: 2, username: 'manager.kandy', module: 'Transfer', backDays: 3, futureDays: 0 },
-  ]);
-  const [newRange, setNewRange] = useState<{ username: string; module: UserDateRange['module']; backDays: string; futureDays: string }>({
-    username: '',
-    module: 'Delivery',
-    backDays: '0',
-    futureDays: '0',
+  const [settings, setSettings] = useState<SystemSetting[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSetting, setSelectedSetting] = useState<SystemSetting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    settingKey: '',
+    settingName: '',
+    settingValue: '',
+    settingType: 'String',
+    description: '',
+    category: 'General',
+    isSystemSetting: false,
+    isEncrypted: false,
+    displayOrder: 0,
+    isActive: true,
   });
 
-  const [lockedDays, setLockedDays] = useState<DayLockEntry[]>([
-    { id: 1, date: '2026-04-01', reason: 'Month-end closing', lockedBy: 'admin', lockedAt: '2026-04-02 18:00' },
-  ]);
-  const [newLock, setNewLock] = useState({ date: '', reason: '' });
+  useEffect(() => {
+    loadSettings();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const [systemAdminSettings, setSystemAdminSettings] = useState<SystemAdminSetting[]>([
-    { 
-      name: 'Dispose Date Change', 
-      value: 0, 
-      description: 'Allow to non-admin users to change Dispose Date in Disposal - [0 - Disallow, 1- Allow ]' 
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await systemSettingsApi.getAll(currentPage, pageSize, undefined, searchTerm, undefined);
+      setSettings(response.settings);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load system settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (setting: SystemSetting) => {
+    try {
+      const updateData: UpdateSystemSettingDto = {
+        settingKey: setting.settingKey,
+        settingName: setting.settingName,
+        settingValue: setting.settingValue,
+        settingType: setting.settingType,
+        description: setting.description,
+        category: setting.category,
+        isSystemSetting: setting.isSystemSetting,
+        isEncrypted: setting.isEncrypted,
+        displayOrder: setting.displayOrder,
+        isActive: !setting.isActive,
+      };
+      await systemSettingsApi.update(setting.id, updateData);
+      toast.success(`Setting ${setting.isActive ? 'deactivated' : 'activated'}`);
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update setting');
+    }
+  };
+
+  const handleAddSetting = async () => {
+    if (!formData.settingKey || !formData.settingName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const createData: CreateSystemSettingDto = {
+        settingKey: formData.settingKey,
+        settingName: formData.settingName,
+        settingValue: formData.settingValue,
+        settingType: formData.settingType,
+        description: formData.description,
+        category: formData.category,
+        isSystemSetting: formData.isSystemSetting,
+        isEncrypted: formData.isEncrypted,
+        displayOrder: formData.displayOrder,
+        isActive: formData.isActive,
+      };
+      await systemSettingsApi.create(createData);
+      toast.success('System setting created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create setting');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditSetting = async () => {
+    if (!selectedSetting || !formData.settingKey || !formData.settingName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateSystemSettingDto = {
+        settingKey: formData.settingKey,
+        settingName: formData.settingName,
+        settingValue: formData.settingValue,
+        settingType: formData.settingType,
+        description: formData.description,
+        category: formData.category,
+        isSystemSetting: formData.isSystemSetting,
+        isEncrypted: formData.isEncrypted,
+        displayOrder: formData.displayOrder,
+        isActive: formData.isActive,
+      };
+      await systemSettingsApi.update(selectedSetting.id, updateData);
+      toast.success('System setting updated successfully');
+      setShowEditModal(false);
+      setSelectedSetting(null);
+      resetForm();
+      loadSettings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update setting');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      settingKey: '',
+      settingName: '',
+      settingValue: '',
+      settingType: 'String',
+      description: '',
+      category: 'General',
+      isSystemSetting: false,
+      isEncrypted: false,
+      displayOrder: 0,
+      isActive: true,
+    });
+  };
+
+  const openEditModal = (setting: SystemSetting) => {
+    setSelectedSetting(setting);
+    setFormData({
+      settingKey: setting.settingKey,
+      settingName: setting.settingName,
+      settingValue: setting.settingValue || '',
+      settingType: setting.settingType,
+      description: setting.description || '',
+      category: setting.category || 'General',
+      isSystemSetting: setting.isSystemSetting,
+      isEncrypted: setting.isEncrypted,
+      displayOrder: setting.displayOrder,
+      isActive: setting.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const columns = [
+    {
+      key: 'settingKey',
+      label: 'Setting Key',
+      render: (item: SystemSetting) => (
+        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+          {item.settingKey}
+        </span>
+      ),
     },
-    { 
-      name: 'Delivered Date Change', 
-      value: 0, 
-      description: 'Allow to non-admin users to change Delivered Date in Disposal - [0 - Disallow, 1- Allow ]' 
+    {
+      key: 'settingName',
+      label: 'Setting Name',
+      render: (item: SystemSetting) => (
+        <div>
+          <span className="font-medium">{item.settingName}</span>
+          {item.description && (
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              {item.description}
+            </div>
+          )}
+        </div>
+      ),
     },
-    { 
-      name: 'Block the current date in Stock BF', 
-      value: 1, 
-      description: 'Block the current date in Stock BF for non-admin users [0 - Disable, 1- Enable ]' 
+    {
+      key: 'settingValue',
+      label: 'Value',
+      render: (item: SystemSetting) => (
+        <span className="text-sm font-mono">{item.isEncrypted ? '********' : (item.settingValue || '-')}</span>
+      ),
     },
-    { 
-      name: 'Day Locking for non-admins', 
-      value: 1, 
-      description: '0- Disable to lock non-admins, 1- Allow to lock non-admins' 
+    {
+      key: 'category',
+      label: 'Category',
+      render: (item: SystemSetting) => (
+        <Badge variant="neutral" size="sm">{item.category || 'General'}</Badge>
+      ),
     },
-    { 
-      name: 'Day UnLocking for non-admins', 
-      value: 0, 
-      description: '0- Disable to Unlock for non-admins, 1- Allow to Unlock non-admins' 
+    {
+      key: 'isSystemSetting',
+      label: 'Type',
+      render: (item: SystemSetting) => (
+        item.isSystemSetting ? <Badge variant="warning" size="sm">System</Badge> : <Badge variant="neutral" size="sm">Custom</Badge>
+      ),
     },
-  ]);
-  const [editingSetting, setEditingSetting] = useState<{ name: string; value: number } | null>(null);
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (item: SystemSetting) => (
+        item.isActive ? (
+          <Badge variant="success" size="sm">Active</Badge>
+        ) : (
+          <Badge variant="danger" size="sm">Inactive</Badge>
+        )
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item: SystemSetting) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => openEditModal(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleActive(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
+          >
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          </button>
+        </div>
+      ),
+    },
+  ];
 
-  const [settings, setSettings] = useState({
-    companyName: 'Don & Sons (Pvt) Ltd',
-    companyAddress: 'Malabe, Sri Lanka',
-    companyPhone: '011-1234567',
-    companyEmail: 'info@donandson.com',
-    currency: 'LKR',
-    taxRate: '0',
-    dateFormat: 'DD/MM/YYYY',
-    timeFormat: '24',
-    language: 'en',
-    autoBackup: true,
-    emailNotifications: true,
-    smsNotifications: false,
-    lowStockAlert: true,
-    lowStockThreshold: '50',
-    sessionTimeout: '30',
-    maxLoginAttempts: '5',
-  });
-
-  const handleSave = () => {
-    console.log('Saving settings:', settings);
-  };
-
-  const handleAddRange = () => {
-    if (!newRange.username) return;
-    setUserDateRanges([
-      ...userDateRanges,
-      {
-        id: Math.max(0, ...userDateRanges.map(r => r.id)) + 1,
-        username: newRange.username,
-        module: newRange.module,
-        backDays: Number(newRange.backDays || 0),
-        futureDays: Number(newRange.futureDays || 0),
-      },
-    ]);
-    setNewRange({ username: '', module: 'Delivery', backDays: '0', futureDays: '0' });
-  };
-
-  const handleRemoveRange = (id: number) => {
-    setUserDateRanges(userDateRanges.filter(r => r.id !== id));
-  };
-
-  const handleLockDay = () => {
-    if (!newLock.date || !newLock.reason) return;
-    setLockedDays([
-      ...lockedDays,
-      {
-        id: Math.max(0, ...lockedDays.map(l => l.id)) + 1,
-        date: newLock.date,
-        reason: newLock.reason,
-        lockedBy: user?.email || 'admin',
-        lockedAt: new Date().toLocaleString(),
-      },
-    ]);
-    setNewLock({ date: '', reason: '' });
-  };
-
-  const handleUnlockDay = (id: number) => {
-    setLockedDays(lockedDays.filter(l => l.id !== id));
-  };
-
-  const handleUpdateSetting = (name: string, newValue: number) => {
-    setSystemAdminSettings(prev =>
-      prev.map(s => s.name === name ? { ...s, value: newValue } : s)
-    );
-    setEditingSetting(null);
-  };
-
-  if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Shield className="w-12 h-12 mx-auto mb-4" style={{ color: '#DC2626' }} />
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Admin Access Required</h2>
-            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              System Settings are only visible to administrators (per requirement 6.iii).
-            </p>
-          </CardContent>
-        </Card>
+  const renderForm = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Setting Key"
+          value={formData.settingKey}
+          onChange={(e) => setFormData({ ...formData, settingKey: e.target.value })}
+          placeholder="e.g., app.session_timeout"
+          fullWidth
+          required
+        />
+        <Input
+          label="Setting Name"
+          value={formData.settingName}
+          onChange={(e) => setFormData({ ...formData, settingName: e.target.value })}
+          placeholder="Session Timeout"
+          fullWidth
+          required
+        />
       </div>
-    );
-  }
+      <Input
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Optional description"
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Setting Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={formData.settingType}
+            onChange={(e) => setFormData({ ...formData, settingType: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg text-sm"
+            style={{ border: '1px solid var(--input)' }}
+          >
+            <option value="String">String</option>
+            <option value="Number">Number</option>
+            <option value="Boolean">Boolean</option>
+            <option value="JSON">JSON</option>
+            <option value="Password">Password</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Category
+          </label>
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg text-sm"
+            style={{ border: '1px solid var(--input)' }}
+          >
+            <option value="General">General</option>
+            <option value="Security">Security</option>
+            <option value="Email">Email</option>
+            <option value="Database">Database</option>
+            <option value="API">API</option>
+          </select>
+        </div>
+      </div>
+      <Input
+        label="Setting Value"
+        value={formData.settingValue}
+        onChange={(e) => setFormData({ ...formData, settingValue: e.target.value })}
+        placeholder="Setting value"
+        fullWidth
+      />
+      <Input
+        label="Display Order"
+        type="number"
+        value={formData.displayOrder.toString()}
+        onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <Toggle
+          checked={formData.isSystemSetting}
+          onChange={(checked) => setFormData({ ...formData, isSystemSetting: checked })}
+          label="System Setting"
+        />
+        <Toggle
+          checked={formData.isEncrypted}
+          onChange={(checked) => setFormData({ ...formData, isEncrypted: checked })}
+          label="Encrypted"
+        />
+        <Toggle
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          label="Active Status"
+        />
+      </div>
+    </div>
+  );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>System Settings</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Settings className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            System Settings
+          </h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Configure system-wide preferences and parameters
+            Manage system-wide configuration settings ({totalCount} settings)
           </p>
-          <div className="mt-2">
-            <Badge variant="primary" size="sm">
-              <Shield className="w-3 h-3 mr-1" />
-              Admin only
-            </Badge>
-          </div>
         </div>
-        <Button variant="primary" size="md" onClick={handleSave}>
-          <Save className="w-4 h-4 mr-2" />
-          Save Settings
+        <Button variant="primary" size="md" onClick={() => {
+          resetForm();
+          setShowAddModal(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Setting
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5" style={{ color: '#C8102E' }} />
-            System Administration Settings
-          </CardTitle>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Core system settings that control date restrictions, locking behavior, and user permissions (Requirement 6.iii).
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-            <table className="w-full text-sm">
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Name</th>
-                  <th className="text-center px-4 py-3 font-medium" style={{ color: 'var(--foreground)', width: '120px' }}>Value</th>
-                  <th className="text-left px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>Description</th>
-                  <th className="text-center px-4 py-3 font-medium" style={{ color: 'var(--foreground)', width: '80px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {systemAdminSettings.map((setting, idx) => (
-                  <tr key={setting.name} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--foreground)' }}>{setting.name}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge 
-                        variant={setting.value === 1 ? 'success' : 'neutral'} 
-                        size="sm"
-                      >
-                        {setting.value}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-foreground)' }}>{setting.description}</td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => setEditingSetting({ name: setting.name, value: setting.value })}
-                        className="p-1.5 rounded-md transition-colors inline-flex items-center justify-center"
-                        style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DBEAFE'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
-                        title="Edit Setting"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>User Date Range Overrides</CardTitle>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Override the default Back/Future date ranges allowed for individual users in specific modules.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-              <Input
-                label="Username"
-                value={newRange.username}
-                onChange={(e) => setNewRange({ ...newRange, username: e.target.value })}
-                placeholder="user.name"
-                fullWidth
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>System Settings</CardTitle>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input
+                type="text"
+                placeholder="Search settings..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
               />
-              <Select
-                label="Module"
-                value={newRange.module}
-                onChange={(e) => setNewRange({ ...newRange, module: e.target.value as UserDateRange['module'] })}
-                options={[
-                  { value: 'Delivery', label: 'Delivery' },
-                  { value: 'Disposal', label: 'Disposal' },
-                  { value: 'Transfer', label: 'Transfer' },
-                  { value: 'Stock BF', label: 'Stock BF' },
-                  { value: 'Cancellation', label: 'Cancellation' },
-                  { value: 'Delivery Return', label: 'Delivery Return' },
-                  { value: 'Label Printing', label: 'Label Printing' },
-                ]}
-                fullWidth
-              />
-              <Input
-                label="Back Days"
-                type="number"
-                value={newRange.backDays}
-                onChange={(e) => setNewRange({ ...newRange, backDays: e.target.value })}
-                min="0"
-                fullWidth
-              />
-              <Input
-                label="Future Days"
-                type="number"
-                value={newRange.futureDays}
-                onChange={(e) => setNewRange({ ...newRange, futureDays: e.target.value })}
-                min="0"
-                fullWidth
-              />
-              <Button variant="primary" onClick={handleAddRange}>
-                <Plus className="w-4 h-4 mr-2" />Add
-              </Button>
-            </div>
-            <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-              <table className="w-full text-sm">
-                <thead style={{ backgroundColor: 'var(--muted)' }}>
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Username</th>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Module</th>
-                    <th className="text-right px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Back Days</th>
-                    <th className="text-right px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Future Days</th>
-                    <th className="text-right px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userDateRanges.length === 0 ? (
-                    <tr><td colSpan={5} className="px-3 py-6 text-center" style={{ color: 'var(--muted-foreground)' }}>No overrides configured.</td></tr>
-                  ) : (
-                    userDateRanges.map(r => (
-                      <tr key={r.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                        <td className="px-3 py-2 font-medium">{r.username}</td>
-                        <td className="px-3 py-2"><Badge variant="primary" size="sm">{r.module}</Badge></td>
-                        <td className="px-3 py-2 text-right">{r.backDays}</td>
-                        <td className="px-3 py-2 text-right">{r.futureDays}</td>
-                        <td className="px-3 py-2 text-right">
-                          <button
-                            onClick={() => handleRemoveRange(r.id)}
-                            className="p-1.5 rounded transition-colors"
-                            style={{ color: '#DC2626' }}
-                            title="Remove"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Day Lock / Unlock</CardTitle>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Locked days reject any new entries (even from Admin) per requirement 6.viii.
-          </p>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-              <Input
-                label="Date to Lock"
-                type="date"
-                value={newLock.date}
-                onChange={(e) => setNewLock({ ...newLock, date: e.target.value })}
-                fullWidth
-              />
-              <Input
-                label="Reason"
-                value={newLock.reason}
-                onChange={(e) => setNewLock({ ...newLock, reason: e.target.value })}
-                placeholder="e.g. Audit closing"
-                fullWidth
-              />
-              <Button variant="primary" onClick={handleLockDay}>
-                <Lock className="w-4 h-4 mr-2" />Lock Day
-              </Button>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
             </div>
-            <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: '#FEF3C7', border: '1px solid #FCD34D' }}>
-              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#D97706' }} />
-              <p className="text-xs" style={{ color: '#92400E' }}>
-                Once a day is locked, no entries can be added or modified for that date in any module — even by Admin.
-              </p>
-            </div>
-            <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-              <table className="w-full text-sm">
-                <thead style={{ backgroundColor: 'var(--muted)' }}>
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Date</th>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Reason</th>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Locked By</th>
-                    <th className="text-left px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Locked At</th>
-                    <th className="text-right px-3 py-2 font-medium" style={{ color: 'var(--foreground)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lockedDays.length === 0 ? (
-                    <tr><td colSpan={5} className="px-3 py-6 text-center" style={{ color: 'var(--muted-foreground)' }}>No locked days.</td></tr>
-                  ) : (
-                    lockedDays.map(l => (
-                      <tr key={l.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                        <td className="px-3 py-2 font-medium">{new Date(l.date).toLocaleDateString()}</td>
-                        <td className="px-3 py-2">{l.reason}</td>
-                        <td className="px-3 py-2">{l.lockedBy}</td>
-                        <td className="px-3 py-2 text-xs" style={{ color: 'var(--muted-foreground)' }}>{l.lockedAt}</td>
-                        <td className="px-3 py-2 text-right">
-                          <Button variant="ghost" size="sm" onClick={() => handleUnlockDay(l.id)}>
-                            <Unlock className="w-3 h-3 mr-1" />Unlock
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Page Theme Colors (Color Coding)</CardTitle>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Customize theme colors for operation pages. Changes apply to page titles, primary buttons, and navigation highlights.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { key: 'delivery', label: 'Delivery' },
-              { key: 'disposal', label: 'Disposal' },
-              { key: 'transfer', label: 'Transfer' },
-              { key: 'stock-bf', label: 'Stock BF' },
-              { key: 'cancellation', label: 'Cancellation' },
-              { key: 'delivery-return', label: 'Delivery Return' },
-              { key: 'label-printing', label: 'Label Printing' },
-              { key: 'daily-production', label: 'Daily Production' },
-              { key: 'production-cancel', label: 'Production Cancel' },
-            ].map((page) => {
-              const theme = pageThemes[page.key];
-              return (
-                <div key={page.key} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center p-3 rounded-lg" style={{ border: '1px solid var(--border)' }}>
-                  <div className="font-medium" style={{ color: 'var(--foreground)' }}>{page.label}</div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Primary Color:</label>
-                    <input
-                      type="color"
-                      value={theme?.primaryColor || '#3B82F6'}
-                      onChange={(e) => setPageTheme(page.key, { ...theme, primaryColor: e.target.value })}
-                      className="w-12 h-8 rounded border cursor-pointer"
-                      style={{ border: '1px solid var(--input)' }}
-                    />
-                    <span className="text-xs font-mono" style={{ color: 'var(--muted-foreground)' }}>{theme?.primaryColor || '#3B82F6'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Accent Color:</label>
-                    <input
-                      type="color"
-                      value={theme?.secondaryColor || '#C8102E'}
-                      onChange={(e) => setPageTheme(page.key, { ...theme, secondaryColor: e.target.value })}
-                      className="w-12 h-8 rounded border cursor-pointer"
-                      style={{ border: '1px solid var(--input)' }}
-                    />
-                    <span className="text-xs font-mono" style={{ color: 'var(--muted-foreground)' }}>{theme?.secondaryColor || '#C8102E'}</span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => resetPageTheme(page.key)}>
-                    Reset
-                  </Button>
-                </div>
-              );
-            })}
-            <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#3B82F6' }} />
-              <p className="text-xs" style={{ color: '#1E40AF' }}>
-                <strong>Color Coding (Requirement 4.i):</strong> Primary color applies to page headings and primary buttons. 
-                Accent color applies to reference numbers (e.g., Delivery No, Disposal No) and navigation menu highlights.
-                Example: If you set Delivery page to Red (#FF0000), the blue elements will become red.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Company Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Input
-              label="Company Name"
-              value={settings.companyName}
-              onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-              fullWidth
+          ) : (
+            <DataTable
+              data={settings}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
             />
-            <Input
-              label="Company Address"
-              value={settings.companyAddress}
-              onChange={(e) => setSettings({ ...settings, companyAddress: e.target.value })}
-              fullWidth
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Phone Number"
-                value={settings.companyPhone}
-                onChange={(e) => setSettings({ ...settings, companyPhone: e.target.value })}
-                fullWidth
-              />
-              <Input
-                label="Email Address"
-                value={settings.companyEmail}
-                onChange={(e) => setSettings({ ...settings, companyEmail: e.target.value })}
-                fullWidth
-              />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Regional Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Regional Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Select
-                label="Currency"
-                value={settings.currency}
-                onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-                options={[
-                  { value: 'LKR', label: 'LKR - Sri Lankan Rupee' },
-                  { value: 'USD', label: 'USD - US Dollar' },
-                  { value: 'EUR', label: 'EUR - Euro' },
-                ]}
-                fullWidth
-              />
-              <Select
-                label="Date Format"
-                value={settings.dateFormat}
-                onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })}
-                options={[
-                  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-                  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-                  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-                ]}
-                fullWidth
-              />
-              <Select
-                label="Time Format"
-                value={settings.timeFormat}
-                onChange={(e) => setSettings({ ...settings, timeFormat: e.target.value })}
-                options={[
-                  { value: '12', label: '12 Hour' },
-                  { value: '24', label: '24 Hour' },
-                ]}
-                fullWidth
-              />
-            </div>
-            <Input
-              label="Tax Rate (%)"
-              type="number"
-              value={settings.taxRate}
-              onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
-              placeholder="0"
-              fullWidth
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Toggle
-              checked={settings.emailNotifications}
-              onChange={(checked) => setSettings({ ...settings, emailNotifications: checked })}
-              label="Enable Email Notifications"
-            />
-            <Toggle
-              checked={settings.smsNotifications}
-              onChange={(checked) => setSettings({ ...settings, smsNotifications: checked })}
-              label="Enable SMS Notifications"
-            />
-            <div className="pt-2">
-              <Toggle
-                checked={settings.lowStockAlert}
-                onChange={(checked) => setSettings({ ...settings, lowStockAlert: checked })}
-                label="Low Stock Alerts"
-              />
-              {settings.lowStockAlert && (
-                <div className="mt-3">
-                  <Input
-                    label="Low Stock Threshold"
-                    type="number"
-                    value={settings.lowStockThreshold}
-                    onChange={(e) => setSettings({ ...settings, lowStockThreshold: e.target.value })}
-                    placeholder="50"
-                    helperText="Alert when stock falls below this quantity"
-                    fullWidth
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Security Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Session Timeout (minutes)"
-                type="number"
-                value={settings.sessionTimeout}
-                onChange={(e) => setSettings({ ...settings, sessionTimeout: e.target.value })}
-                helperText="Auto-logout after inactivity"
-                fullWidth
-              />
-              <Input
-                label="Max Login Attempts"
-                type="number"
-                value={settings.maxLoginAttempts}
-                onChange={(e) => setSettings({ ...settings, maxLoginAttempts: e.target.value })}
-                helperText="Account locks after this many failed attempts"
-                fullWidth
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Backup Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Backup & Maintenance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Toggle
-              checked={settings.autoBackup}
-              onChange={(checked) => setSettings({ ...settings, autoBackup: checked })}
-              label="Enable Automatic Backup"
-            />
-            <div className="flex items-center space-x-3 pt-2">
-              <Button variant="secondary" size="md">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Backup Now
-              </Button>
-              <Button variant="ghost" size="md">
-                View Backup History
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Edit System Setting Modal */}
       <Modal
-        isOpen={editingSetting !== null}
-        onClose={() => setEditingSetting(null)}
-        title="Edit System Setting"
-        size="md"
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add System Setting"
+        size="lg"
       >
-        {editingSetting && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-                {editingSetting.name}
-              </p>
-              <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
-                {systemAdminSettings.find(s => s.name === editingSetting.name)?.description}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block" style={{ color: 'var(--foreground)' }}>
-                Value
-              </label>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="settingValue"
-                    checked={editingSetting.value === 0}
-                    onChange={() => setEditingSetting({ ...editingSetting, value: 0 })}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm" style={{ color: 'var(--foreground)' }}>0 - Disabled / Disallow</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="settingValue"
-                    checked={editingSetting.value === 1}
-                    onChange={() => setEditingSetting({ ...editingSetting, value: 1 })}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm" style={{ color: 'var(--foreground)' }}>1 - Enabled / Allow</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setEditingSetting(null)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (editingSetting) {
-                handleUpdateSetting(editingSetting.name, editingSetting.value);
-              }
-            }}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Setting
+          <Button variant="primary" onClick={handleAddSetting} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Setting'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedSetting(null);
+          resetForm();
+        }}
+        title="Edit System Setting"
+        size="lg"
+      >
+        {renderForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => {
+            setShowEditModal(false);
+            setSelectedSetting(null);
+            resetForm();
+          }} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleEditSetting} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>
