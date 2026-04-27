@@ -1,150 +1,88 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import Checkbox from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Printer, FileStack, Package, ChefHat, ListChecks, Boxes, Eye, Download } from 'lucide-react';
-import { mockDeliveryTurns } from '@/lib/mock-data/delivery-turns';
-import { productionSections } from '@/lib/mock-data/dms-production';
-
-interface SectionDocument {
-  id: string;
-  title: string;
-  type: 'recipe' | 'sin' | 'production' | 'consumables' | 'qc';
-  pages: number;
-  description: string;
-}
-
-const sectionDocs: Record<string, SectionDocument[]> = {
-  'Bakery 1': [
-    { id: 'bk1-1', title: 'Bakery 1 Recipe Sheet', type: 'recipe', pages: 4, description: 'All bread & loaf recipes with ingredients & quantities' },
-    { id: 'bk1-2', title: 'Bakery 1 Stores Issue Note', type: 'sin', pages: 2, description: 'Aggregated raw materials for bakery 1' },
-    { id: 'bk1-3', title: 'Bakery 1 Production Plan', type: 'production', pages: 3, description: 'Production targets per turn' },
-    { id: 'bk1-4', title: 'Bakery 1 Consumables List', type: 'consumables', pages: 1, description: 'Packaging, gas, oil for the day' },
-    { id: 'bk1-5', title: 'Bakery 1 QC Checklist', type: 'qc', pages: 1, description: 'Quality control sign-off sheet' },
-  ],
-  'Bakery 2': [
-    { id: 'bk2-1', title: 'Bakery 2 Recipe Sheet', type: 'recipe', pages: 3, description: 'Specialty bread recipes' },
-    { id: 'bk2-2', title: 'Bakery 2 Stores Issue Note', type: 'sin', pages: 2, description: 'Aggregated raw materials' },
-    { id: 'bk2-3', title: 'Bakery 2 Production Plan', type: 'production', pages: 2, description: 'Targets by turn' },
-    { id: 'bk2-4', title: 'Bakery 2 Consumables', type: 'consumables', pages: 1, description: 'Wrappers, oil' },
-  ],
-  'Filling Section': [
-    { id: 'fs-1', title: 'Filling Recipe Sheet', type: 'recipe', pages: 5, description: 'Cream, jam, savory fillings' },
-    { id: 'fs-2', title: 'Filling Stores Issue Note', type: 'sin', pages: 3, description: 'Raw materials' },
-    { id: 'fs-3', title: 'Filling Production Plan', type: 'production', pages: 2, description: 'Daily targets' },
-    { id: 'fs-4', title: 'Filling QC Checklist', type: 'qc', pages: 1, description: 'Taste & weight checks' },
-  ],
-  'Short-Eats 1': [
-    { id: 'se1-1', title: 'Short-Eats 1 Recipe Sheet', type: 'recipe', pages: 4, description: 'Buns, fish/veg fillings' },
-    { id: 'se1-2', title: 'Short-Eats 1 Stores Issue Note', type: 'sin', pages: 2, description: 'Raw materials' },
-    { id: 'se1-3', title: 'Short-Eats 1 Consumables', type: 'consumables', pages: 1, description: 'Trays, paper' },
-  ],
-  'Short-Eats 2': [
-    { id: 'se2-1', title: 'Short-Eats 2 Recipe Sheet', type: 'recipe', pages: 3, description: 'Sandwiches, rolls' },
-    { id: 'se2-2', title: 'Short-Eats 2 Stores Issue Note', type: 'sin', pages: 2, description: 'Raw materials' },
-    { id: 'se2-3', title: 'Short-Eats 2 Production Plan', type: 'production', pages: 1, description: 'Daily target' },
-  ],
-  'Rotty Section': [
-    { id: 'rs-1', title: 'Rotty Recipe Sheet', type: 'recipe', pages: 2, description: 'Dough & fillings' },
-    { id: 'rs-2', title: 'Rotty Stores Issue Note', type: 'sin', pages: 1, description: 'Raw materials' },
-    { id: 'rs-3', title: 'Rotty Production Plan', type: 'production', pages: 1, description: 'Targets per turn' },
-  ],
-  'Plain Roll Section': [
-    { id: 'pr-1', title: 'Plain Roll Recipe Sheet', type: 'recipe', pages: 1, description: 'Plain roll recipes' },
-    { id: 'pr-2', title: 'Plain Roll Stores Issue Note', type: 'sin', pages: 1, description: 'Raw materials' },
-    { id: 'pr-3', title: 'Plain Roll Production Plan', type: 'production', pages: 1, description: 'Daily target' },
-  ],
-  'Pastry Section': [
-    { id: 'ps-1', title: 'Pastry Recipe Sheet', type: 'recipe', pages: 4, description: 'All pastry varieties' },
-    { id: 'ps-2', title: 'Pastry Stores Issue Note', type: 'sin', pages: 2, description: 'Raw materials' },
-    { id: 'ps-3', title: 'Pastry Production Plan', type: 'production', pages: 2, description: 'Daily targets' },
-    { id: 'ps-4', title: 'Pastry QC Checklist', type: 'qc', pages: 1, description: 'Decoration & weight checks' },
-  ],
-};
-
-const getDocIcon = (type: SectionDocument['type']) => {
-  switch (type) {
-    case 'recipe': return <ChefHat className="w-4 h-4" />;
-    case 'sin': return <Package className="w-4 h-4" />;
-    case 'production': return <Boxes className="w-4 h-4" />;
-    case 'consumables': return <ListChecks className="w-4 h-4" />;
-    case 'qc': return <ListChecks className="w-4 h-4" />;
-    default: return <FileStack className="w-4 h-4" />;
-  }
-};
-
-const docTypeColor: Record<SectionDocument['type'], 'primary' | 'success' | 'warning' | 'info' | 'neutral'> = {
-  recipe: 'primary',
-  sin: 'success',
-  production: 'info',
-  consumables: 'warning',
-  qc: 'neutral',
-};
+import { Printer, Download, Eye, Loader2, ChefHat } from 'lucide-react';
+import { printApi, type SectionPrintBundle } from '@/lib/api/print';
+import { productionPlannerApi } from '@/lib/api/production-planner';
+import { productionSectionsApi, type ProductionSection } from '@/lib/api/production-sections';
+import { toast } from 'sonner';
 
 export default function SectionPrintBundlePage() {
-  const [printDate, setPrintDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTurn, setSelectedTurn] = useState<number>(1);
-  const [selectedSections, setSelectedSections] = useState<string[]>(['Bakery 1', 'Short-Eats 1']);
-  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-  const [collate, setCollate] = useState(true);
-  const [duplex, setDuplex] = useState(true);
-  const [coverPage, setCoverPage] = useState(true);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [productionPlans, setProductionPlans] = useState<any[]>([]);
+  const [productionSections, setProductionSections] = useState<ProductionSection[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [bundleData, setBundleData] = useState<SectionPrintBundle | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const allSelectedDocs = useMemo(() => {
-    return selectedSections.flatMap(section =>
-      (sectionDocs[section] || []).filter(d => selectedDocs.has(d.id))
-    );
-  }, [selectedSections, selectedDocs]);
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  const totalPages = allSelectedDocs.reduce((sum, d) => sum + d.pages, 0) + (coverPage ? selectedSections.length : 0);
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const [plansRes, sectionsRes] = await Promise.all([
+        productionPlannerApi.getAllProductionPlans(),
+        productionSectionsApi.getAll(1, 100, undefined, true),
+      ]);
 
-  const toggleSection = (section: string) => {
-    setSelectedSections(prev => {
-      if (prev.includes(section)) {
-        const newSelectedDocs = new Set(selectedDocs);
-        (sectionDocs[section] || []).forEach(d => newSelectedDocs.delete(d.id));
-        setSelectedDocs(newSelectedDocs);
-        return prev.filter(s => s !== section);
-      }
-      return [...prev, section];
-    });
+      setProductionPlans(plansRes);
+      setProductionSections(sectionsRes.productionSections);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const toggleDoc = (docId: string) => {
-    setSelectedDocs(prev => {
-      const next = new Set(prev);
-      if (next.has(docId)) next.delete(docId);
-      else next.add(docId);
-      return next;
-    });
-  };
-
-  const selectAllInSection = (section: string) => {
-    const docs = sectionDocs[section] || [];
-    setSelectedDocs(prev => {
-      const next = new Set(prev);
-      docs.forEach(d => next.add(d.id));
-      return next;
-    });
-  };
-
-  const handlePrintBundle = () => {
-    if (allSelectedDocs.length === 0) {
-      alert('Please select at least one document to print.');
+  const handleGenerateBundle = async () => {
+    if (!selectedPlanId || !selectedSectionId) {
+      toast.error('Please select a production plan and section');
       return;
     }
-    alert(`Printing bundle: ${allSelectedDocs.length} documents, ${totalPages} pages total. Collate: ${collate ? 'Yes' : 'No'}, Duplex: ${duplex ? 'Yes' : 'No'}.`);
+
+    try {
+      setIsGenerating(true);
+      const bundle = await printApi.getSectionBundle(selectedPlanId, selectedSectionId);
+      setBundleData(bundle);
+      toast.success('Section bundle generated successfully');
+    } catch (error) {
+      console.error('Error generating section bundle:', error);
+      toast.error('Failed to generate section bundle');
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  const handlePrint = () => {
+    if (!bundleData) {
+      toast.error('No bundle to print');
+      return;
+    }
+    window.print();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'var(--brand-primary)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading section print bundle...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Section Print Bundle</h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
@@ -152,192 +90,213 @@ export default function SectionPrintBundlePage() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="secondary" size="md" onClick={() => setPreviewMode(!previewMode)}>
-            <Eye className="w-4 h-4 mr-2" />
-            {previewMode ? 'Hide Preview' : 'Preview'}
-          </Button>
-          <Button variant="ghost" size="md">
+          <Button variant="ghost" size="md" disabled={!bundleData}>
             <Download className="w-4 h-4 mr-2" />
             Save as PDF
           </Button>
-          <Button variant="primary" size="md" onClick={handlePrintBundle}>
+          <Button variant="primary" size="md" onClick={handlePrint} disabled={!bundleData}>
             <Printer className="w-4 h-4 mr-2" />
-            Print Bundle ({totalPages} pages)
+            Print Bundle
           </Button>
         </div>
       </div>
 
-      <Card>
+      <Card className="no-print">
         <CardHeader>
           <CardTitle>Bundle Settings</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Production Date"
-              type="date"
-              value={printDate}
-              onChange={(e) => setPrintDate(e.target.value)}
-              fullWidth
-            />
-            <Select
-              label="Delivery Turn"
-              value={selectedTurn}
-              onChange={(e) => setSelectedTurn(Number(e.target.value))}
-              options={mockDeliveryTurns.map(t => ({ value: t.id, label: t.displayName }))}
-              fullWidth
-            />
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-                Print Options
+                Production Plan
               </label>
-              <div className="space-y-2 pt-1">
-                <Checkbox checked={collate} onChange={(e) => setCollate(e.target.checked)} label="Collate copies" />
-                <Checkbox checked={duplex} onChange={(e) => setDuplex(e.target.checked)} label="Double-sided (duplex)" />
-                <Checkbox checked={coverPage} onChange={(e) => setCoverPage(e.target.checked)} label="Add section cover pages" />
-              </div>
+              <Select
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                options={[
+                  { value: '', label: 'Select a production plan' },
+                  ...productionPlans.map(p => ({
+                    value: p.id,
+                    label: `${p.id.substring(0, 8)} - ${p.status}`,
+                  })),
+                ]}
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+                Production Section
+              </label>
+              <Select
+                value={selectedSectionId}
+                onChange={(e) => setSelectedSectionId(e.target.value)}
+                options={[
+                  { value: '', label: 'Select a section' },
+                  ...productionSections.map(s => ({
+                    value: s.id,
+                    label: s.name,
+                  })),
+                ]}
+                fullWidth
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button
+                className="w-full"
+                onClick={handleGenerateBundle}
+                disabled={!selectedPlanId || !selectedSectionId || isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <ChefHat className="w-4 h-4 mr-2" />
+                    Generate Bundle
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="text-base">Sections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {productionSections.map(section => {
-                const isSelected = selectedSections.includes(section);
-                const docs = sectionDocs[section] || [];
-                return (
-                  <button
-                    key={section}
-                    onClick={() => toggleSection(section)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg transition-colors text-left"
-                    style={{
-                      border: isSelected ? '2px solid var(--brand-primary)' : '1px solid var(--border)',
-                      backgroundColor: isSelected ? 'var(--dms-destructive-soft)' : 'var(--dms-surface)',
-                    }}
-                  >
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{section}</p>
-                      <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{docs.length} docs available</p>
-                    </div>
-                    <input type="checkbox" checked={isSelected} readOnly />
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-9 space-y-4">
-          {selectedSections.length === 0 ? (
-            <Card>
-              <div className="text-center py-12">
-                <FileStack className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--muted-foreground)' }} />
-                <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                  Select one or more sections from the left to choose documents to bundle.
-                </p>
+      {bundleData && (
+        <div className="print-only">
+          {/* Cover Page */}
+          <Card className="mb-6">
+            <CardContent className="p-8">
+              <div className="text-center space-y-4">
+                <h1 className="text-4xl font-bold">DON & SONS</h1>
+                <h2 className="text-2xl font-semibold">Production Section Bundle</h2>
+                <div className="mt-8 space-y-2">
+                  <p className="text-xl font-bold">{bundleData.productionSectionName}</p>
+                  <p className="text-lg">Production Date: {new Date(bundleData.productionDate).toLocaleDateString()}</p>
+                  <p className="text-md">Total Products: {bundleData.products.length}</p>
+                  <p className="text-md">Total Quantity: {bundleData.totalQuantity}</p>
+                </div>
+                <div className="mt-12 text-sm text-gray-600">
+                  <p>Printed: {new Date(bundleData.printedAt).toLocaleString()}</p>
+                </div>
               </div>
-            </Card>
-          ) : (
-            selectedSections.map(section => {
-              const docs = sectionDocs[section] || [];
-              const sectionSelectedCount = docs.filter(d => selectedDocs.has(d.id)).length;
-              return (
-                <Card key={section}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">
-                        {section}{' '}
-                        <span className="text-xs font-normal" style={{ color: 'var(--muted-foreground)' }}>
-                          ({sectionSelectedCount} of {docs.length} selected)
-                        </span>
-                      </CardTitle>
-                      <Button variant="ghost" size="sm" onClick={() => selectAllInSection(section)}>
-                        Select All
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {docs.map(doc => {
-                        const isSelected = selectedDocs.has(doc.id);
-                        return (
-                          <div
-                            key={doc.id}
-                            className="p-3 rounded-lg cursor-pointer transition-all flex items-start gap-3"
-                            style={{
-                              border: isSelected ? '2px solid var(--brand-primary)' : '1px solid var(--border)',
-                              backgroundColor: isSelected ? 'var(--dms-destructive-soft)' : 'var(--dms-surface)',
-                            }}
-                            onClick={() => toggleDoc(doc.id)}
-                          >
-                            <input type="checkbox" checked={isSelected} onChange={() => toggleDoc(doc.id)} className="mt-1" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span style={{ color: 'var(--muted-foreground)' }}>{getDocIcon(doc.type)}</span>
-                                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{doc.title}</p>
-                              </div>
-                              <p className="text-xs mb-2" style={{ color: 'var(--muted-foreground)' }}>{doc.description}</p>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={docTypeColor[doc.type]} size="sm">{doc.type.toUpperCase()}</Badge>
-                                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{doc.pages} page{doc.pages !== 1 ? 's' : ''}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      </div>
+            </CardContent>
+          </Card>
 
-      {previewMode && allSelectedDocs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Bundle Preview / Order</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ol className="space-y-2">
-              {selectedSections.flatMap(section => {
-                const docs = (sectionDocs[section] || []).filter(d => selectedDocs.has(d.id));
-                if (docs.length === 0) return [];
-                return [
-                  ...(coverPage
-                    ? [
-                        <li key={`cover-${section}`} className="p-2 rounded flex items-center justify-between" style={{ backgroundColor: 'var(--dms-amber)' }}>
-                          <span className="text-sm font-semibold">▌ Cover: {section}</span>
-                          <span className="text-xs" style={{ color: 'var(--dms-amber-text)' }}>1 page</span>
-                        </li>,
-                      ]
-                    : []),
-                  ...docs.map((d, idx) => (
-                    <li key={d.id} className="p-2 rounded flex items-center justify-between" style={{ backgroundColor: 'var(--muted)' }}>
-                      <span className="text-sm">
-                        <span className="text-xs mr-2" style={{ color: 'var(--muted-foreground)' }}>{section} #{idx + 1}</span>
-                        {d.title}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{d.pages} page{d.pages !== 1 ? 's' : ''}</span>
-                    </li>
-                  )),
-                ];
-              })}
-            </ol>
-            <div className="mt-4 pt-4 flex justify-between items-center" style={{ borderTop: '1px solid var(--border)' }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Bundle Total</span>
-              <span className="text-lg font-bold" style={{ color: 'var(--brand-primary)' }}>{totalPages} pages</span>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Production Summary */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Production Summary - {bundleData.productionSectionName}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--muted)' }}>
+                    <th className="border p-2 text-left">Product Code</th>
+                    <th className="border p-2 text-left">Product Name</th>
+                    <th className="border p-2 text-center">Produce Quantity</th>
+                    <th className="border p-2 text-center">Has Recipe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bundleData.products.map(product => (
+                    <tr key={product.productId}>
+                      <td className="border p-2 font-mono">{product.productCode}</td>
+                      <td className="border p-2">{product.productName}</td>
+                      <td className="border p-2 text-center font-bold">{product.produceQty}</td>
+                      <td className="border p-2 text-center">
+                        <Badge variant={product.hasRecipe ? 'success' : 'neutral'} size="sm">
+                          {product.hasRecipe ? 'Yes' : 'No'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ backgroundColor: 'var(--muted)' }}>
+                    <td colSpan={2} className="border p-2 font-bold">TOTAL</td>
+                    <td className="border p-2 text-center font-bold">{bundleData.totalQuantity}</td>
+                    <td className="border p-2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </CardContent>
+          </Card>
+
+          {/* Recipe Breakdown */}
+          {bundleData.products.filter(p => p.hasRecipe && p.ingredients.length > 0).map(product => (
+            <Card key={`recipe-${product.productId}`} className="mb-6 page-break">
+              <CardHeader>
+                <CardTitle>Recipe: {product.productCode} - {product.productName}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <p className="text-lg font-semibold">Production Quantity: {product.produceQty}</p>
+                </div>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--muted)' }}>
+                      <th className="border p-2 text-left">Ingredient Code</th>
+                      <th className="border p-2 text-left">Ingredient Name</th>
+                      <th className="border p-2 text-center">Quantity</th>
+                      <th className="border p-2 text-center">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {product.ingredients.map(ing => (
+                      <tr key={ing.ingredientId}>
+                        <td className="border p-2 font-mono">{ing.ingredientCode}</td>
+                        <td className="border p-2">{ing.ingredientName}</td>
+                        <td className="border p-2 text-center font-semibold">{ing.quantity}</td>
+                        <td className="border p-2 text-center">{ing.unit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
+
+      {!bundleData && !isGenerating && (
+        <div
+          className="text-center py-12 rounded-lg border-2 border-dashed no-print"
+          style={{ backgroundColor: 'var(--muted)', borderColor: 'var(--border)' }}
+        >
+          <ChefHat className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--muted-foreground)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>
+            Select a production plan and section to generate the bundle
+          </p>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-only, .print-only * {
+            visibility: visible;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-only {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .page-break {
+            page-break-before: always;
+          }
+        }
+      `}</style>
     </div>
   );
 }

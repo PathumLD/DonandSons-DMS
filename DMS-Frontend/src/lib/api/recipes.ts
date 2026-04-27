@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type ApiEnvelope } from './client';
 
 export interface RecipeIngredient {
   id?: string;
@@ -105,36 +105,38 @@ export const recipesApi = {
     if (activeOnly !== undefined) params.append('activeOnly', activeOnly.toString());
     if (productId) params.append('productId', productId);
 
-    const response = await apiClient.get<RecipesResponse>(`/recipes?${params}`);
+    const response = await apiClient.get<ApiEnvelope<RecipesResponse>>(`/api/Recipes?${params}`);
     return response.data.data;
   },
 
   async getById(id: string): Promise<Recipe> {
-    const response = await apiClient.get<Recipe>(`/recipes/${id}`);
+    const response = await apiClient.get<ApiEnvelope<Recipe>>(`/api/Recipes/${id}`);
     return response.data.data;
   },
 
   async getByProductId(productId: string): Promise<Recipe> {
-    const response = await apiClient.get<Recipe>(`/recipes/by-product/${productId}`);
+    const response = await apiClient.get<ApiEnvelope<Recipe>>(`/api/Recipes/by-product/${productId}`);
     return response.data.data;
   },
 
   async create(dto: CreateRecipeDto): Promise<Recipe> {
-    const response = await apiClient.post<Recipe>('/recipes', dto);
+    const response = await apiClient.post<ApiEnvelope<Recipe>>('/api/Recipes', dto);
     return response.data.data;
   },
 
   async update(id: string, dto: UpdateRecipeDto): Promise<Recipe> {
-    const response = await apiClient.put<Recipe>(`/recipes/${id}`, dto);
+    const response = await apiClient.put<ApiEnvelope<Recipe>>(`/api/Recipes/${id}`, dto);
     return response.data.data;
   },
 
   async delete(id: string): Promise<void> {
-    await apiClient.delete(`/recipes/${id}`);
+    await apiClient.delete(`/api/Recipes/${id}`);
   },
 
   async calculateIngredients(productId: string, quantity: number): Promise<RecipeCalculation> {
-    const response = await apiClient.post<RecipeCalculation>(`/recipes/${productId}/calculate?qty=${quantity}`, {});
+    const response = await apiClient.post<ApiEnvelope<RecipeCalculation>>(`/api/Recipes/${productId}/calculate`, null, {
+      params: { qty: quantity }
+    });
     return response.data.data;
   },
 };

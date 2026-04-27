@@ -1,240 +1,145 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import Select from '@/components/ui/select';
-import { FileText, Download, AlertTriangle } from 'lucide-react';
-import { mockEnhancedIngredients } from '@/lib/mock-data/enhanced-data';
-import { mockSectionConfigurations, ProductionSection } from '@/lib/mock-data/enhanced-models';
+import { FileText, Download, AlertTriangle, Loader2, Save, CheckCircle } from 'lucide-react';
+import { storesIssueNotesApi, type ComputedIngredient, type StoresIssueNoteDetail } from '@/lib/api/stores-issue-notes';
+import { productionPlannerApi } from '@/lib/api/production-planner';
+import { productionSectionsApi, type ProductionSection } from '@/lib/api/production-sections';
 import { Badge } from '@/components/ui/badge';
-
-interface StoresIngredient {
-  ingredientId: number;
-  ingredientCode: string;
-  ingredientName: string;
-  productionQty: number;
-  extraQty: number;
-  storesQty: number;
-  unit: string;
-  notes?: string;
-  showExtraInStoresOnly: boolean;
-}
-
-interface ProductBreakdown {
-  productCode: string;
-  productName: string;
-  fullQty: number;
-  miniQty: number;
-  customizedQty: number;
-  totalQty: number;
-}
+import { toast } from 'sonner';
 
 export default function StoresIssueNoteEnhancedPage() {
-  const [selectedSection, setSelectedSection] = useState<ProductionSection>('Bakery 1');
-  const [selectedDate, setSelectedDate] = useState('2026-04-22');
-  const [selectedTurn, setSelectedTurn] = useState('5:00 AM');
-  const [useFreezerStock, setUseFreezerStock] = useState(false);
+  const [productionPlans, setProductionPlans] = useState<any[]>([]);
+  const [productionSections, setProductionSections] = useState<ProductionSection[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [computedIngredients, setComputedIngredients] = useState<ComputedIngredient[]>([]);
+  const [savedNote, setSavedNote] = useState<StoresIssueNoteDetail | null>(null);
+  const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isComputing, setIsComputing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isIssuing, setIsIssuing] = useState(false);
+  const [isReceiving, setIsReceiving] = useState(false);
 
-  // Mock data - Section-wise ingredients
-  const storesIngredients: { [key: string]: StoresIngredient[] } = {
-    'Bakery 1': [
-      {
-        ingredientId: 1,
-        ingredientCode: 'FLR001',
-        ingredientName: 'Wheat Flour',
-        productionQty: 450,
-        extraQty: 22.5,
-        storesQty: 472.5,
-        unit: 'kg',
-        notes: '5% extra for spillage',
-        showExtraInStoresOnly: true,
-      },
-      {
-        ingredientId: 5,
-        ingredientCode: 'SGR001',
-        ingredientName: 'Sugar',
-        productionQty: 65,
-        extraQty: 1.95,
-        storesQty: 66.95,
-        unit: 'kg',
-        notes: '3% buffer',
-        showExtraInStoresOnly: true,
-      },
-      {
-        ingredientId: 6,
-        ingredientCode: 'YST001',
-        ingredientName: 'Yeast',
-        productionQty: 2800,
-        extraQty: 140,
-        storesQty: 2940,
-        unit: 'g',
-        notes: '5% buffer',
-        showExtraInStoresOnly: true,
-      },
-      {
-        ingredientId: 7,
-        ingredientCode: 'BTR001',
-        ingredientName: 'Butter',
-        productionQty: 45,
-        extraQty: 0,
-        storesQty: 45,
-        unit: 'kg',
-        showExtraInStoresOnly: false,
-      },
-      {
-        ingredientId: 3,
-        ingredientCode: 'EGG001',
-        ingredientName: 'Raw Eggs',
-        productionQty: 350,
-        extraQty: 0,
-        storesQty: 350,
-        unit: 'Nos',
-        notes: 'For dough only',
-        showExtraInStoresOnly: false,
-      },
-    ],
-    'Filling Section': [
-      {
-        ingredientId: 2,
-        ingredientCode: 'CRT001',
-        ingredientName: 'Carrot',
-        productionQty: 120,
-        extraQty: 18,
-        storesQty: 138,
-        unit: 'kg',
-        notes: '15% extra for cleaning loss',
-        showExtraInStoresOnly: true,
-      },
-      {
-        ingredientId: 3,
-        ingredientCode: 'EGG001',
-        ingredientName: 'Raw Eggs',
-        productionQty: 180,
-        extraQty: 0,
-        storesQty: 180,
-        unit: 'Nos',
-        notes: 'For filling',
-        showExtraInStoresOnly: false,
-      },
-    ],
-    'Garnish Section': [
-      {
-        ingredientId: 4,
-        ingredientCode: 'EGG002',
-        ingredientName: 'Boiled Eggs',
-        productionQty: 95,
-        extraQty: 0,
-        storesQty: 95,
-        unit: 'Nos',
-        notes: 'Pre-boiled',
-        showExtraInStoresOnly: false,
-      },
-      {
-        ingredientId: 3,
-        ingredientCode: 'EGG001',
-        ingredientName: 'Raw Eggs (for garnish)',
-        productionQty: 50,
-        extraQty: 0,
-        storesQty: 50,
-        unit: 'Nos',
-        notes: 'Raw for garnishing',
-        showExtraInStoresOnly: false,
-      },
-    ],
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const [plansRes, sectionsRes] = await Promise.all([
+        productionPlannerApi.getAllProductionPlans(),
+        productionSectionsApi.getAll(1, 100, undefined, true),
+      ]);
+
+      setProductionPlans(plansRes);
+      setProductionSections(sectionsRes.productionSections);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Mock product breakdown
-  const productBreakdown: { [key: string]: ProductBreakdown[] } = {
-    'Bakery 1': [
-      {
-        productCode: 'BR2',
-        productName: 'Sandwich Bread Large',
-        fullQty: 450,
-        miniQty: 320,
-        customizedQty: 25,
-        totalQty: 795,
-      },
-      {
-        productCode: 'BU10',
-        productName: 'Vegetable Bun (Dough)',
-        fullQty: 580,
-        miniQty: 420,
-        customizedQty: 50,
-        totalQty: 1050,
-      },
-      {
-        productCode: 'BU12',
-        productName: 'Fish Bun (Dough)',
-        fullQty: 520,
-        miniQty: 380,
-        customizedQty: 0,
-        totalQty: 900,
-      },
-      {
-        productCode: 'EGB',
-        productName: 'Egg Bun (Dough)',
-        fullQty: 380,
-        miniQty: 280,
-        customizedQty: 40,
-        totalQty: 700,
-      },
-    ],
-    'Filling Section': [
-      {
-        productCode: 'BU10',
-        productName: 'Vegetable Bun (Filling)',
-        fullQty: 580,
-        miniQty: 420,
-        customizedQty: 50,
-        totalQty: 1050,
-      },
-      {
-        productCode: 'BU12',
-        productName: 'Fish Bun (Filling)',
-        fullQty: 520,
-        miniQty: 380,
-        customizedQty: 0,
-        totalQty: 900,
-      },
-      {
-        productCode: 'EGB',
-        productName: 'Egg Bun (Filling)',
-        fullQty: 380,
-        miniQty: 280,
-        customizedQty: 40,
-        totalQty: 700,
-      },
-    ],
-    'Garnish Section': [
-      {
-        productCode: 'EGB',
-        productName: 'Egg Bun (Garnish)',
-        fullQty: 380,
-        miniQty: 280,
-        customizedQty: 40,
-        totalQty: 700,
-      },
-    ],
+  const handleComputeSIN = async () => {
+    if (!selectedPlanId || !selectedSectionId) {
+      toast.error('Please select a production plan and section');
+      return;
+    }
+
+    try {
+      setIsComputing(true);
+      const data = await storesIssueNotesApi.computeStoresIssueNote(selectedPlanId, selectedSectionId);
+      setComputedIngredients(data.ingredients);
+      toast.success('Stores Issue Note computed successfully');
+    } catch (error) {
+      console.error('Error computing SIN:', error);
+      toast.error('Failed to compute stores issue note');
+    } finally {
+      setIsComputing(false);
+    }
   };
 
-  const sectionConfig = mockSectionConfigurations.find((s) => s.name === selectedSection);
-  const currentIngredients = storesIngredients[selectedSection] || [];
-  const currentProducts = productBreakdown[selectedSection] || [];
+  const handleSaveSIN = async () => {
+    if (computedIngredients.length === 0) {
+      toast.error('No ingredients to save');
+      return;
+    }
 
-  const handleExport = () => {
-    alert(`Exporting Stores Issue Note for ${selectedSection}`);
+    try {
+      setIsSaving(true);
+      const note = await storesIssueNotesApi.createStoresIssueNote({
+        productionPlanId: selectedPlanId,
+        productionSectionId: selectedSectionId,
+        issueDate,
+        items: computedIngredients.map(ing => ({
+          ingredientId: ing.ingredientId,
+          productionQty: ing.productionQty,
+          extraQty: ing.extraQty,
+          totalQty: ing.totalQty,
+        })),
+      });
+      setSavedNote(note);
+      setComputedIngredients([]);
+      toast.success('Stores Issue Note saved successfully');
+    } catch (error) {
+      console.error('Error saving SIN:', error);
+      toast.error('Failed to save stores issue note');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const calculateTotalStoresQty = () => {
-    return currentIngredients.reduce((sum, ing) => {
-      if (useFreezerStock) {
-        // In stores sheet, we show reduced quantities
-        return sum + ing.storesQty;
-      }
-      return sum + ing.storesQty;
-    }, 0);
+  const handleIssueNote = async () => {
+    if (!savedNote) return;
+
+    try {
+      setIsIssuing(true);
+      const updated = await storesIssueNotesApi.issueNote(savedNote.id, 'current-user-id');
+      setSavedNote(updated);
+      toast.success('Stores Issue Note issued successfully');
+    } catch (error) {
+      console.error('Error issuing note:', error);
+      toast.error('Failed to issue note');
+    } finally {
+      setIsIssuing(false);
+    }
   };
+
+  const handleReceiveNote = async () => {
+    if (!savedNote) return;
+
+    try {
+      setIsReceiving(true);
+      const updated = await storesIssueNotesApi.receiveNote(savedNote.id, 'current-user-id');
+      setSavedNote(updated);
+      toast.success('Stores Issue Note received successfully');
+    } catch (error) {
+      console.error('Error receiving note:', error);
+      toast.error('Failed to receive note');
+    } finally {
+      setIsReceiving(false);
+    }
+  };
+
+  const selectedSection = productionSections.find(s => s.id === selectedSectionId);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'var(--brand-primary)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading stores issue notes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -249,83 +154,101 @@ export default function StoresIssueNoteEnhancedPage() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="primary" size="md" onClick={handleExport}>
+          <Button variant="secondary" size="md" disabled={!savedNote}>
             <Download className="w-4 h-4 mr-2" />
             Export Section Report
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Control Panel */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                Production Plan
+              </label>
+              <Select
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                options={[
+                  { value: '', label: 'Select a production plan' },
+                  ...productionPlans.map(p => ({
+                    value: p.id,
+                    label: `${p.id.substring(0, 8)} - ${p.status}`,
+                  })),
+                ]}
+                fullWidth
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
                 Section
               </label>
               <Select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value as ProductionSection)}
-                options={mockSectionConfigurations.map((s) => ({
-                  value: s.name,
-                  label: s.name,
-                }))}
+                value={selectedSectionId}
+                onChange={(e) => setSelectedSectionId(e.target.value)}
+                options={[
+                  { value: '', label: 'Select a section' },
+                  ...productionSections.map(s => ({
+                    value: s.id,
+                    label: s.name,
+                  })),
+                ]}
+                fullWidth
               />
             </div>
+
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Delivery Date
+                Issue Date
               </label>
               <input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                value={issueDate}
+                onChange={(e) => setIssueDate(e.target.value)}
                 className="w-full px-3 py-2 rounded border"
                 style={{ borderColor: 'var(--input)' }}
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Delivery Turn
-              </label>
-              <Select
-                value={selectedTurn}
-                onChange={(e) => setSelectedTurn(e.target.value)}
-                options={[
-                  { value: '5:00 AM', label: '5:00 AM' },
-                  { value: '10:30 AM', label: '10:30 AM' },
-                  { value: '3:30 PM', label: '3:30 PM' },
-                ]}
-              />
-            </div>
-            <div>
-              {sectionConfig && (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                    Production Start
-                  </label>
-                  <p className="text-sm font-semibold mt-2" style={{ color: 'var(--brand-primary)' }}>
-                    {sectionConfig.productionStartTime}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Options
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={useFreezerStock}
-                  onChange={(e) => setUseFreezerStock(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm" style={{ color: 'var(--foreground)' }}>
-                  Use Freezer Stock
-                </span>
-              </label>
+
+            <div className="flex items-end gap-2">
+              <Button
+                className="flex-1"
+                onClick={handleComputeSIN}
+                disabled={!selectedPlanId || !selectedSectionId || isComputing}
+                size="sm"
+              >
+                {isComputing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Computing...
+                  </>
+                ) : (
+                  'Compute SIN'
+                )}
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={handleSaveSIN}
+                disabled={computedIngredients.length === 0 || isSaving}
+                size="sm"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save SIN
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -355,212 +278,208 @@ export default function StoresIssueNoteEnhancedPage() {
                 • <strong>Reason:</strong> Extra quantity is for handling loss (cleaning,
                 spillage) - stores needs total, production needs recipe value
               </li>
-              <li>
-                • <strong>Freezer Stock:</strong> When enabled, shows reduced balance in stores
-                sheet
-              </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Product Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Breakdown - {selectedSection}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th
-                    className="px-3 py-2 text-left text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Product Code
-                  </th>
-                  <th
-                    className="px-3 py-2 text-left text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Product Name
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Full Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Mini Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--status-warning)' }}
-                  >
-                    Customized Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
-                  >
-                    Total Qty
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className="divide-y"
-                style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-              >
-                {currentProducts.map((product, idx) => (
-                  <tr key={idx}>
-                    <td className="px-3 py-2 text-sm font-mono" style={{ color: 'var(--muted-foreground)' }}>
-                      {product.productCode}
-                    </td>
-                    <td className="px-3 py-2 text-sm" style={{ color: 'var(--foreground)' }}>
-                      {product.productName}
-                    </td>
-                    <td className="px-3 py-2 text-center text-sm">{product.fullQty}</td>
-                    <td className="px-3 py-2 text-center text-sm">{product.miniQty}</td>
-                    <td
-                      className="px-3 py-2 text-center text-sm font-semibold"
-                      style={{ color: 'var(--status-warning)', backgroundColor: 'var(--dms-orange)' }}
-                    >
-                      {product.customizedQty}
-                    </td>
-                    <td
-                      className="px-3 py-2 text-center text-sm font-bold"
-                      style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
-                    >
-                      {product.totalQty}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Ingredients with Extra Quantities */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ingredient Requirements - {selectedSection}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
-              <thead style={{ backgroundColor: 'var(--muted)' }}>
-                <tr>
-                  <th
-                    className="px-3 py-2 text-left text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Ingredient Code
-                  </th>
-                  <th
-                    className="px-3 py-2 text-left text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Ingredient Name
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Production Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--status-warning)' }}
-                  >
-                    Extra Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
-                  >
-                    Stores Qty
-                  </th>
-                  <th
-                    className="px-3 py-2 text-center text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Unit
-                  </th>
-                  <th
-                    className="px-3 py-2 text-left text-xs font-medium"
-                    style={{ color: 'var(--muted-foreground)' }}
-                  >
-                    Notes
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className="divide-y"
-                style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-              >
-                {currentIngredients.map((ingredient) => (
-                  <tr key={ingredient.ingredientId}>
-                    <td className="px-3 py-2 text-sm font-mono" style={{ color: 'var(--muted-foreground)' }}>
-                      {ingredient.ingredientCode}
-                    </td>
-                    <td className="px-3 py-2 text-sm" style={{ color: 'var(--foreground)' }}>
-                      {ingredient.ingredientName}
-                      {ingredient.showExtraInStoresOnly && (
-                        <Badge variant="neutral" className="ml-2">
-                          Extra in Stores Only
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center text-sm font-semibold">
-                      {ingredient.productionQty}
-                    </td>
-                    <td
-                      className="px-3 py-2 text-center text-sm font-semibold"
-                      style={{
-                        color: ingredient.extraQty > 0 ? 'var(--status-warning)' : 'var(--muted-foreground)',
-                        backgroundColor: ingredient.extraQty > 0 ? 'var(--dms-orange)' : 'transparent',
-                      }}
+      {computedIngredients.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingredient Requirements - {selectedSection?.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
+                <thead style={{ backgroundColor: 'var(--muted)' }}>
+                  <tr>
+                    <th
+                      className="px-3 py-2 text-left text-xs font-medium"
+                      style={{ color: 'var(--muted-foreground)' }}
                     >
-                      {ingredient.extraQty > 0 ? `+${ingredient.extraQty}` : '-'}
-                    </td>
-                    <td
-                      className="px-3 py-2 text-center text-sm font-bold"
+                      Ingredient Code
+                    </th>
+                    <th
+                      className="px-3 py-2 text-left text-xs font-medium"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      Ingredient Name
+                    </th>
+                    <th
+                      className="px-3 py-2 text-center text-xs font-medium"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      Production Qty
+                    </th>
+                    <th
+                      className="px-3 py-2 text-center text-xs font-medium"
+                      style={{ color: 'var(--status-warning)' }}
+                    >
+                      Extra Qty
+                    </th>
+                    <th
+                      className="px-3 py-2 text-center text-xs font-medium"
                       style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
                     >
-                      {ingredient.storesQty}
-                    </td>
-                    <td className="px-3 py-2 text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                      {ingredient.unit}
-                    </td>
-                    <td className="px-3 py-2 text-xs italic" style={{ color: 'var(--muted-foreground)' }}>
-                      {ingredient.notes || '-'}
-                    </td>
+                      Total Qty
+                    </th>
+                    <th
+                      className="px-3 py-2 text-center text-xs font-medium"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      Unit
+                    </th>
+                    <th
+                      className="px-3 py-2 text-left text-xs font-medium"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      Used In Products
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                </thead>
+                <tbody
+                  className="divide-y"
+                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                >
+                  {computedIngredients.map((ingredient) => (
+                    <tr key={ingredient.ingredientId}>
+                      <td className="px-3 py-2 text-sm font-mono" style={{ color: 'var(--muted-foreground)' }}>
+                        {ingredient.ingredientCode}
+                      </td>
+                      <td className="px-3 py-2 text-sm" style={{ color: 'var(--foreground)' }}>
+                        {ingredient.ingredientName}
+                      </td>
+                      <td className="px-3 py-2 text-center text-sm font-semibold">
+                        {ingredient.productionQty.toFixed(2)}
+                      </td>
+                      <td
+                        className="px-3 py-2 text-center text-sm font-semibold"
+                        style={{
+                          color: ingredient.extraQty > 0 ? 'var(--status-warning)' : 'var(--muted-foreground)',
+                          backgroundColor: ingredient.extraQty > 0 ? 'var(--dms-orange)' : 'transparent',
+                        }}
+                      >
+                        {ingredient.extraQty > 0 ? `+${ingredient.extraQty.toFixed(2)} (${ingredient.extraPercentage}%)` : '-'}
+                      </td>
+                      <td
+                        className="px-3 py-2 text-center text-sm font-bold"
+                        style={{ color: 'var(--dms-amber-fg)', backgroundColor: 'var(--dms-amber)' }}
+                      >
+                        {ingredient.totalQty.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                        {ingredient.unit}
+                      </td>
+                      <td className="px-3 py-2 text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                        {ingredient.usedInProducts.join(', ')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Legend */}
-      <div
-        className="p-4 rounded-lg"
-        style={{ backgroundColor: 'var(--dms-success-callout)', border: '1px solid var(--dms-success-border)' }}
-      >
-        <p className="text-sm" style={{ color: 'var(--dms-success-text)' }}>
-          <strong>Color Key:</strong> Production Qty (black) = Recipe quantity for production
-          sheet | Extra Qty (orange) = Additional quantity for handling loss | Stores Qty (red)
-          = Total to be issued by stores | Customized Qty (orange background) = Customized
-          orders shown separately
-        </p>
-      </div>
+      {/* Saved Note Details */}
+      {savedNote && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Saved Stores Issue Note</CardTitle>
+              <div className="flex gap-2">
+                <Badge
+                  variant={
+                    savedNote.status === 'Draft' ? 'neutral' :
+                    savedNote.status === 'Issued' ? 'warning' : 'success'
+                  }
+                  size="lg"
+                >
+                  {savedNote.status}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Issue Note No</p>
+                  <p className="font-semibold">{savedNote.issueNoteNo}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Section</p>
+                  <p className="font-semibold">{savedNote.productionSectionName}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Issue Date</p>
+                  <p className="font-semibold">{new Date(savedNote.issueDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Items</p>
+                  <p className="font-semibold">{savedNote.items.length}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {savedNote.status === 'Draft' && (
+                  <Button
+                    variant="primary"
+                    onClick={handleIssueNote}
+                    disabled={isIssuing}
+                  >
+                    {isIssuing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Issuing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Issue Note
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {savedNote.status === 'Issued' && (
+                  <Button
+                    variant="primary"
+                    onClick={handleReceiveNote}
+                    disabled={isReceiving}
+                  >
+                    {isReceiving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Receiving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Receive Note
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {computedIngredients.length === 0 && !savedNote && !isComputing && (
+        <div
+          className="text-center py-12 rounded-lg border-2 border-dashed"
+          style={{ backgroundColor: 'var(--muted)', borderColor: 'var(--border)' }}
+        >
+          <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--muted-foreground)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>
+            Select a production plan and section, then click "Compute SIN" to generate the note
+          </p>
+        </div>
+      )}
     </div>
   );
 }

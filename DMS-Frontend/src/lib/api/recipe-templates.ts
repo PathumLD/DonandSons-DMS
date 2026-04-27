@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type ApiEnvelope } from './client';
 
 export interface RecipeTemplate {
   id: string;
@@ -47,26 +47,26 @@ export const recipeTemplatesApi = {
     if (search) params.append('search', search);
     if (activeOnly !== undefined) params.append('activeOnly', activeOnly.toString());
 
-    const response = await apiClient.get<RecipeTemplatesResponse>(`/recipetemplates?${params}`);
+    const response = await apiClient.get<ApiEnvelope<RecipeTemplatesResponse>>(`/api/RecipeTemplates?${params}`);
     return response.data.data;
   },
 
   async getById(id: string): Promise<RecipeTemplate> {
-    const response = await apiClient.get<RecipeTemplate>(`/recipetemplates/${id}`);
+    const response = await apiClient.get<ApiEnvelope<RecipeTemplate>>(`/api/RecipeTemplates/${id}`);
     return response.data.data;
   },
 
   async create(dto: CreateRecipeTemplateDto): Promise<RecipeTemplate> {
-    const response = await apiClient.post<RecipeTemplate>('/recipetemplates', dto);
+    const response = await apiClient.post<ApiEnvelope<RecipeTemplate>>('/api/RecipeTemplates', dto);
     return response.data.data;
   },
 
   async update(id: string, dto: UpdateRecipeTemplateDto): Promise<RecipeTemplate> {
-    const response = await apiClient.put<RecipeTemplate>(`/recipetemplates/${id}`, dto);
+    const response = await apiClient.put<ApiEnvelope<RecipeTemplate>>(`/api/RecipeTemplates/${id}`, dto);
     return response.data.data;
   },
 
   async delete(id: string): Promise<void> {
-    await apiClient.delete(`/recipetemplates/${id}`);
+    await apiClient.delete(`/api/RecipeTemplates/${id}`);
   },
 };
