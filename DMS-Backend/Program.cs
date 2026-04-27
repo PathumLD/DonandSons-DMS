@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using Serilog;
 using DMS_Backend.Authorization;
 using DMS_Backend.Configuration;
@@ -123,6 +124,10 @@ builder.Services.AddScoped<IGridConfigurationService, GridConfigurationService>(
 builder.Services.AddScoped<IWorkflowConfigService, WorkflowConfigService>();
 builder.Services.AddScoped<ISecurityPolicyService, SecurityPolicyService>();
 
+// Phase 5a: Recipe services
+builder.Services.AddScoped<IRecipeTemplateService, RecipeTemplateService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
+
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 
@@ -156,6 +161,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 // Suppressed in .csproj - consider migrating to Mapperly in future
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
+// Add OpenAPI/Swagger with Scalar UI
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -199,10 +205,15 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Map OpenAPI endpoint and enable Scalar UI
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-}
+    options
+        .WithTitle("DMS Backend API")
+        .WithTheme(Scalar.AspNetCore.ScalarTheme.Mars)
+        .WithDefaultHttpClient(Scalar.AspNetCore.ScalarTarget.CSharp, Scalar.AspNetCore.ScalarClient.HttpClient);
+});
 
 // Disable HTTPS redirection in development to avoid CORS preflight issues
 if (!app.Environment.IsDevelopment())

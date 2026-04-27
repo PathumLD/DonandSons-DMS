@@ -1,0 +1,10 @@
+2026-04-27 11:57:19.630 +05:30 [INF] Starting DMS Backend API
+2026-04-27 11:57:26.005 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-27 11:57:26.016 +05:30 [INF] Starting dev data seed
+2026-04-27 11:57:26.060 +05:30 [INF] Demo users already exist, skipping
+2026-04-27 11:57:26.077 +05:30 [INF] Demo roles already exist, skipping
+2026-04-27 11:57:26.081 +05:30 [INF] Dev data seed completed successfully
+2026-04-27 11:57:26.088 +05:30 [INF] Database seeded successfully
+2026-04-27 11:57:26.370 +05:30 [INF] DMS Backend API started successfully
+2026-04-27 11:57:29.647 +05:30 [WRN] Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+2026-04-27 11:58:59.310 +05:30 [WRN] Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.

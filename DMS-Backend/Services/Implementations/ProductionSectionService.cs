@@ -50,7 +50,7 @@ public sealed class ProductionSectionService : IProductionSectionService
 
         var productionSections = await query
             .Include(ps => ps.SectionConsumables.Where(sc => sc.IsActive))
-            .OrderBy(ps => ps.DisplayOrder)
+            .OrderBy(ps => ps.SortOrder)
             .ThenBy(ps => ps.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

@@ -49,6 +49,12 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<WorkflowConfig> WorkflowConfigs => Set<WorkflowConfig>();
     public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
 
+    // Phase 5a: Recipe entities
+    public DbSet<RecipeTemplate> RecipeTemplates => Set<RecipeTemplate>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<RecipeComponent> RecipeComponents => Set<RecipeComponent>();
+    public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -387,6 +393,107 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.IngredientType);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.SortOrder);
+        });
+
+        // RecipeTemplate entity configuration
+        modelBuilder.Entity<RecipeTemplate>(entity =>
+        {
+            entity.ToTable("recipe_templates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // Recipe entity configuration
+        modelBuilder.Entity<Recipe>(entity =>
+        {
+            entity.ToTable("recipes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Template)
+                .WithMany()
+                .HasForeignKey(e => e.TemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // RecipeComponent entity configuration
+        modelBuilder.Entity<RecipeComponent>(entity =>
+        {
+            entity.ToTable("recipe_components");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComponentName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Recipe)
+                .WithMany(r => r.RecipeComponents)
+                .HasForeignKey(e => e.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProductionSection)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.BaseRecipe)
+                .WithMany()
+                .HasForeignKey(e => e.BaseRecipeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.RecipeId);
+            entity.HasIndex(e => e.ProductionSectionId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // RecipeIngredient entity configuration
+        modelBuilder.Entity<RecipeIngredient>(entity =>
+        {
+            entity.ToTable("recipe_ingredients");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QtyPerUnit).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.ExtraQtyPerUnit).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.PercentageValue).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.RecipeComponent)
+                .WithMany(rc => rc.RecipeIngredients)
+                .HasForeignKey(e => e.RecipeComponentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Ingredient)
+                .WithMany()
+                .HasForeignKey(e => e.IngredientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.RecipeComponentId);
+            entity.HasIndex(e => e.IngredientId);
+            entity.HasIndex(e => e.IsActive);
         });
     }
 }

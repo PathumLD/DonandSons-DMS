@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
@@ -9,88 +9,154 @@ import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
 import { FileStack, Plus, Search, Edit, Eye, Copy, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockRecipeTemplates, type RecipeTemplate } from '@/lib/mock-data/dms-production';
-import { mockIngredients } from '@/lib/mock-data/products';
+import { recipeTemplatesApi, type RecipeTemplate } from '@/lib/api/recipe-templates';
+import toast from 'react-hot-toast';
 
 export default function RecipeTemplatesPage() {
-  const [templates, setTemplates] = useState<RecipeTemplate[]>(mockRecipeTemplates);
+  const [templates, setTemplates] = useState<RecipeTemplate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<RecipeTemplate | null>(null);
   
   const [formData, setFormData] = useState({
+    code: '',
     name: '',
     description: '',
-    active: true,
+    categoryId: '',
+    isDefault: false,
+    sortOrder: 0,
+    isActive: true,
   });
 
-  const filteredTemplates = useMemo(() => {
-    return templates.filter(t =>
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [templates, searchTerm]);
+  useEffect(() => {
+    fetchTemplates();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const totalPages = Math.ceil(filteredTemplates.length / pageSize);
-  const paginatedTemplates = filteredTemplates.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const handleAdd = () => {
-    const newTemplate: RecipeTemplate = {
-      id: Math.max(...templates.map(t => t.id)) + 1,
-      name: formData.name,
-      description: formData.description,
-      ingredientCount: 0,
-      ingredients: [],
-      active: formData.active,
-    };
-    setTemplates([newTemplate, ...templates]);
-    setShowAddModal(false);
-    resetForm();
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true);
+      const response = await recipeTemplatesApi.getAll(
+        currentPage,
+        pageSize,
+        searchTerm || undefined,
+        undefined
+      );
+      setTemplates(response.recipeTemplates);
+      setTotalPages(response.totalPages);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error.message || 'Failed to fetch recipe templates';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEdit = () => {
-    if (selectedTemplate) {
-      setTemplates(templates.map(t =>
-        t.id === selectedTemplate.id
-          ? { ...t, name: formData.name, description: formData.description, active: formData.active }
-          : t
-      ));
+  const handleAdd = async () => {
+    if (!formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await recipeTemplatesApi.create({
+        code: formData.code,
+        name: formData.name,
+        description: formData.description || undefined,
+        categoryId: formData.categoryId || undefined,
+        isDefault: formData.isDefault,
+        sortOrder: formData.sortOrder,
+        isActive: formData.isActive,
+      });
+      toast.success('Recipe template created successfully');
+      setShowAddModal(false);
+      resetForm();
+      fetchTemplates();
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error.message || 'Failed to create recipe template';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!selectedTemplate || !formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await recipeTemplatesApi.update(selectedTemplate.id, {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description || undefined,
+        categoryId: formData.categoryId || undefined,
+        isDefault: formData.isDefault,
+        sortOrder: formData.sortOrder,
+        isActive: formData.isActive,
+      });
+      toast.success('Recipe template updated successfully');
       setShowEditModal(false);
       setSelectedTemplate(null);
       resetForm();
+      fetchTemplates();
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error.message || 'Failed to update recipe template';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const openEditModal = (template: RecipeTemplate) => {
     setSelectedTemplate(template);
     setFormData({
+      code: template.code,
       name: template.name,
-      description: template.description,
-      active: template.active,
+      description: template.description || '',
+      categoryId: template.categoryId || '',
+      isDefault: template.isDefault,
+      sortOrder: template.sortOrder,
+      isActive: template.isActive,
     });
     setShowEditModal(true);
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', active: true });
+    setFormData({
+      code: '',
+      name: '',
+      description: '',
+      categoryId: '',
+      isDefault: false,
+      sortOrder: 0,
+      isActive: true,
+    });
   };
 
-  const handleApplyToProduct = (templateId: number) => {
+  const handleApplyToProduct = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
-      alert(`Applying template "${template.name}" to product. You can now edit the recipe per product.`);
+      toast.success(`Template "${template.name}" selected. Navigate to Recipe Management to apply it to a product.`);
     }
   };
 
   const columns = [
+    { key: 'code', label: 'Code', render: (item: RecipeTemplate) => <span className="font-medium">{item.code}</span> },
     { key: 'name', label: 'Template Name', render: (item: RecipeTemplate) => <span className="font-medium">{item.name}</span> },
     { key: 'description', label: 'Description' },
-    { key: 'ingredientCount', label: 'Ingredients', render: (item: RecipeTemplate) => <span className="font-semibold" style={{ color: '#C8102E' }}>{item.ingredientCount}</span> },
-    { key: 'active', label: 'Status', render: (item: RecipeTemplate) => item.active ? <Badge variant="success" size="sm">Active</Badge> : <Badge variant="neutral" size="sm">Inactive</Badge> },
+    { key: 'isActive', label: 'Status', render: (item: RecipeTemplate) => item.isActive ? <Badge variant="success" size="sm">Active</Badge> : <Badge variant="neutral" size="sm">Inactive</Badge> },
     {
       key: 'actions', label: 'Actions', render: (item: RecipeTemplate) => (
         <div className="flex items-center space-x-2">
@@ -107,7 +173,7 @@ export default function RecipeTemplatesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Predefined Recipe Templates</h1>
-          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Reusable recipe templates for quick product setup ({filteredTemplates.length} templates)</p>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Reusable recipe templates for quick product setup ({totalCount} templates)</p>
         </div>
         <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}><Plus className="w-4 h-4 mr-2" />Create Template</Button>
       </div>
@@ -123,40 +189,66 @@ export default function RecipeTemplatesPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable data={paginatedTemplates} columns={columns} currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
+          {loading ? (
+            <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+              Loading templates...
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+              No templates found
+            </div>
+          ) : (
+            <DataTable data={templates} columns={columns} currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
+          )}
         </CardContent>
       </Card>
 
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Create Recipe Template" size="lg">
         <div className="space-y-4">
+          <Input label="Template Code" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g., TMPL-CURRY-001" fullWidth required />
           <Input label="Template Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Vegetable Curry Template" fullWidth required />
           <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Brief description of the template..." fullWidth />
+          <Input label="Sort Order" type="number" value={String(formData.sortOrder)} onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })} placeholder="0" fullWidth />
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="isDefault" checked={formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} className="rounded" />
+            <label htmlFor="isDefault" className="text-sm" style={{ color: 'var(--foreground)' }}>Set as Default Template</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded" />
+            <label htmlFor="isActive" className="text-sm" style={{ color: 'var(--foreground)' }}>Active</label>
+          </div>
           
           <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-notes)', border: '1px solid var(--dms-notes-border)' }}>
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--dms-notes-title)' }}>Next Steps:</p>
             <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
-              After creating the template, you can add ingredient lines. Templates can then be applied to products as a starting point for their recipes.
+              After creating the template, navigate to Recipe Management to apply it to a product and define the recipe components and ingredients.
             </p>
           </div>
         </div>
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" />Create Template</Button>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>Cancel</Button>
+          <Button variant="primary" onClick={handleAdd} disabled={submitting}><Plus className="w-4 h-4 mr-2" />{submitting ? 'Creating...' : 'Create Template'}</Button>
         </ModalFooter>
       </Modal>
 
       <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedTemplate(null); resetForm(); }} title="Edit Recipe Template" size="lg">
         <div className="space-y-4">
+          <Input label="Template Code" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} placeholder="e.g., TMPL-CURRY-001" fullWidth required />
           <Input label="Template Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} fullWidth required />
           <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth />
+          <Input label="Sort Order" type="number" value={String(formData.sortOrder)} onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })} fullWidth />
           <div className="flex items-center space-x-2">
-            <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} className="rounded" />
-            <label className="text-sm" style={{ color: 'var(--foreground)' }}>Active</label>
+            <input type="checkbox" id="editIsDefault" checked={formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} className="rounded" />
+            <label htmlFor="editIsDefault" className="text-sm" style={{ color: 'var(--foreground)' }}>Set as Default Template</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="editIsActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded" />
+            <label htmlFor="editIsActive" className="text-sm" style={{ color: 'var(--foreground)' }}>Active</label>
           </div>
         </div>
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowEditModal(false); setSelectedTemplate(null); resetForm(); }}>Cancel</Button>
-          <Button variant="primary" onClick={handleEdit}><Save className="w-4 h-4 mr-2" />Save Changes</Button>
+          <Button variant="ghost" onClick={() => { setShowEditModal(false); setSelectedTemplate(null); resetForm(); }} disabled={submitting}>Cancel</Button>
+          <Button variant="primary" onClick={handleEdit} disabled={submitting}><Save className="w-4 h-4 mr-2" />{submitting ? 'Saving...' : 'Save Changes'}</Button>
         </ModalFooter>
       </Modal>
 
@@ -164,36 +256,36 @@ export default function RecipeTemplatesPage() {
         {selectedTemplate && (
           <div className="space-y-4">
             <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Template Code</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedTemplate.code}</p>
+            </div>
+            <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Template Name</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedTemplate.name}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Description</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedTemplate.description}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedTemplate.description || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Sort Order</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedTemplate.sortOrder}</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Default Template</p>
+                <Badge variant={selectedTemplate.isDefault ? 'success' : 'neutral'} size="sm">{selectedTemplate.isDefault ? 'Yes' : 'No'}</Badge>
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
+                <Badge variant={selectedTemplate.isActive ? 'success' : 'neutral'} size="sm">{selectedTemplate.isActive ? 'Active' : 'Inactive'}</Badge>
+              </div>
             </div>
             
-            <div>
-              <p className="text-xs font-medium mb-3" style={{ color: 'var(--muted-foreground)' }}>Ingredients ({selectedTemplate.ingredientCount})</p>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y" style={{ borderColor: 'var(--border)' }}>
-                  <thead style={{ backgroundColor: 'var(--muted)' }}>
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Ingredient</th>
-                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Qty/Unit</th>
-                      <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Unit</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                    {selectedTemplate.ingredients.map((ingredient, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2 text-sm" style={{ color: 'var(--foreground)' }}>{ingredient.ingredientCode} - {ingredient.ingredientName}</td>
-                        <td className="px-4 py-2 text-center text-sm font-semibold" style={{ color: '#C8102E' }}>{ingredient.qtyPerUnit}</td>
-                        <td className="px-4 py-2 text-center text-sm" style={{ color: 'var(--muted-foreground)' }}>{ingredient.unit}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-notes)', border: '1px solid var(--dms-notes-border)' }}>
+              <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
+                Recipe templates serve as metadata for organizing recipes. To apply this template and define recipe components with ingredients, navigate to Recipe Management and select a product.
+              </p>
             </div>
           </div>
         )}
