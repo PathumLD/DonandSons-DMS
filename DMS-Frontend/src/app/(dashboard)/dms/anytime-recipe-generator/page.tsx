@@ -1,45 +1,58 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { Zap, Printer, Download } from 'lucide-react';
-import { allProducts } from '@/lib/mock-data/products-full';
-import { rawIngredients as allIngredients } from '@/lib/mock-data/ingredients-full';
 import { PrintFooter } from '@/components/dms/print-footer';
-
-interface RecipeResult {
-  productName: string;
-  quantity: number;
-  timestamp: string;
-  operator: string;
-  ingredients: { name: string; qty: number; unit: string }[];
-}
+import { recipesApi, type RecipeCalculation } from '@/lib/api/recipes';
+import { productsApi, type Product } from '@/lib/api/products';
+import toast from 'react-hot-toast';
 
 export default function AnytimeRecipeGeneratorPage() {
-  const [selectedProductId, setSelectedProductId] = useState<number>(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(0);
   const [remarks, setRemarks] = useState<string>('');
-  const [result, setResult] = useState<RecipeResult | null>(null);
+  const [result, setResult] = useState<RecipeCalculation | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  const handleGenerate = () => {
-    const product = allProducts.find(p => p.id === selectedProductId);
-    if (!product || quantity <= 0) return;
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
-    // Mock recipe calculation
-    const mockIngredients = allIngredients.slice(0, 5).map((ing, idx) => ({
-      name: ing.name,
-      qty: quantity * (idx + 1) * 0.05,
-      unit: ing.uom
-    }));
+  const loadProducts = async () => {
+    try {
+      setIsLoadingProducts(true);
+      const response = await productsApi.getAll(1, 1000, undefined, true);
+      setProducts(response.products);
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
 
-    setResult({
-      productName: product.name,
-      quantity,
-      timestamp: new Date().toLocaleString(),
-      operator: 'Admin User',
-      ingredients: mockIngredients
-    });
+  const handleGenerate = async () => {
+    if (!selectedProductId || quantity <= 0) {
+      toast.error('Please select a product and enter a valid quantity');
+      return;
+    }
+
+    try {
+      setIsCalculating(true);
+      const calculation = await recipesApi.calculateIngredients(selectedProductId, quantity);
+      setResult(calculation);
+      toast.success('Recipe calculated successfully!');
+    } catch (error) {
+      console.error('Failed to calculate recipe:', error);
+      toast.error('Failed to calculate recipe. Make sure the product has a recipe configured.');
+      setResult(null);
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handlePrint = () => {
@@ -72,13 +85,16 @@ export default function AnytimeRecipeGeneratorPage() {
                 <label className="block text-sm font-medium mb-2">Product</label>
                 <select
                   value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(parseInt(e.target.value))}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg"
+                  disabled={isLoadingProducts}
                 >
-                  <option value={0}>Select a product...</option>
-                  {allProducts.map(product => (
+                  <option value="">
+                    {isLoadingProducts ? 'Loading products...' : 'Select a product...'}
+                  </option>
+                  {products.map(product => (
                     <option key={product.id} value={product.id}>
-                      {product.code} - {product.name}
+                      {product.code} - {product.description}
                     </option>
                   ))}
                 </select>
@@ -110,10 +126,10 @@ export default function AnytimeRecipeGeneratorPage() {
               <Button
                 onClick={handleGenerate}
                 className="w-full"
-                disabled={!selectedProductId || quantity <= 0}
+                disabled={isCalculating || !selectedProductId || quantity <= 0}
               >
                 <Zap className="w-4 h-4 mr-2" />
-                Generate Recipe
+                {isCalculating ? 'Calculating...' : 'Generate Recipe'}
               </Button>
             </div>
           </CardContent>
@@ -142,10 +158,13 @@ export default function AnytimeRecipeGeneratorPage() {
                 <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--muted)' }}>
                   <h3 className="text-lg font-semibold mb-1">{result.productName}</h3>
                   <div className="text-sm text-gray-600">
+                    Code: <span className="font-semibold text-gray-900">{result.productCode}</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
                     Quantity: <span className="font-semibold text-gray-900">{result.quantity}</span>
                   </div>
                   <div className="text-xs mt-2" style={{ color: 'var(--muted-foreground)' }}>
-                    Generated: {result.timestamp}
+                    Generated: {new Date().toLocaleString()}
                   </div>
                 </div>
 
@@ -154,10 +173,23 @@ export default function AnytimeRecipeGeneratorPage() {
                   <div className="space-y-2">
                     {result.ingredients.map((ing, idx) => (
                       <div key={idx} className="flex justify-between items-center py-2 border-b">
-                        <span className="text-sm">{ing.name}</span>
-                        <span className="font-semibold">
-                          {ing.qty.toFixed(2)} {ing.unit}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{ing.ingredientName}</span>
+                          <span className="text-xs text-gray-500">
+                            {ing.ingredientCode} • {ing.componentName}
+                            {ing.storesOnly && ' • Stores Only'}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold">
+                            {ing.totalQuantity.toFixed(2)} {ing.unit}
+                          </div>
+                          {ing.showExtraInStores && ing.extraQuantity > 0 && (
+                            <div className="text-xs text-orange-600">
+                              +{ing.extraQuantity.toFixed(2)} extra
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -170,7 +202,7 @@ export default function AnytimeRecipeGeneratorPage() {
                   </div>
                 )}
 
-                <PrintFooter preparedBy={result.operator} />
+                <PrintFooter preparedBy="System Generated" />
               </div>
             </CardContent>
           </Card>

@@ -49,6 +49,22 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<WorkflowConfig> WorkflowConfigs => Set<WorkflowConfig>();
     public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
 
+    // Phase 5a: Recipe entities
+    public DbSet<RecipeTemplate> RecipeTemplates => Set<RecipeTemplate>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<RecipeComponent> RecipeComponents => Set<RecipeComponent>();
+    public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
+
+    // Phase 5b: DMS Planning entities
+    public DbSet<DefaultQuantity> DefaultQuantities => Set<DefaultQuantity>();
+    public DbSet<DeliveryPlan> DeliveryPlans => Set<DeliveryPlan>();
+    public DbSet<DeliveryPlanItem> DeliveryPlanItems => Set<DeliveryPlanItem>();
+    public DbSet<OrderHeader> OrderHeaders => Set<OrderHeader>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<ImmediateOrder> ImmediateOrders => Set<ImmediateOrder>();
+    public DbSet<FreezerStock> FreezerStocks => Set<FreezerStock>();
+    public DbSet<FreezerStockHistory> FreezerStockHistory => Set<FreezerStockHistory>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -387,6 +403,346 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.IngredientType);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.SortOrder);
+        });
+
+        // RecipeTemplate entity configuration
+        modelBuilder.Entity<RecipeTemplate>(entity =>
+        {
+            entity.ToTable("recipe_templates");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // Recipe entity configuration
+        modelBuilder.Entity<Recipe>(entity =>
+        {
+            entity.ToTable("recipes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Template)
+                .WithMany()
+                .HasForeignKey(e => e.TemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // RecipeComponent entity configuration
+        modelBuilder.Entity<RecipeComponent>(entity =>
+        {
+            entity.ToTable("recipe_components");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComponentName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Recipe)
+                .WithMany(r => r.RecipeComponents)
+                .HasForeignKey(e => e.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProductionSection)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.BaseRecipe)
+                .WithMany()
+                .HasForeignKey(e => e.BaseRecipeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.RecipeId);
+            entity.HasIndex(e => e.ProductionSectionId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // RecipeIngredient entity configuration
+        modelBuilder.Entity<RecipeIngredient>(entity =>
+        {
+            entity.ToTable("recipe_ingredients");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QtyPerUnit).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.ExtraQtyPerUnit).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.PercentageValue).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.RecipeComponent)
+                .WithMany(rc => rc.RecipeIngredients)
+                .HasForeignKey(e => e.RecipeComponentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Ingredient)
+                .WithMany()
+                .HasForeignKey(e => e.IngredientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.RecipeComponentId);
+            entity.HasIndex(e => e.IngredientId);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // DefaultQuantity entity configuration
+        modelBuilder.Entity<DefaultQuantity>(entity =>
+        {
+            entity.ToTable("default_quantities");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.MiniQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DayType)
+                .WithMany()
+                .HasForeignKey(e => e.DayTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.OutletId, e.DayTypeId, e.ProductId }).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // DeliveryPlan entity configuration
+        modelBuilder.Entity<DeliveryPlan>(entity =>
+        {
+            entity.ToTable("delivery_plans");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.PlanNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ExcludedOutlets).HasColumnType("jsonb");
+            entity.Property(e => e.ExcludedProducts).HasColumnType("jsonb");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryTurn)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryTurnId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DayType)
+                .WithMany()
+                .HasForeignKey(e => e.DayTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.PlanNo).IsUnique();
+            entity.HasIndex(e => e.PlanDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // DeliveryPlanItem entity configuration
+        modelBuilder.Entity<DeliveryPlanItem>(entity =>
+        {
+            entity.ToTable("delivery_plan_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.MiniQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryPlan)
+                .WithMany(dp => dp.DeliveryPlanItems)
+                .HasForeignKey(e => e.DeliveryPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.DeliveryPlanId, e.ProductId, e.OutletId }).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // OrderHeader entity configuration
+        modelBuilder.Entity<OrderHeader>(entity =>
+        {
+            entity.ToTable("order_headers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryPlan)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryPlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.OrderNo).IsUnique();
+            entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // OrderItem entity configuration
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.ToTable("order_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.MiniQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.OrderHeader)
+                .WithMany(oh => oh.OrderItems)
+                .HasForeignKey(e => e.OrderHeaderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DeliveryTurn)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryTurnId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.OrderHeaderId, e.ProductId, e.OutletId, e.DeliveryTurnId }).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // ImmediateOrder entity configuration
+        modelBuilder.Entity<ImmediateOrder>(entity =>
+        {
+            entity.ToTable("immediate_orders");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.RequestedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FullQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.MiniQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryTurn)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryTurnId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.OrderNo).IsUnique();
+            entity.HasIndex(e => new { e.OrderDate, e.DeliveryTurnId, e.OutletId });
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // FreezerStock entity configuration
+        modelBuilder.Entity<FreezerStock>(entity =>
+        {
+            entity.ToTable("freezer_stocks");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CurrentStock).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProductionSection)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.LastUpdatedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.ProductId, e.ProductionSectionId }).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // FreezerStockHistory entity configuration
+        modelBuilder.Entity<FreezerStockHistory>(entity =>
+        {
+            entity.ToTable("freezer_stock_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TransactionType).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.PreviousStock).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.NewStock).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.ReferenceNo).HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.FreezerStock)
+                .WithMany(fs => fs.StockHistory)
+                .HasForeignKey(e => e.FreezerStockId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.FreezerStockId);
+            entity.HasIndex(e => e.TransactionDate);
+            entity.HasIndex(e => e.IsActive);
         });
     }
 }

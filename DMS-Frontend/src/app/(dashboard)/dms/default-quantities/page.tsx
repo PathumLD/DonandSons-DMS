@@ -1,32 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import { Save, RotateCcw } from 'lucide-react';
-import { mockOutlets, mockOrderProducts } from '@/lib/mock-data/dms-orders';
-
-type DayType = 'Weekday' | 'Saturday' | 'Sunday' | 'Holiday';
+import { Save, RotateCcw, Loader2 } from 'lucide-react';
+import { defaultQuantitiesApi, type BulkUpsertDefaultQuantityDto } from '@/lib/api/default-quantities';
+import { productsApi, type Product } from '@/lib/api/products';
+import { outletsApi, type Outlet } from '@/lib/api/outlets';
+import { dayTypesApi, type DayType } from '@/lib/api/day-types';
+import { toast } from 'sonner';
 
 export default function DefaultQuantitiesPage() {
-  const [selectedDayType, setSelectedDayType] = useState<DayType>('Weekday');
-  const [products] = useState(mockOrderProducts.slice(0, 8)); // Show subset for demo
-  const [outlets] = useState(mockOutlets.slice(0, 6)); // Show subset for demo
-  const [quantities, setQuantities] = useState<{ [productId: number]: { [outletId: number]: { full: number; mini: number } } }>({});
+  const [dayTypes, setDayTypes] = useState<DayType[]>([]);
+  const [selectedDayType, setSelectedDayType] = useState<string>('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [quantities, setQuantities] = useState<{ [productId: string]: { [outletId: string]: { full: number; mini: number; id?: string } } }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize with mock defaults
-  useState(() => {
-    const initialQtys: { [productId: number]: { [outletId: number]: { full: number; mini: number } } } = {};
-    products.forEach(product => {
-      initialQtys[product.id] = {};
-      outlets.forEach(outlet => {
-        initialQtys[product.id][outlet.id] = { full: 30 + outlet.id * 2, mini: 20 + outlet.id * 2 };
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDayType && products.length > 0 && outlets.length > 0) {
+      loadDefaultQuantities();
+    }
+  }, [selectedDayType]);
+
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const [dayTypesRes, productsRes, outletsRes] = await Promise.all([
+        dayTypesApi.getAll(1, 100, undefined, true),
+        productsApi.getAll(1, 100, undefined, undefined, true),
+        outletsApi.getAll(1, 100, undefined, undefined, true),
+      ]);
+
+      setDayTypes(dayTypesRes.dayTypes);
+      setProducts(productsRes.products);
+      setOutlets(outletsRes.outlets);
+
+      if (dayTypesRes.dayTypes.length > 0) {
+        setSelectedDayType(dayTypesRes.dayTypes[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadDefaultQuantities = async () => {
+    try {
+      const response = await defaultQuantitiesApi.getAll(1, 1000, undefined, selectedDayType);
+      
+      const quantitiesMap: { [productId: string]: { [outletId: string]: { full: number; mini: number; id?: string } } } = {};
+      
+      products.forEach(product => {
+        quantitiesMap[product.id] = {};
+        outlets.forEach(outlet => {
+          quantitiesMap[product.id][outlet.id] = { full: 0, mini: 0 };
+        });
       });
-    });
-    setQuantities(initialQtys);
-  });
 
-  const handleQuantityChange = (productId: number, outletId: number, type: 'full' | 'mini', value: string) => {
+      response.defaultQuantities.forEach(dq => {
+        if (quantitiesMap[dq.productId] && quantitiesMap[dq.productId][dq.outletId]) {
+          quantitiesMap[dq.productId][dq.outletId] = {
+            full: dq.fullQuantity,
+            mini: dq.miniQuantity,
+            id: dq.id,
+          };
+        }
+      });
+
+      setQuantities(quantitiesMap);
+    } catch (error) {
+      console.error('Error loading default quantities:', error);
+      toast.error('Failed to load default quantities');
+    }
+  };
+
+  const handleQuantityChange = (productId: string, outletId: string, type: 'full' | 'mini', value: string) => {
     const numValue = value === '' ? 0 : parseInt(value) || 0;
     setQuantities(prev => ({
       ...prev,
@@ -40,23 +97,72 @@ export default function DefaultQuantitiesPage() {
     }));
   };
 
-  const handleSave = () => {
-    console.log('Saving default quantities:', { dayType: selectedDayType, quantities });
-    alert(`Default quantities for ${selectedDayType} saved successfully!`);
+  const handleSave = async () => {
+    if (!selectedDayType) {
+      toast.error('Please select a day type');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const bulkData: BulkUpsertDefaultQuantityDto[] = [];
+      
+      products.forEach(product => {
+        outlets.forEach(outlet => {
+          const qty = quantities[product.id]?.[outlet.id];
+          if (qty) {
+            bulkData.push({
+              id: qty.id,
+              outletId: outlet.id,
+              dayTypeId: selectedDayType,
+              productId: product.id,
+              fullQuantity: qty.full,
+              miniQuantity: qty.mini,
+            });
+          }
+        });
+      });
+
+      await defaultQuantitiesApi.bulkUpsert(bulkData);
+      
+      toast.success('Default quantities saved successfully!');
+      
+      await loadDefaultQuantities();
+    } catch (error) {
+      console.error('Error saving default quantities:', error);
+      toast.error('Failed to save default quantities');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all quantities to zero?')) {
-      const resetQtys: { [productId: number]: { [outletId: number]: { full: number; mini: number } } } = {};
+      const resetQtys: { [productId: string]: { [outletId: string]: { full: number; mini: number; id?: string } } } = {};
       products.forEach(product => {
         resetQtys[product.id] = {};
         outlets.forEach(outlet => {
-          resetQtys[product.id][outlet.id] = { full: 0, mini: 0 };
+          const existingId = quantities[product.id]?.[outlet.id]?.id;
+          resetQtys[product.id][outlet.id] = { full: 0, mini: 0, id: existingId };
         });
       });
       setQuantities(resetQtys);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-96">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-primary)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading default quantities...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedDayTypeName = dayTypes.find(dt => dt.id === selectedDayType)?.name || '';
 
   return (
     <div className="p-6 space-y-6">
@@ -66,31 +172,49 @@ export default function DefaultQuantitiesPage() {
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Configure default outlet quantities per day type</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="md" onClick={handleReset}><RotateCcw className="w-4 h-4 mr-2" />Reset</Button>
-          <Button variant="primary" size="md" onClick={handleSave}><Save className="w-4 h-4 mr-2" />Save Defaults</Button>
+          <Button variant="ghost" size="md" onClick={handleReset} disabled={isSubmitting}>
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Reset
+          </Button>
+          <Button variant="primary" size="md" onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Defaults
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
       <div className="flex items-center space-x-3">
-        {(['Weekday', 'Saturday', 'Sunday', 'Holiday'] as DayType[]).map((dayType) => (
+        {dayTypes.map((dayType) => (
           <button
-            key={dayType}
-            onClick={() => setSelectedDayType(dayType)}
+            key={dayType.id}
+            onClick={() => setSelectedDayType(dayType.id)}
+            disabled={isSubmitting}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
-              backgroundColor: selectedDayType === dayType ? 'var(--brand-primary)' : 'var(--dms-pill-off-bg)',
-              color: selectedDayType === dayType ? '#ffffff' : 'var(--dms-pill-off-fg)',
-              border: `2px solid ${selectedDayType === dayType ? 'var(--brand-primary)' : 'var(--dms-pill-off-border)'}`,
+              backgroundColor: selectedDayType === dayType.id ? 'var(--brand-primary)' : 'var(--dms-pill-off-bg)',
+              color: selectedDayType === dayType.id ? '#ffffff' : 'var(--dms-pill-off-fg)',
+              border: `2px solid ${selectedDayType === dayType.id ? 'var(--brand-primary)' : 'var(--dms-pill-off-border)'}`,
+              opacity: isSubmitting ? 0.6 : 1,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
             }}
           >
-            {dayType}
+            {dayType.name}
           </button>
         ))}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{selectedDayType} Default Quantities - {products.length} Products × {outlets.length} Outlets</CardTitle>
+          <CardTitle>{selectedDayTypeName} Default Quantities - {products.length} Products × {outlets.length} Outlets</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -130,8 +254,9 @@ export default function DefaultQuantitiesPage() {
                             min="0"
                             value={quantities[product.id]?.[outlet.id]?.full || 0}
                             onChange={(e) => handleQuantityChange(product.id, outlet.id, 'full', e.target.value)}
+                            disabled={isSubmitting}
                             className="w-full px-2 py-1 text-sm text-center rounded"
-                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
+                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)', opacity: isSubmitting ? 0.6 : 1 }}
                           />
                         </td>
                         <td key={`${product.id}-${outlet.id}-m`} className="px-1 py-1 border-r" style={{ borderColor: 'var(--input)' }}>
@@ -140,8 +265,9 @@ export default function DefaultQuantitiesPage() {
                             min="0"
                             value={quantities[product.id]?.[outlet.id]?.mini || 0}
                             onChange={(e) => handleQuantityChange(product.id, outlet.id, 'mini', e.target.value)}
+                            disabled={isSubmitting}
                             className="w-full px-2 py-1 text-sm text-center rounded"
-                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
+                            style={{ border: '1px solid var(--input)', backgroundColor: 'var(--background)', color: 'var(--foreground)', opacity: isSubmitting ? 0.6 : 1 }}
                           />
                         </td>
                       </>
