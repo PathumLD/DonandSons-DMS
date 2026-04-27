@@ -128,6 +128,13 @@ builder.Services.AddScoped<ISecurityPolicyService, SecurityPolicyService>();
 builder.Services.AddScoped<IRecipeTemplateService, RecipeTemplateService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 
+// Phase 5b: DMS Planning services
+builder.Services.AddScoped<IDefaultQuantityService, DefaultQuantityService>();
+builder.Services.AddScoped<IDeliveryPlanService, DeliveryPlanService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IImmediateOrderService, ImmediateOrderService>();
+builder.Services.AddScoped<IFreezerStockService, FreezerStockService>();
+
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 

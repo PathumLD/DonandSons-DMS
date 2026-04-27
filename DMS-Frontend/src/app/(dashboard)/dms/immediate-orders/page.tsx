@@ -1,118 +1,273 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import Checkbox from '@/components/ui/checkbox';
-import { Zap, Plus, Search, Eye, Edit } from 'lucide-react';
+import { Zap, Plus, Search, Eye, Check, X, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockImmediateOrders, mockOrderProducts, mockDeliveryPlans, type ImmediateOrder } from '@/lib/mock-data/dms-orders';
+import { immediateOrdersApi, type ImmediateOrder, type CreateImmediateOrderDto } from '@/lib/api/immediate-orders';
+import { productsApi, type Product } from '@/lib/api/products';
+import { outletsApi, type Outlet } from '@/lib/api/outlets';
+import { deliveryTurnsApi, type DeliveryTurn } from '@/lib/api/delivery-turns';
+import { toast } from 'sonner';
 
 export default function ImmediateOrdersPage() {
-  const [orders, setOrders] = useState<ImmediateOrder[]>(mockImmediateOrders);
+  const [orders, setOrders] = useState<ImmediateOrder[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [deliveryTurns, setDeliveryTurns] = useState<DeliveryTurn[]>([]);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ImmediateOrder | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
   
-  const [formData, setFormData] = useState({
-    orderDate: new Date().toISOString().split('T')[0],
+  const [formData, setFormData] = useState<CreateImmediateOrderDto>({
+    outletId: '',
     productId: '',
-    qtyFull: '',
-    qtyMini: '',
-    isCustomized: false,
-    customizationNotes: '',
-    deliveryPlanId: '',
+    deliveryTurnId: '',
+    orderDate: new Date().toISOString().split('T')[0],
+    quantity: 0,
+    notes: '',
   });
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter(o => {
-      const matchesSearch = 
-        o.orderNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.productName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !statusFilter || o.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [orders, searchTerm, statusFilter]);
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  const totalPages = Math.ceil(filteredOrders.length / pageSize);
-  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  useEffect(() => {
+    loadOrders();
+  }, [currentPage, pageSize, statusFilter]);
 
-  const handleAdd = () => {
-    const product = mockOrderProducts.find(p => p.id === Number(formData.productId));
-    if (!product) return;
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const [productsRes, outletsRes, turnsRes] = await Promise.all([
+        productsApi.getAll(1, 100, undefined, undefined, true),
+        outletsApi.getAll(1, 100, undefined, undefined, true),
+        deliveryTurnsApi.getAll(1, 100, undefined, true),
+      ]);
+
+      setProducts(productsRes.products);
+      setOutlets(outletsRes.outlets);
+      setDeliveryTurns(turnsRes.deliveryTurns);
+
+      if (outletsRes.outlets.length > 0) {
+        setFormData(prev => ({ ...prev, outletId: outletsRes.outlets[0].id }));
+      }
+      if (turnsRes.deliveryTurns.length > 0) {
+        setFormData(prev => ({ ...prev, deliveryTurnId: turnsRes.deliveryTurns[0].id }));
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadOrders = async () => {
+    try {
+      const response = await immediateOrdersApi.getAll(
+        currentPage,
+        pageSize,
+        undefined,
+        undefined,
+        statusFilter || undefined
+      );
+      setOrders(response.immediateOrders);
+      setTotalCount(response.totalCount);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      toast.error('Failed to load immediate orders');
+    }
+  };
+
+  const handleAdd = async () => {
+    try {
+      setIsSubmitting(true);
+      await immediateOrdersApi.create(formData);
+      
+      toast.success('Immediate order created successfully!');
+      setShowAddModal(false);
+      resetForm();
+      await loadOrders();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to create immediate order');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleApprove = async (orderId: string) => {
+    try {
+      await immediateOrdersApi.approve(orderId);
+      toast.success('Order approved successfully!');
+      await loadOrders();
+    } catch (error) {
+      console.error('Error approving order:', error);
+      toast.error('Failed to approve order');
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedOrder) return;
     
-    const newOrder: ImmediateOrder = {
-      id: Math.max(...orders.map(o => o.id)) + 1,
-      orderNo: `IO-2026-${String(orders.length + 1).padStart(3, '0')}`,
-      orderDate: formData.orderDate,
-      productId: Number(formData.productId),
-      productCode: product.code,
-      productName: product.name,
-      qtyFull: Number(formData.qtyFull),
-      qtyMini: Number(formData.qtyMini),
-      isCustomized: formData.isCustomized,
-      customizationNotes: formData.customizationNotes || undefined,
-      status: 'Pending',
-      requestedBy: 'cashier1',
-      deliveryPlanId: formData.deliveryPlanId ? Number(formData.deliveryPlanId) : undefined,
-    };
-    setOrders([newOrder, ...orders]);
-    setShowAddModal(false);
-    resetForm();
+    if (!rejectReason.trim()) {
+      toast.error('Please provide a rejection reason');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await immediateOrdersApi.reject(selectedOrder.id, rejectReason);
+      
+      toast.success('Order rejected successfully!');
+      setShowRejectModal(false);
+      setSelectedOrder(null);
+      setRejectReason('');
+      await loadOrders();
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      toast.error('Failed to reject order');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setFormData({
-      orderDate: new Date().toISOString().split('T')[0],
+      outletId: outlets[0]?.id || '',
       productId: '',
-      qtyFull: '',
-      qtyMini: '',
-      isCustomized: false,
-      customizationNotes: '',
-      deliveryPlanId: '',
+      deliveryTurnId: deliveryTurns[0]?.id || '',
+      orderDate: new Date().toISOString().split('T')[0],
+      quantity: 0,
+      notes: '',
     });
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Confirmed': return <Badge variant="success" size="sm">Confirmed</Badge>;
-      case 'Cancelled': return <Badge variant="danger" size="sm">Cancelled</Badge>;
+      case 'Approved': return <Badge variant="success" size="sm">Approved</Badge>;
+      case 'Rejected': return <Badge variant="danger" size="sm">Rejected</Badge>;
+      case 'Completed': return <Badge variant="success" size="sm">Completed</Badge>;
       default: return <Badge variant="warning" size="sm">Pending</Badge>;
     }
   };
 
   const columns = [
-    { key: 'orderDate', label: 'Order Date', render: (item: ImmediateOrder) => <span className="font-medium">{new Date(item.orderDate).toLocaleDateString()}</span> },
-    { key: 'orderNo', label: 'Order No', render: (item: ImmediateOrder) => <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>{item.orderNo}</span> },
-    { key: 'product', label: 'Product', render: (item: ImmediateOrder) => <span>{item.productCode} - {item.productName}</span> },
-    { key: 'qtyFull', label: 'Qty Full', render: (item: ImmediateOrder) => <span className="font-semibold">{item.qtyFull}</span> },
-    { key: 'qtyMini', label: 'Qty Mini', render: (item: ImmediateOrder) => <span className="font-semibold">{item.qtyMini}</span> },
-    { key: 'isCustomized', label: 'Customized', render: (item: ImmediateOrder) => item.isCustomized ? <Badge variant="warning" size="sm">★ Custom</Badge> : <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Standard</span> },
-    { key: 'status', label: 'Status', render: (item: ImmediateOrder) => getStatusBadge(item.status) },
-    { key: 'actions', label: 'Actions', render: (item: ImmediateOrder) => (
-      <div className="flex items-center space-x-2">
-        <button onClick={() => { setSelectedOrder(item); setShowViewModal(true); }} className="p-1.5 rounded transition-colors" style={{ color: 'var(--muted-foreground)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'} title="View"><Eye className="w-4 h-4" /></button>
-      </div>
-    )},
+    { 
+      key: 'orderDate', 
+      label: 'Order Date', 
+      render: (item: any) => <span className="font-medium">{new Date(item.orderDate).toLocaleDateString()}</span> 
+    },
+    { 
+      key: 'outlet', 
+      label: 'Outlet', 
+      render: (item: any) => <span>{item.outletName}</span> 
+    },
+    { 
+      key: 'product', 
+      label: 'Product', 
+      render: (item: any) => <span>{item.productName}</span> 
+    },
+    { 
+      key: 'turn', 
+      label: 'Turn', 
+      render: (item: any) => <span>{item.deliveryTurnName}</span> 
+    },
+    { 
+      key: 'quantity', 
+      label: 'Quantity', 
+      render: (item: any) => <span className="font-semibold">{item.quantity}</span> 
+    },
+    { 
+      key: 'status', 
+      label: 'Status', 
+      render: (item: any) => getStatusBadge(item.status) 
+    },
+    { 
+      key: 'requestedAt', 
+      label: 'Requested', 
+      render: (item: any) => <span className="text-xs">{new Date(item.requestedAt).toLocaleString()}</span> 
+    },
+    { 
+      key: 'actions', 
+      label: 'Actions', 
+      render: (item: any) => (
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => { setSelectedOrder(item); setShowViewModal(true); }} 
+            className="p-1.5 rounded transition-colors" 
+            style={{ color: 'var(--muted-foreground)' }} 
+            title="View"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          {item.status === 'Pending' && (
+            <>
+              <button 
+                onClick={() => handleApprove(item.id)} 
+                className="p-1.5 rounded transition-colors" 
+                style={{ color: 'var(--success)' }} 
+                title="Approve"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => { setSelectedOrder(item); setShowRejectModal(true); }} 
+                className="p-1.5 rounded transition-colors" 
+                style={{ color: 'var(--destructive)' }} 
+                title="Reject"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+      )
+    },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-96">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-primary)' }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading immediate orders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Immediate Orders</h1>
-          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Quick order management for urgent requests ({filteredOrders.length} orders)</p>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Quick order management for urgent requests ({totalCount} orders)</p>
         </div>
-        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}><Plus className="w-4 h-4 mr-2" />Add Order</Button>
+        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Order
+        </Button>
       </div>
 
       <Card>
@@ -120,47 +275,90 @@ export default function ImmediateOrdersPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Immediate Orders</CardTitle>
             <div className="flex items-center space-x-3">
-              <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} options={[{ value: '', label: 'All Status' }, { value: 'Pending', label: 'Pending' }, { value: 'Confirmed', label: 'Confirmed' }, { value: 'Cancelled', label: 'Cancelled' }]} />
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                <input type="text" placeholder="Search orders..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--input)' }} />
-              </div>
+              <Select 
+                value={statusFilter} 
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} 
+                options={[
+                  { value: '', label: 'All Status' }, 
+                  { value: 'Pending', label: 'Pending' }, 
+                  { value: 'Approved', label: 'Approved' }, 
+                  { value: 'Rejected', label: 'Rejected' },
+                  { value: 'Completed', label: 'Completed' }
+                ]} 
+              />
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable data={paginatedOrders} columns={columns} currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
+          <DataTable 
+            data={orders} 
+            columns={columns} 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            pageSize={pageSize} 
+            onPageChange={setCurrentPage} 
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} 
+          />
         </CardContent>
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Immediate Order" size="lg">
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Immediate Order" size="md">
         <div className="space-y-4">
-          <Input label="Order Date" type="date" value={formData.orderDate} onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })} fullWidth required />
+          <Input 
+            label="Order Date" 
+            type="date" 
+            value={formData.orderDate} 
+            onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })} 
+            fullWidth 
+            required 
+          />
           
-          <Select label="Product" value={formData.productId} onChange={(e) => setFormData({ ...formData, productId: e.target.value })} options={mockOrderProducts.filter(p => p.isIncluded).map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))} placeholder="Select product" fullWidth required />
+          <Select 
+            label="Outlet" 
+            value={formData.outletId} 
+            onChange={(e) => setFormData({ ...formData, outletId: e.target.value })} 
+            options={outlets.map(o => ({ value: o.id, label: o.name }))} 
+            fullWidth 
+            required 
+          />
           
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Quantity Full" type="number" min="0" value={formData.qtyFull} onChange={(e) => setFormData({ ...formData, qtyFull: e.target.value })} placeholder="0" fullWidth required />
-            <Input label="Quantity Mini" type="number" min="0" value={formData.qtyMini} onChange={(e) => setFormData({ ...formData, qtyMini: e.target.value })} placeholder="0" fullWidth />
-          </div>
+          <Select 
+            label="Product" 
+            value={formData.productId} 
+            onChange={(e) => setFormData({ ...formData, productId: e.target.value })} 
+            options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))} 
+            placeholder="Select product" 
+            fullWidth 
+            required 
+          />
+
+          <Select 
+            label="Delivery Turn" 
+            value={formData.deliveryTurnId} 
+            onChange={(e) => setFormData({ ...formData, deliveryTurnId: e.target.value })} 
+            options={deliveryTurns.map(t => ({ value: t.id, label: t.name }))} 
+            fullWidth 
+            required 
+          />
           
-          <Checkbox checked={formData.isCustomized} onChange={(e) => setFormData({ ...formData, isCustomized: e.target.checked })} label="Is Customized Order" />
+          <Input 
+            label="Quantity" 
+            type="number" 
+            min="0" 
+            value={formData.quantity.toString()} 
+            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} 
+            placeholder="0" 
+            fullWidth 
+            required 
+          />
           
-          {formData.isCustomized && (
-            <div className="w-full">
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>Customization Notes</label>
-              <textarea
-                value={formData.customizationNotes}
-                onChange={(e) => setFormData({ ...formData, customizationNotes: e.target.value })}
-                placeholder="Special instructions or customizations..."
-                rows={3}
-                className="w-full rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none"
-                style={{ border: '1px solid var(--input)', color: 'var(--foreground)' }}
-              />
-            </div>
-          )}
-          
-          <Select label="Link to Delivery Plan (Optional)" value={formData.deliveryPlanId} onChange={(e) => setFormData({ ...formData, deliveryPlanId: e.target.value })} options={[{ value: '', label: 'Standalone Order' }, ...mockDeliveryPlans.filter(p => p.status !== 'Delivered').map(p => ({ value: p.id, label: `${p.planNo} - ${p.dayType} ${p.deliveryTurn}` }))]} fullWidth />
+          <Input 
+            label="Notes" 
+            value={formData.notes} 
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
+            placeholder="Special instructions or notes..." 
+            fullWidth 
+          />
           
           <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-warn-box)', border: '1px solid var(--dms-warn-box-border)' }}>
             <div className="flex items-start space-x-2">
@@ -168,15 +366,29 @@ export default function ImmediateOrdersPage() {
               <div>
                 <p className="text-sm font-medium mb-1" style={{ color: 'var(--dms-notes-title)' }}>Immediate Order</p>
                 <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
-                  Quantities from this order will be included in the Grand Total and will be produced immediately.
+                  This order requires approval before production. It will be produced immediately once approved.
                 </p>
               </div>
             </div>
           </div>
         </div>
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" />Add Order</Button>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAdd} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Order
+              </>
+            )}
+          </Button>
         </ModalFooter>
       </Modal>
 
@@ -184,25 +396,91 @@ export default function ImmediateOrdersPage() {
         {selectedOrder && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Order No</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.orderNo}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>{getStatusBadge(selectedOrder.status)}</div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
+                {getStatusBadge(selectedOrder.status)}
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Order Date</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selectedOrder.orderDate).toLocaleDateString()}</p>
+              </div>
             </div>
-            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.productCode} - {selectedOrder.productName}</p></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity Full</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.qtyFull}</p></div>
-              <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity Mini</p><p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.qtyMini}</p></div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Outlet</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.outletName}</p>
             </div>
-            {selectedOrder.isCustomized && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--dms-amber-tint)' }}>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--dms-notes-title)' }}>★ Customization Notes</p>
-                <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>{selectedOrder.customizationNotes}</p>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.productName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Delivery Turn</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.deliveryTurnName}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.quantity}</p>
+            </div>
+            {selectedOrder.notes && (
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Notes</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.notes}</p>
               </div>
             )}
-            <div><p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested By</p><p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.requestedBy}</p></div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested By</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.requestedBy}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested At</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selectedOrder.requestedAt).toLocaleString()}</p>
+            </div>
+            {selectedOrder.status === 'Rejected' && selectedOrder.rejectionReason && (
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--destructive-bg)', border: '1px solid var(--destructive)' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--destructive)' }}>Rejection Reason</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.rejectionReason}</p>
+              </div>
+            )}
           </div>
         )}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelectedOrder(null); }}>Close</Button>
+          <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelectedOrder(null); }}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={showRejectModal} onClose={() => { setShowRejectModal(false); setSelectedOrder(null); setRejectReason(''); }} title="Reject Order" size="md">
+        <div className="space-y-4">
+          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+            Please provide a reason for rejecting this order:
+          </p>
+          <Input 
+            label="Rejection Reason" 
+            value={rejectReason} 
+            onChange={(e) => setRejectReason(e.target.value)} 
+            placeholder="Enter rejection reason..." 
+            fullWidth 
+            required 
+          />
+        </div>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => { setShowRejectModal(false); setSelectedOrder(null); setRejectReason(''); }} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleReject} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Rejecting...
+              </>
+            ) : (
+              <>
+                <X className="w-4 h-4 mr-2" />
+                Reject Order
+              </>
+            )}
+          </Button>
         </ModalFooter>
       </Modal>
     </div>

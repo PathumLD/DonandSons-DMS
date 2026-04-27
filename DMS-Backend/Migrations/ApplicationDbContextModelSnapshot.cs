@@ -494,6 +494,229 @@ namespace DMS_Backend.Migrations
                     b.ToTable("day_types");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DefaultQuantity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DayTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("day_type_id");
+
+                    b.Property<decimal>("FullQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("full_quantity");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("MiniQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("mini_quantity");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outlet_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DayTypeId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("OutletId", "DayTypeId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("default_quantities", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DayTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("day_type_id");
+
+                    b.Property<Guid>("DeliveryTurnId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_turn_id");
+
+                    b.PrimitiveCollection<string>("ExcludedOutlets")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("excluded_outlets");
+
+                    b.PrimitiveCollection<string>("ExcludedProducts")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("excluded_products");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PlanDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("plan_date");
+
+                    b.Property<string>("PlanNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("plan_no");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("UseFreezerStock")
+                        .HasColumnType("boolean")
+                        .HasColumnName("use_freezer_stock");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DayTypeId");
+
+                    b.HasIndex("DeliveryTurnId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("PlanDate");
+
+                    b.HasIndex("PlanNo")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("delivery_plans", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryPlanItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeliveryPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_plan_id");
+
+                    b.Property<decimal>("FullQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("full_quantity");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("MiniQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("mini_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outlet_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("OutletId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("DeliveryPlanId", "ProductId", "OutletId")
+                        .IsUnique();
+
+                    b.ToTable("delivery_plan_items", (string)null);
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryTurn", b =>
                 {
                     b.Property<Guid>("Id")
@@ -569,6 +792,149 @@ namespace DMS_Backend.Migrations
                     b.ToTable("delivery_turns");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.FreezerStock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CurrentStock")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("current_stock");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_updated_at");
+
+                    b.Property<Guid>("LastUpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_updated_by");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid>("ProductionSectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_section_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("LastUpdatedBy");
+
+                    b.HasIndex("ProductionSectionId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("ProductId", "ProductionSectionId")
+                        .IsUnique();
+
+                    b.ToTable("freezer_stocks", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.FreezerStockHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FreezerStockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("freezer_stock_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("NewStock")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("new_stock");
+
+                    b.Property<decimal>("PreviousStock")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("previous_stock");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ReferenceNo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reference_no");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("transaction_date");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("transaction_type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("FreezerStockId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("freezer_stock_history", (string)null);
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.GridConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
@@ -638,6 +1004,118 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("grid_configurations");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ImmediateOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DeliveryTurnId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_turn_id");
+
+                    b.Property<decimal>("FullQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("full_quantity");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("MiniQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("mini_quantity");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("order_date");
+
+                    b.Property<string>("OrderNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("order_no");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outlet_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<string>("RequestedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeliveryTurnId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("OrderNo")
+                        .IsUnique();
+
+                    b.HasIndex("OutletId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("OrderDate", "DeliveryTurnId", "OutletId");
+
+                    b.ToTable("immediate_orders", (string)null);
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Ingredient", b =>
@@ -885,6 +1363,172 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("label_templates");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.OrderHeader", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DeliveryPlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_plan_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("order_date");
+
+                    b.Property<string>("OrderNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("order_no");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("TotalItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_items");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("UseFreezerStock")
+                        .HasColumnType("boolean")
+                        .HasColumnName("use_freezer_stock");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeliveryPlanId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("OrderDate");
+
+                    b.HasIndex("OrderNo")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("order_headers", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CustomizationNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("customization_notes");
+
+                    b.Property<Guid>("DeliveryTurnId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_turn_id");
+
+                    b.Property<decimal>("FullQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("full_quantity");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsCustomized")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_customized");
+
+                    b.Property<bool>("IsExtra")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_extra");
+
+                    b.Property<decimal>("MiniQuantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("mini_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OrderHeaderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_header_id");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outlet_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeliveryTurnId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("OutletId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("OrderHeaderId", "ProductId", "OutletId", "DeliveryTurnId")
+                        .IsUnique();
+
+                    b.ToTable("order_items", (string)null);
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Outlet", b =>
@@ -2515,6 +3159,115 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DefaultQuantity", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DayType", "DayType")
+                        .WithMany()
+                        .HasForeignKey("DayTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DayType");
+
+                    b.Navigation("Outlet");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryPlan", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DayType", "DayType")
+                        .WithMany()
+                        .HasForeignKey("DayTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryTurn", "DeliveryTurn")
+                        .WithMany()
+                        .HasForeignKey("DeliveryTurnId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DayType");
+
+                    b.Navigation("DeliveryTurn");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryPlanItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryPlan", "DeliveryPlan")
+                        .WithMany("DeliveryPlanItems")
+                        .HasForeignKey("DeliveryPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeliveryPlan");
+
+                    b.Navigation("Outlet");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryTurn", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
@@ -2526,6 +3279,68 @@ namespace DMS_Backend.Migrations
                         .HasForeignKey("UpdatedById");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.FreezerStock", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "LastUpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionSection", "ProductionSection")
+                        .WithMany()
+                        .HasForeignKey("ProductionSectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("LastUpdatedByUser");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductionSection");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.FreezerStockHistory", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.FreezerStock", "FreezerStock")
+                        .WithMany("StockHistory")
+                        .HasForeignKey("FreezerStockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("FreezerStock");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -2549,6 +3364,52 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ImmediateOrder", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryTurn", "DeliveryTurn")
+                        .WithMany()
+                        .HasForeignKey("DeliveryTurnId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeliveryTurn");
+
+                    b.Navigation("Outlet");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Ingredient", b =>
@@ -2608,6 +3469,75 @@ namespace DMS_Backend.Migrations
                         .HasForeignKey("UpdatedById");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.OrderHeader", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryPlan", "DeliveryPlan")
+                        .WithMany()
+                        .HasForeignKey("DeliveryPlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeliveryPlan");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.OrderItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryTurn", "DeliveryTurn")
+                        .WithMany()
+                        .HasForeignKey("DeliveryTurnId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.OrderHeader", "OrderHeader")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderHeaderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeliveryTurn");
+
+                    b.Navigation("OrderHeader");
+
+                    b.Navigation("Outlet");
+
+                    b.Navigation("Product");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -3054,9 +3984,24 @@ namespace DMS_Backend.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryPlan", b =>
+                {
+                    b.Navigation("DeliveryPlanItems");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.DeliveryTurn", b =>
                 {
                     b.Navigation("Outlets");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.FreezerStock", b =>
+                {
+                    b.Navigation("StockHistory");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.OrderHeader", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.Outlet", b =>
