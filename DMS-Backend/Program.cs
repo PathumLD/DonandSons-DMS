@@ -135,6 +135,14 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IImmediateOrderService, ImmediateOrderService>();
 builder.Services.AddScoped<IFreezerStockService, FreezerStockService>();
 
+// Phase 5c: DMS Computed Views services
+builder.Services.AddScoped<IDeliverySummaryService, DeliverySummaryService>();
+builder.Services.AddScoped<IDashboardPivotService, DashboardPivotService>();
+builder.Services.AddScoped<IProductionPlannerService, ProductionPlannerService>();
+builder.Services.AddScoped<IStoresIssueNoteService, StoresIssueNoteService>();
+builder.Services.AddScoped<IPrintService, PrintService>();
+builder.Services.AddScoped<IReconciliationService, ReconciliationService>();
+
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 

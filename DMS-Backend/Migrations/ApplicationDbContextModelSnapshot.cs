@@ -2067,6 +2067,140 @@ namespace DMS_Backend.Migrations
                     b.ToTable("products", (string)null);
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AdjustedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("AdjustedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AdjustmentQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ProductionPlanItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdjustedAt");
+
+                    b.HasIndex("ProductionPlanItemId");
+
+                    b.ToTable("production_adjustments", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ComputedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("DeliveryPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TotalProducts")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalQuantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("UseFreezerStock")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComputedDate");
+
+                    b.HasIndex("DeliveryPlanId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("production_plans", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlanItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<decimal>("CustomizedFullQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("CustomizedMiniQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("FreezerStock")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<bool>("IsExcluded")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("ProduceQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductionPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductionSectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("RegularFullQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("RegularMiniQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductionSectionId");
+
+                    b.HasIndex("ProductionPlanId", "ProductionSectionId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("production_plan_items", (string)null);
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionSection", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2422,6 +2556,110 @@ namespace DMS_Backend.Migrations
                     b.ToTable("recipe_templates", (string)null);
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Reconciliation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("DeliveryPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ReconciliationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReconciliationNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SubmittedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OutletId");
+
+                    b.HasIndex("ReconciliationDate");
+
+                    b.HasIndex("ReconciliationNo")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("DeliveryPlanId", "OutletId")
+                        .IsUnique();
+
+                    b.ToTable("reconciliations", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ReconciliationItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ActualQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<decimal>("ExpectedQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("ReconciliationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("VarianceQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("VarianceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("VarianceType");
+
+                    b.HasIndex("ReconciliationId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("reconciliation_items", (string)null);
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2726,6 +2964,107 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("security_policies");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<DateTime>("IssueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IssueNoteNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("IssuedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductionPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductionSectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReceivedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IssueDate");
+
+                    b.HasIndex("IssueNoteNo")
+                        .IsUnique();
+
+                    b.HasIndex("ProductionSectionId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ProductionPlanId", "ProductionSectionId")
+                        .IsUnique();
+
+                    b.ToTable("stores_issue_notes", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNoteItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<decimal>("ExtraQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("IngredientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("ProductionQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("StoresIssueNoteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalQty")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IngredientId");
+
+                    b.HasIndex("StoresIssueNoteId", "IngredientId")
+                        .IsUnique();
+
+                    b.ToTable("stores_issue_note_items", (string)null);
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.SystemLog", b =>
@@ -3682,6 +4021,55 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionAdjustment", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionPlanItem", "ProductionPlanItem")
+                        .WithMany("ProductionAdjustments")
+                        .HasForeignKey("ProductionPlanItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductionPlanItem");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlan", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryPlan", "DeliveryPlan")
+                        .WithMany()
+                        .HasForeignKey("DeliveryPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryPlan");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlanItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionPlan", "ProductionPlan")
+                        .WithMany("ProductionPlanItems")
+                        .HasForeignKey("ProductionPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionSection", "ProductionSection")
+                        .WithMany()
+                        .HasForeignKey("ProductionSectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductionPlan");
+
+                    b.Navigation("ProductionSection");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionSection", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
@@ -3818,6 +4206,44 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Reconciliation", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.DeliveryPlan", "DeliveryPlan")
+                        .WithMany()
+                        .HasForeignKey("DeliveryPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryPlan");
+
+                    b.Navigation("Outlet");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ReconciliationItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Reconciliation", "Reconciliation")
+                        .WithMany("ReconciliationItems")
+                        .HasForeignKey("ReconciliationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Reconciliation");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Role", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
@@ -3906,6 +4332,44 @@ namespace DMS_Backend.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNote", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionPlan", "ProductionPlan")
+                        .WithMany()
+                        .HasForeignKey("ProductionPlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.ProductionSection", "ProductionSection")
+                        .WithMany()
+                        .HasForeignKey("ProductionSectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductionPlan");
+
+                    b.Navigation("ProductionSection");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNoteItem", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.Ingredient", "Ingredient")
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.StoresIssueNote", "StoresIssueNote")
+                        .WithMany("StoresIssueNoteItems")
+                        .HasForeignKey("StoresIssueNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ingredient");
+
+                    b.Navigation("StoresIssueNote");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.SystemSetting", b =>
@@ -4019,6 +4483,16 @@ namespace DMS_Backend.Migrations
                     b.Navigation("PriceListItems");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlan", b =>
+                {
+                    b.Navigation("ProductionPlanItems");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlanItem", b =>
+                {
+                    b.Navigation("ProductionAdjustments");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionSection", b =>
                 {
                     b.Navigation("SectionConsumables");
@@ -4034,11 +4508,21 @@ namespace DMS_Backend.Migrations
                     b.Navigation("RecipeIngredients");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Reconciliation", b =>
+                {
+                    b.Navigation("ReconciliationItems");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.Role", b =>
                 {
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNote", b =>
+                {
+                    b.Navigation("StoresIssueNoteItems");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.UnitOfMeasure", b =>

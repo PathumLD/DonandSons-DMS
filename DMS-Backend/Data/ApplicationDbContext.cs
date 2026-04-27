@@ -65,6 +65,15 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<FreezerStock> FreezerStocks => Set<FreezerStock>();
     public DbSet<FreezerStockHistory> FreezerStockHistory => Set<FreezerStockHistory>();
 
+    // Phase 5c: DMS Computed Views entities
+    public DbSet<ProductionPlan> ProductionPlans => Set<ProductionPlan>();
+    public DbSet<ProductionPlanItem> ProductionPlanItems => Set<ProductionPlanItem>();
+    public DbSet<ProductionAdjustment> ProductionAdjustments => Set<ProductionAdjustment>();
+    public DbSet<StoresIssueNote> StoresIssueNotes => Set<StoresIssueNote>();
+    public DbSet<StoresIssueNoteItem> StoresIssueNoteItems => Set<StoresIssueNoteItem>();
+    public DbSet<Reconciliation> Reconciliations => Set<Reconciliation>();
+    public DbSet<ReconciliationItem> ReconciliationItems => Set<ReconciliationItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -743,6 +752,177 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.FreezerStockId);
             entity.HasIndex(e => e.TransactionDate);
             entity.HasIndex(e => e.IsActive);
+        });
+
+        // ProductionPlan entity configuration
+        modelBuilder.Entity<ProductionPlan>(entity =>
+        {
+            entity.ToTable("production_plans");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComputedDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.TotalQuantity).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryPlan)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.DeliveryPlanId).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ComputedDate);
+        });
+
+        // ProductionPlanItem entity configuration
+        modelBuilder.Entity<ProductionPlanItem>(entity =>
+        {
+            entity.ToTable("production_plan_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RegularFullQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.RegularMiniQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.CustomizedFullQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.CustomizedMiniQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.FreezerStock).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.ProduceQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.ProductionPlan)
+                .WithMany(pp => pp.ProductionPlanItems)
+                .HasForeignKey(e => e.ProductionPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProductionSection)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.ProductionPlanId, e.ProductionSectionId, e.ProductId }).IsUnique();
+        });
+
+        // ProductionAdjustment entity configuration
+        modelBuilder.Entity<ProductionAdjustment>(entity =>
+        {
+            entity.ToTable("production_adjustments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AdjustmentQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.AdjustedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.ProductionPlanItem)
+                .WithMany(ppi => ppi.ProductionAdjustments)
+                .HasForeignKey(e => e.ProductionPlanItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.ProductionPlanItemId);
+            entity.HasIndex(e => e.AdjustedAt);
+        });
+
+        // StoresIssueNote entity configuration
+        modelBuilder.Entity<StoresIssueNote>(entity =>
+        {
+            entity.ToTable("stores_issue_notes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IssueNoteNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.IssueDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.ProductionPlan)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProductionSection)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.IssueNoteNo).IsUnique();
+            entity.HasIndex(e => new { e.ProductionPlanId, e.ProductionSectionId }).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.IssueDate);
+        });
+
+        // StoresIssueNoteItem entity configuration
+        modelBuilder.Entity<StoresIssueNoteItem>(entity =>
+        {
+            entity.ToTable("stores_issue_note_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ProductionQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.ExtraQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.TotalQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.StoresIssueNote)
+                .WithMany(sin => sin.StoresIssueNoteItems)
+                .HasForeignKey(e => e.StoresIssueNoteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Ingredient)
+                .WithMany()
+                .HasForeignKey(e => e.IngredientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.StoresIssueNoteId, e.IngredientId }).IsUnique();
+        });
+
+        // Reconciliation entity configuration
+        modelBuilder.Entity<Reconciliation>(entity =>
+        {
+            entity.ToTable("reconciliations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReconciliationNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ReconciliationDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryPlan)
+                .WithMany()
+                .HasForeignKey(e => e.DeliveryPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.ReconciliationNo).IsUnique();
+            entity.HasIndex(e => new { e.DeliveryPlanId, e.OutletId }).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ReconciliationDate);
+        });
+
+        // ReconciliationItem entity configuration
+        modelBuilder.Entity<ReconciliationItem>(entity =>
+        {
+            entity.ToTable("reconciliation_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ExpectedQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.ActualQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.VarianceQty).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.VarianceType).HasConversion<string>().IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Reconciliation)
+                .WithMany(r => r.ReconciliationItems)
+                .HasForeignKey(e => e.ReconciliationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.ReconciliationId, e.ProductId }).IsUnique();
+            entity.HasIndex(e => e.VarianceType);
         });
     }
 }

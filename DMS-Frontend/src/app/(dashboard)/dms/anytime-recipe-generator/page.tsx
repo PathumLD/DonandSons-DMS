@@ -25,7 +25,7 @@ export default function AnytimeRecipeGeneratorPage() {
   const loadProducts = async () => {
     try {
       setIsLoadingProducts(true);
-      const response = await productsApi.getAll(1, 1000, undefined, true);
+      const response = await productsApi.getAll(1, 1000, undefined, undefined, true);
       setProducts(response.products);
     } catch (error) {
       console.error('Failed to load products:', error);
@@ -94,7 +94,7 @@ export default function AnytimeRecipeGeneratorPage() {
                   </option>
                   {products.map(product => (
                     <option key={product.id} value={product.id}>
-                      {product.code} - {product.description}
+                      {product.code} - {product.name}
                     </option>
                   ))}
                 </select>
