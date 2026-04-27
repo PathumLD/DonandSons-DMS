@@ -55,4 +55,6 @@ public class SectionConsumable : BaseEntity
 
     [ForeignKey("IngredientId")]
     public virtual Ingredient Ingredient { get; set; } = null!;
+
+    public string? Formula => CalculationFormula;
 }

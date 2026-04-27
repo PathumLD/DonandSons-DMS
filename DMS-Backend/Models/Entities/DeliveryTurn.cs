@@ -69,4 +69,6 @@ public class DeliveryTurn : BaseEntity
 
     // Navigation properties
     public virtual ICollection<Outlet> Outlets { get; set; } = new List<Outlet>();
+
+    public int DisplayOrder => SortOrder;
 }

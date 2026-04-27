@@ -93,7 +93,7 @@ public sealed class UsersController : ControllerBase
 
             return Ok(ApiResponse<UserDetailDto>.SuccessResponse(user));
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             return NotFound(ApiResponse<UserDetailDto>.FailureResponse(Error.NotFound("User", id.ToString())));
         }
@@ -115,7 +115,7 @@ public sealed class UsersController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResponse(new { message = "User deleted successfully" }));
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(Error.NotFound("User", id.ToString())));
         }
@@ -140,7 +140,7 @@ public sealed class UsersController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResponse(new { message = "Roles assigned successfully" }));
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(Error.NotFound("User", id.ToString())));
         }
@@ -166,7 +166,7 @@ public sealed class UsersController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResponse(new { message = "Password reset successfully" }));
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(Error.NotFound("User", id.ToString())));
         }
