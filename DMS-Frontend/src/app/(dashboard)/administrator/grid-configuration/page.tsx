@@ -1,711 +1,449 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import { Settings, Plus, Trash2, Save, GripVertical, ChevronRight, ChevronDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
-
-interface GridColumn {
-  id: string;
-  columnKey: string;
-  columnName: string;
-  columnType: 'Text' | 'Number' | 'Decimal' | 'Checkbox' | 'Dropdown' | 'Custom';
-  parentColumnId?: string;
-  hasSubColumns: boolean;
-  subColumns: GridColumn[];
-  isEditable: boolean;
-  isRequired: boolean;
-  width?: number;
-  sortOrder: number;
-  dropdownValues?: string;
-  showCondition?: string;
-  active: boolean;
-}
-
-interface GridConfig {
-  id: string;
-  name: string;
-  description: string;
-  columns: GridColumn[];
-  allowAddColumns: boolean;
-  allowAddRows: boolean;
-  version: number;
-}
+import Input from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
+import { Settings, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { gridConfigurationsApi, type GridConfiguration, type CreateGridConfigurationDto, type UpdateGridConfigurationDto } from '@/lib/api/grid-configurations';
+import toast from 'react-hot-toast';
 
 export default function GridConfigurationPage() {
-  const [configurations, setConfigurations] = useState<GridConfig[]>([
-    {
-      id: '1',
-      name: 'Order Entry Grid',
-      description: 'Main order entry spreadsheet for all outlets',
-      columns: [
-        {
-          id: 'col1',
-          columnKey: 'product_yn',
-          columnName: 'Y/N',
-          columnType: 'Checkbox',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: true,
-          isRequired: false,
-          width: 80,
-          sortOrder: 1,
-          active: true,
-        },
-        {
-          id: 'col2',
-          columnKey: 'product_name',
-          columnName: 'Product',
-          columnType: 'Text',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: false,
-          isRequired: true,
-          width: 200,
-          sortOrder: 2,
-          active: true,
-        },
-        {
-          id: 'col3',
-          columnKey: 'product_code',
-          columnName: 'Code',
-          columnType: 'Text',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: false,
-          isRequired: true,
-          width: 100,
-          sortOrder: 3,
-          active: true,
-        },
-        {
-          id: 'col4',
-          columnKey: 'freezer_balance',
-          columnName: 'BAL',
-          columnType: 'Number',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: false,
-          isRequired: false,
-          width: 80,
-          sortOrder: 4,
-          active: true,
-        },
-        {
-          id: 'col5',
-          columnKey: 'section',
-          columnName: 'Section',
-          columnType: 'Text',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: false,
-          isRequired: false,
-          width: 120,
-          sortOrder: 5,
-          active: true,
-        },
-        {
-          id: 'col6',
-          columnKey: 'outlets',
-          columnName: 'Outlets',
-          columnType: 'Custom',
-          hasSubColumns: true,
-          subColumns: [
-            {
-              id: 'col6_1',
-              columnKey: 'turn_5am',
-              columnName: '5:00 AM',
-              columnType: 'Custom',
-              parentColumnId: 'col6',
-              hasSubColumns: true,
-              subColumns: [
-                {
-                  id: 'col6_1_1',
-                  columnKey: 'turn_5am_full',
-                  columnName: 'F',
-                  columnType: 'Decimal',
-                  parentColumnId: 'col6_1',
-                  hasSubColumns: false,
-                  subColumns: [],
-                  isEditable: true,
-                  isRequired: false,
-                  width: 60,
-                  sortOrder: 1,
-                  active: true,
-                },
-                {
-                  id: 'col6_1_2',
-                  columnKey: 'turn_5am_mini',
-                  columnName: 'M',
-                  columnType: 'Decimal',
-                  parentColumnId: 'col6_1',
-                  hasSubColumns: false,
-                  subColumns: [],
-                  isEditable: true,
-                  isRequired: false,
-                  width: 60,
-                  sortOrder: 2,
-                  active: true,
-                },
-              ],
-              isEditable: false,
-              isRequired: false,
-              sortOrder: 1,
-              active: true,
-            },
-            {
-              id: 'col6_2',
-              columnKey: 'turn_1030am',
-              columnName: '10:30 AM',
-              columnType: 'Custom',
-              parentColumnId: 'col6',
-              hasSubColumns: true,
-              subColumns: [
-                {
-                  id: 'col6_2_1',
-                  columnKey: 'turn_1030am_full',
-                  columnName: 'F',
-                  columnType: 'Decimal',
-                  parentColumnId: 'col6_2',
-                  hasSubColumns: false,
-                  subColumns: [],
-                  isEditable: true,
-                  isRequired: false,
-                  width: 60,
-                  sortOrder: 1,
-                  showCondition: 'product.hasMultiTurn === true',
-                  active: true,
-                },
-                {
-                  id: 'col6_2_2',
-                  columnKey: 'turn_1030am_mini',
-                  columnName: 'M',
-                  columnType: 'Decimal',
-                  parentColumnId: 'col6_2',
-                  hasSubColumns: false,
-                  subColumns: [],
-                  isEditable: true,
-                  isRequired: false,
-                  width: 60,
-                  sortOrder: 2,
-                  showCondition: 'product.hasMultiTurn === true',
-                  active: true,
-                },
-              ],
-              isEditable: false,
-              isRequired: false,
-              sortOrder: 2,
-              showCondition: 'product.hasMultiTurn === true',
-              active: true,
-            },
-          ],
-          isEditable: false,
-          isRequired: false,
-          sortOrder: 6,
-          active: true,
-        },
-      ],
-      allowAddColumns: true,
-      allowAddRows: true,
-      version: 1,
-    },
-  ]);
-
-  const [selectedConfig, setSelectedConfig] = useState<GridConfig | null>(configurations[0]);
-  const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set(['col6']));
-  const [showAddColumnModal, setShowAddColumnModal] = useState(false);
-  const [showAddTurnModal, setShowAddTurnModal] = useState(false);
-  const [newColumn, setNewColumn] = useState<Partial<GridColumn>>({
-    columnType: 'Text',
-    isEditable: true,
-    isRequired: false,
-    active: true,
-    hasSubColumns: false,
-    subColumns: [],
-    sortOrder: 1,
+  const [configurations, setConfigurations] = useState<GridConfiguration[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<GridConfiguration | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    gridName: '',
+    userId: undefined as string | undefined,
+    configurationName: '',
+    columnSettings: '',
+    sortSettings: '',
+    filterSettings: '',
+    pageSize: 50,
+    isDefault: false,
+    isShared: false,
+    isActive: true,
   });
 
-  const [newTurn, setNewTurn] = useState({
-    name: '',
-    time: '',
-  });
+  useEffect(() => {
+    loadConfigurations();
+  }, [currentPage, pageSize, searchTerm]);
 
-  const toggleExpand = (columnId: string) => {
-    const newExpanded = new Set(expandedColumns);
-    if (newExpanded.has(columnId)) {
-      newExpanded.delete(columnId);
-    } else {
-      newExpanded.add(columnId);
+  const loadConfigurations = async () => {
+    try {
+      setLoading(true);
+      const response = await gridConfigurationsApi.getAll(currentPage, pageSize, searchTerm, undefined, undefined);
+      setConfigurations(response.gridConfigurations);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load grid configurations');
+    } finally {
+      setLoading(false);
     }
-    setExpandedColumns(newExpanded);
   };
 
-  const handleAddColumn = () => {
-    if (!selectedConfig || !newColumn.columnName || !newColumn.columnKey) return;
+  const handleToggleActive = async (config: GridConfiguration) => {
+    try {
+      const updateData: UpdateGridConfigurationDto = {
+        gridName: config.gridName,
+        userId: config.userId,
+        configurationName: config.configurationName,
+        columnSettings: config.columnSettings,
+        sortSettings: config.sortSettings,
+        filterSettings: config.filterSettings,
+        pageSize: config.pageSize,
+        isDefault: config.isDefault,
+        isShared: config.isShared,
+        isActive: !config.isActive,
+      };
+      await gridConfigurationsApi.update(config.id, updateData);
+      toast.success(`Configuration ${config.isActive ? 'deactivated' : 'activated'}`);
+      loadConfigurations();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update configuration');
+    }
+  };
 
-    const column: GridColumn = {
-      id: `col_${Date.now()}`,
-      columnKey: newColumn.columnKey || '',
-      columnName: newColumn.columnName || '',
-      columnType: newColumn.columnType || 'Text',
-      hasSubColumns: newColumn.hasSubColumns || false,
-      subColumns: [],
-      isEditable: newColumn.isEditable !== false,
-      isRequired: newColumn.isRequired || false,
-      width: newColumn.width,
-      sortOrder: selectedConfig.columns.length + 1,
-      dropdownValues: newColumn.dropdownValues,
-      showCondition: newColumn.showCondition,
-      active: true,
-    };
+  const handleAddConfiguration = async () => {
+    if (!formData.gridName || !formData.configurationName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
-    const updatedConfig = {
-      ...selectedConfig,
-      columns: [...selectedConfig.columns, column],
-    };
+    try {
+      setSubmitting(true);
+      const createData: CreateGridConfigurationDto = {
+        gridName: formData.gridName,
+        userId: formData.userId,
+        configurationName: formData.configurationName,
+        columnSettings: formData.columnSettings,
+        sortSettings: formData.sortSettings,
+        filterSettings: formData.filterSettings,
+        pageSize: formData.pageSize,
+        isDefault: formData.isDefault,
+        isShared: formData.isShared,
+        isActive: formData.isActive,
+      };
+      await gridConfigurationsApi.create(createData);
+      toast.success('Grid configuration created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadConfigurations();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create configuration');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    setConfigurations((prev) =>
-      prev.map((config) => (config.id === selectedConfig.id ? updatedConfig : config))
-    );
-    setSelectedConfig(updatedConfig);
-    setShowAddColumnModal(false);
-    setNewColumn({
-      columnType: 'Text',
-      isEditable: true,
-      isRequired: false,
-      active: true,
-      hasSubColumns: false,
-      subColumns: [],
-      sortOrder: 1,
+  const handleEditConfiguration = async () => {
+    if (!selectedConfig || !formData.gridName || !formData.configurationName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateGridConfigurationDto = {
+        gridName: formData.gridName,
+        userId: formData.userId,
+        configurationName: formData.configurationName,
+        columnSettings: formData.columnSettings,
+        sortSettings: formData.sortSettings,
+        filterSettings: formData.filterSettings,
+        pageSize: formData.pageSize,
+        isDefault: formData.isDefault,
+        isShared: formData.isShared,
+        isActive: formData.isActive,
+      };
+      await gridConfigurationsApi.update(selectedConfig.id, updateData);
+      toast.success('Grid configuration updated successfully');
+      setShowEditModal(false);
+      setSelectedConfig(null);
+      resetForm();
+      loadConfigurations();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update configuration');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      gridName: '',
+      userId: undefined,
+      configurationName: '',
+      columnSettings: '',
+      sortSettings: '',
+      filterSettings: '',
+      pageSize: 50,
+      isDefault: false,
+      isShared: false,
+      isActive: true,
     });
   };
 
-  const handleAddTurn = () => {
-    if (!selectedConfig || !newTurn.name || !newTurn.time) return;
+  const openEditModal = (config: GridConfiguration) => {
+    setSelectedConfig(config);
+    setFormData({
+      gridName: config.gridName,
+      userId: config.userId,
+      configurationName: config.configurationName || '',
+      columnSettings: config.columnSettings || '',
+      sortSettings: config.sortSettings || '',
+      filterSettings: config.filterSettings || '',
+      pageSize: config.pageSize || 50,
+      isDefault: config.isDefault,
+      isShared: config.isShared,
+      isActive: config.isActive,
+    });
+    setShowEditModal(true);
+  };
 
-    const outletsColumn = selectedConfig.columns.find((col) => col.columnKey === 'outlets');
-    if (!outletsColumn) return;
-
-    const newTurnColumn: GridColumn = {
-      id: `turn_${Date.now()}`,
-      columnKey: `turn_${newTurn.time.replace(':', '')}`,
-      columnName: newTurn.name,
-      columnType: 'Custom',
-      parentColumnId: 'col6',
-      hasSubColumns: true,
-      subColumns: [
-        {
-          id: `turn_${Date.now()}_1`,
-          columnKey: `turn_${newTurn.time.replace(':', '')}_full`,
-          columnName: 'F',
-          columnType: 'Decimal',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: true,
-          isRequired: false,
-          width: 60,
-          sortOrder: 1,
-          active: true,
-          parentColumnId: `turn_${Date.now()}`,
-        },
-        {
-          id: `turn_${Date.now()}_2`,
-          columnKey: `turn_${newTurn.time.replace(':', '')}_mini`,
-          columnName: 'M',
-          columnType: 'Decimal',
-          hasSubColumns: false,
-          subColumns: [],
-          isEditable: true,
-          isRequired: false,
-          width: 60,
-          sortOrder: 2,
-          active: true,
-          parentColumnId: `turn_${Date.now()}`,
-        },
-      ],
-      isEditable: false,
-      isRequired: false,
-      sortOrder: outletsColumn.subColumns.length + 1,
-      active: true,
-    };
-
-    const updatedOutletsColumn = {
-      ...outletsColumn,
-      subColumns: [...outletsColumn.subColumns, newTurnColumn],
-    };
-
-    const updatedConfig = {
-      ...selectedConfig,
-      columns: selectedConfig.columns.map((col) =>
-        col.columnKey === 'outlets' ? updatedOutletsColumn : col
+  const columns = [
+    {
+      key: 'gridName',
+      label: 'Grid Name',
+      render: (item: GridConfiguration) => (
+        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+          {item.gridName}
+        </span>
       ),
-    };
-
-    setConfigurations((prev) =>
-      prev.map((config) => (config.id === selectedConfig.id ? updatedConfig : config))
-    );
-    setSelectedConfig(updatedConfig);
-    setShowAddTurnModal(false);
-    setNewTurn({ name: '', time: '' });
-  };
-
-  const handleDeleteColumn = (columnId: string) => {
-    if (!selectedConfig) return;
-
-    const updatedConfig = {
-      ...selectedConfig,
-      columns: selectedConfig.columns.filter((col) => col.id !== columnId),
-    };
-
-    setConfigurations((prev) =>
-      prev.map((config) => (config.id === selectedConfig.id ? updatedConfig : config))
-    );
-    setSelectedConfig(updatedConfig);
-  };
-
-  const renderColumnRow = (column: GridColumn, level: number = 0) => {
-    const isExpanded = expandedColumns.has(column.id);
-    const indent = level * 24;
-
-    return (
-      <div key={column.id}>
-        <div
-          className="flex items-center justify-between p-3 border-b hover:bg-gray-50"
-          style={{ borderColor: 'var(--border)', paddingLeft: `${12 + indent}px` }}
-        >
-          <div className="flex items-center space-x-3 flex-1">
-            {column.hasSubColumns && (
-              <button
-                onClick={() => toggleExpand(column.id)}
-                className="p-1 hover:bg-gray-200 rounded"
-              >
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </button>
-            )}
-            {!column.hasSubColumns && <div className="w-6"></div>}
-
-            <GripVertical className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
-                  {column.columnName}
-                </span>
-                <Badge variant="neutral">{column.columnType}</Badge>
-                {column.isRequired && (
-                  <Badge variant="danger" className="text-xs">
-                    Required
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-                Key: {column.columnKey}
-                {column.width && ` • Width: ${column.width}px`}
-                {column.showCondition && ` • Condition: ${column.showCondition}`}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteColumn(column.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
+    },
+    {
+      key: 'configurationName',
+      label: 'Configuration Name',
+      render: (item: GridConfiguration) => (
+        <span className="font-medium">{item.configurationName || '-'}</span>
+      ),
+    },
+    {
+      key: 'pageSize',
+      label: 'Page Size',
+      render: (item: GridConfiguration) => (
+        <Badge variant="neutral" size="sm">{item.pageSize || 50}</Badge>
+      ),
+    },
+    {
+      key: 'userId',
+      label: 'User Specific',
+      render: (item: GridConfiguration) => (
+        item.userId ? <Badge variant="info" size="sm">User</Badge> : <Badge variant="neutral" size="sm">Global</Badge>
+      ),
+    },
+    {
+      key: 'isDefault',
+      label: 'Default',
+      render: (item: GridConfiguration) => (
+        item.isDefault ? <Badge variant="info" size="sm">Default</Badge> : null
+      ),
+    },
+    {
+      key: 'isShared',
+      label: 'Shared',
+      render: (item: GridConfiguration) => (
+        item.isShared ? <Badge variant="success" size="sm">Shared</Badge> : null
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (item: GridConfiguration) => (
+        item.isActive ? (
+          <Badge variant="success" size="sm">Active</Badge>
+        ) : (
+          <Badge variant="danger" size="sm">Inactive</Badge>
+        )
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item: GridConfiguration) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => openEditModal(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Edit"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleActive(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
+          >
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          </button>
         </div>
+      ),
+    },
+  ];
 
-        {isExpanded &&
-          column.subColumns.map((subCol) => renderColumnRow(subCol, level + 1))}
+  const renderForm = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Grid Name"
+          value={formData.gridName}
+          onChange={(e) => setFormData({ ...formData, gridName: e.target.value })}
+          placeholder="e.g., OrderGrid, ProductGrid"
+          fullWidth
+          required
+        />
+        <Input
+          label="Configuration Name"
+          value={formData.configurationName}
+          onChange={(e) => setFormData({ ...formData, configurationName: e.target.value })}
+          placeholder="My Custom View"
+          fullWidth
+          required
+        />
       </div>
-    );
-  };
+      <Input
+        label="User ID (Optional)"
+        value={formData.userId || ''}
+        onChange={(e) => setFormData({ ...formData, userId: e.target.value || undefined })}
+        placeholder="Leave empty for global configuration"
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Input
+          label="Page Size"
+          type="number"
+          value={formData.pageSize.toString()}
+          onChange={(e) => setFormData({ ...formData, pageSize: parseInt(e.target.value) || 50 })}
+          fullWidth
+        />
+      </div>
+      <Input
+        label="Column Settings (JSON)"
+        value={formData.columnSettings}
+        onChange={(e) => setFormData({ ...formData, columnSettings: e.target.value })}
+        placeholder='{"visible": ["col1", "col2"], "widths": {"col1": 100}}'
+        fullWidth
+      />
+      <Input
+        label="Sort Settings (JSON)"
+        value={formData.sortSettings}
+        onChange={(e) => setFormData({ ...formData, sortSettings: e.target.value })}
+        placeholder='{"field": "name", "direction": "asc"}'
+        fullWidth
+      />
+      <Input
+        label="Filter Settings (JSON)"
+        value={formData.filterSettings}
+        onChange={(e) => setFormData({ ...formData, filterSettings: e.target.value })}
+        placeholder='{"category": "bakery", "status": "active"}'
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <Toggle
+          checked={formData.isDefault}
+          onChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+          label="Set as Default"
+        />
+        <Toggle
+          checked={formData.isShared}
+          onChange={(checked) => setFormData({ ...formData, isShared: checked })}
+          label="Shared Configuration"
+        />
+        <Toggle
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          label="Active Status"
+        />
+      </div>
+    </div>
+  );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Settings className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
             Grid Configuration
           </h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Customize grid structure like Excel - Add columns, rows, sub-columns dynamically
+            Manage saved grid configurations, views, and preferences ({totalCount} configurations)
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="secondary" size="md">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-          <Button variant="primary" size="md">
-            <Save className="w-4 h-4 mr-2" />
-            Save Configuration
-          </Button>
-        </div>
+        <Button variant="primary" size="md" onClick={() => {
+          resetForm();
+          setShowAddModal(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Configuration
+        </Button>
       </div>
 
-      {/* Info Card */}
-      <div
-        className="p-4 rounded-lg"
-        style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD' }}
-      >
-        <div className="flex items-start space-x-3">
-          <Settings className="w-5 h-5 mt-0.5" style={{ color: '#1E40AF' }} />
-          <div>
-            <p className="text-sm font-medium" style={{ color: '#1E40AF' }}>
-              Dynamic Grid Configuration
-            </p>
-            <p className="text-xs mt-1" style={{ color: '#1E40AF' }}>
-              Admin can add/remove columns, sub-columns, delivery turns, and sections just like
-              modifying an Excel sheet. All changes are applied dynamically to the grid without
-              code changes.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Grid to Configure</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            {configurations.map((config) => (
-              <div
-                key={config.id}
-                onClick={() => setSelectedConfig(config)}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedConfig?.id === config.id
-                    ? 'border-red-600 bg-red-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <h3 className="font-semibold" style={{ color: 'var(--foreground)' }}>
-                  {config.name}
-                </h3>
-                <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-                  {config.description}
-                </p>
-                <div className="flex items-center space-x-2 mt-3">
-                  <Badge variant="neutral">{config.columns.length} columns</Badge>
-                  <Badge variant="neutral">v{config.version}</Badge>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>Grid Configurations</CardTitle>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input
+                type="text"
+                placeholder="Search configurations..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
+              />
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
+            </div>
+          ) : (
+            <DataTable
+              data={configurations}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Column Configuration */}
-      {selectedConfig && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Column Structure - {selectedConfig.name}</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowAddTurnModal(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Delivery Turn
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowAddColumnModal(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Column
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="border-t" style={{ borderColor: 'var(--border)' }}>
-              {selectedConfig.columns.map((column) => renderColumnRow(column))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Add Column Modal */}
-      {showAddColumnModal && (
-        <Modal
-          isOpen={showAddColumnModal}
-          onClose={() => setShowAddColumnModal(false)}
-          title="Add New Column"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Column Name
-              </label>
-              <Input
-                value={newColumn.columnName || ''}
-                onChange={(e) =>
-                  setNewColumn({ ...newColumn, columnName: e.target.value })
-                }
-                placeholder="e.g., Delivery Zone"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Column Key (Unique)
-              </label>
-              <Input
-                value={newColumn.columnKey || ''}
-                onChange={(e) =>
-                  setNewColumn({ ...newColumn, columnKey: e.target.value })
-                }
-                placeholder="e.g., delivery_zone"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Column Type
-              </label>
-              <Select
-                value={newColumn.columnType || 'Text'}
-                onChange={(e) =>
-                  setNewColumn({
-                    ...newColumn,
-                    columnType: e.target.value as GridColumn['columnType'],
-                  })
-                }
-                options={[
-                  { value: 'Text', label: 'Text' },
-                  { value: 'Number', label: 'Number' },
-                  { value: 'Decimal', label: 'Decimal' },
-                  { value: 'Checkbox', label: 'Checkbox' },
-                  { value: 'Dropdown', label: 'Dropdown' },
-                  { value: 'Custom', label: 'Custom' },
-                ]}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Width (pixels)
-              </label>
-              <Input
-                type="number"
-                value={newColumn.width || ''}
-                onChange={(e) =>
-                  setNewColumn({ ...newColumn, width: parseInt(e.target.value) || undefined })
-                }
-                placeholder="e.g., 120"
-              />
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={newColumn.isEditable !== false}
-                  onChange={(e) =>
-                    setNewColumn({ ...newColumn, isEditable: e.target.checked })
-                  }
-                />
-                <span className="text-sm" style={{ color: 'var(--foreground)' }}>
-                  Editable
-                </span>
-              </label>
-
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={newColumn.isRequired || false}
-                  onChange={(e) =>
-                    setNewColumn({ ...newColumn, isRequired: e.target.checked })
-                  }
-                />
-                <span className="text-sm" style={{ color: 'var(--foreground)' }}>
-                  Required
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setShowAddColumnModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleAddColumn}>
-              Add Column
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
-
-      {/* Add Turn Modal */}
-      {showAddTurnModal && (
-        <Modal
-          isOpen={showAddTurnModal}
-          onClose={() => setShowAddTurnModal(false)}
-          title="Add New Delivery Turn"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Turn Name
-              </label>
-              <Input
-                value={newTurn.name}
-                onChange={(e) => setNewTurn({ ...newTurn, name: e.target.value })}
-                placeholder="e.g., 6:00 PM Turn"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
-                Turn Time
-              </label>
-              <Input
-                type="time"
-                value={newTurn.time}
-                onChange={(e) => setNewTurn({ ...newTurn, time: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setShowAddTurnModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleAddTurn}>
-              Add Delivery Turn
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
-
-      {/* Legend */}
-      <div
-        className="p-4 rounded-lg"
-        style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC' }}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add Grid Configuration"
+        size="lg"
       >
-        <p className="text-sm" style={{ color: '#166534' }}>
-          <strong>Features:</strong> Add/remove columns dynamically • Create sub-columns for
-          hierarchical structure • Add new delivery turns • Configure column types, widths,
-          validation • Set conditional display rules • All changes apply immediately to the grid
-        </p>
-      </div>
+        {renderForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddConfiguration} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Configuration'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedConfig(null);
+          resetForm();
+        }}
+        title="Edit Grid Configuration"
+        size="lg"
+      >
+        {renderForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => {
+            setShowEditModal(false);
+            setSelectedConfig(null);
+            resetForm();
+          }} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleEditConfiguration} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

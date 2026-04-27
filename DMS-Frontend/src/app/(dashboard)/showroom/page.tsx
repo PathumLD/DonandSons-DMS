@@ -7,7 +7,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
-import { Store, Plus, Search, Edit, X, Check } from 'lucide-react';
+import { Store, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { outletsApi, type Outlet, type CreateOutletDto, type UpdateOutletDto } from '@/lib/api/outlets';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ export default function ShowroomPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedShowroom, setSelectedShowroom] = useState<Outlet | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<Partial<CreateOutletDto & { isActive?: boolean }>>({
     code: '',
@@ -81,6 +82,7 @@ export default function ShowroomPage() {
 
   const handleAddShowroom = async () => {
     try {
+      setSubmitting(true);
       // Combine opening and closing times
       const operatingHours = openingTime && closingTime 
         ? `${openingTime} - ${closingTime}` 
@@ -104,12 +106,15 @@ export default function ShowroomPage() {
       loadShowrooms();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create outlet');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleEditShowroom = async () => {
     if (selectedShowroom) {
       try {
+        setSubmitting(true);
         // Combine opening and closing times
         const operatingHours = openingTime && closingTime 
           ? `${openingTime} - ${closingTime}` 
@@ -135,6 +140,8 @@ export default function ShowroomPage() {
         loadShowrooms();
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Failed to update outlet');
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -384,8 +391,8 @@ export default function ShowroomPage() {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
             </div>
           ) : (
             <DataTable
@@ -413,12 +420,12 @@ export default function ShowroomPage() {
       >
         {renderShowroomForm()}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleAddShowroom}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Showroom
+          <Button variant="primary" onClick={handleAddShowroom} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Showroom'}
           </Button>
         </ModalFooter>
       </Modal>
@@ -440,11 +447,12 @@ export default function ShowroomPage() {
             setShowEditModal(false);
             setSelectedShowroom(null);
             resetForm();
-          }}>
+          }} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditShowroom}>
-            Save Changes
+          <Button variant="primary" onClick={handleEditShowroom} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </ModalFooter>
       </Modal>

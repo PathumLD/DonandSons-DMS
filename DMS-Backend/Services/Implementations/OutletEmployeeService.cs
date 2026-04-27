@@ -52,7 +52,8 @@ public sealed class OutletEmployeeService : IOutletEmployeeService
         {
             query = query.Where(oe =>
                 oe.Outlet.Name.Contains(search) ||
-                oe.User.FullName.Contains(search) ||
+                oe.User.FirstName.Contains(search) ||
+                oe.User.LastName.Contains(search) ||
                 (oe.User.Email != null && oe.User.Email.Contains(search)) ||
                 (oe.Position != null && oe.Position.Contains(search)));
         }
@@ -66,7 +67,8 @@ public sealed class OutletEmployeeService : IOutletEmployeeService
 
         var outletEmployees = await query
             .OrderBy(oe => oe.Outlet.Name)
-            .ThenBy(oe => oe.User.FullName)
+            .ThenBy(oe => oe.User.FirstName)
+            .ThenBy(oe => oe.User.LastName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ProjectTo<OutletEmployeeListDto>(_mapper.ConfigurationProvider)

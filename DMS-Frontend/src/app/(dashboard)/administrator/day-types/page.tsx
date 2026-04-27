@@ -1,289 +1,418 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { mockDayTypes, DayType } from '@/lib/mock-data/day-types';
+import { DataTable } from '@/components/ui/data-table';
+import { Modal, ModalFooter } from '@/components/ui/modal';
+import Input from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
+import { Calendar, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { dayTypesApi, type DayType, type CreateDayTypeDto, type UpdateDayTypeDto } from '@/lib/api/day-types';
+import toast from 'react-hot-toast';
 
 export default function DayTypesPage() {
-  const [dayTypes, setDayTypes] = useState<DayType[]>(mockDayTypes);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<DayType>>({});
-  const [isAdding, setIsAdding] = useState(false);
+  const [dayTypes, setDayTypes] = useState<DayType[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedDayType, setSelectedDayType] = useState<DayType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    multiplier: 1.0,
+    color: '#C8102E',
+    isActive: true,
+  });
 
-  const handleEdit = (dayType: DayType) => {
-    setEditingId(dayType.id);
-    setFormData(dayType);
-    setIsAdding(false);
+  useEffect(() => {
+    loadDayTypes();
+  }, [currentPage, pageSize, searchTerm]);
+
+  const loadDayTypes = async () => {
+    try {
+      setLoading(true);
+      const response = await dayTypesApi.getAll(currentPage, pageSize, searchTerm, undefined);
+      setDayTypes(response.dayTypes);
+      setTotalCount(response.totalCount);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load day types');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAdd = () => {
-    setIsAdding(true);
-    setEditingId(null);
+  const handleToggleActive = async (dayType: DayType) => {
+    try {
+      const updateData: UpdateDayTypeDto = {
+        code: dayType.code,
+        name: dayType.name,
+        description: dayType.description,
+        multiplier: dayType.multiplier,
+        color: dayType.color,
+        isActive: !dayType.isActive,
+      };
+      await dayTypesApi.update(dayType.id, updateData);
+      toast.success(`Day type ${dayType.isActive ? 'deactivated' : 'activated'}`);
+      loadDayTypes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update day type');
+    }
+  };
+
+  const handleAddDayType = async () => {
+    if (!formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const createData: CreateDayTypeDto = {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        multiplier: formData.multiplier,
+        color: formData.color,
+        isActive: formData.isActive,
+      };
+      await dayTypesApi.create(createData);
+      toast.success('Day type created successfully');
+      setShowAddModal(false);
+      resetForm();
+      loadDayTypes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create day type');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditDayType = async () => {
+    if (!selectedDayType || !formData.code || !formData.name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const updateData: UpdateDayTypeDto = {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        multiplier: formData.multiplier,
+        color: formData.color,
+        isActive: formData.isActive,
+      };
+      await dayTypesApi.update(selectedDayType.id, updateData);
+      toast.success('Day type updated successfully');
+      setShowEditModal(false);
+      setSelectedDayType(null);
+      resetForm();
+      loadDayTypes();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update day type');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
     setFormData({
       code: '',
-      displayName: '',
-      appliesToMorning: true,
-      appliesToEvening: false,
-      isExtraVariant: false,
-      sortOrder: dayTypes.length + 1,
-      isActive: true
+      name: '',
+      description: '',
+      multiplier: 1.0,
+      color: '#C8102E',
+      isActive: true,
     });
   };
 
-  const handleSave = () => {
-    if (isAdding) {
-      const newId = Math.max(...dayTypes.map(dt => dt.id)) + 1;
-      const newDayType: DayType = {
-        ...formData as DayType,
-        id: newId
-      };
-      setDayTypes([...dayTypes, newDayType]);
-      setIsAdding(false);
-    } else if (editingId) {
-      setDayTypes(dayTypes.map(dt =>
-        dt.id === editingId ? { ...dt, ...formData } : dt
-      ));
-      setEditingId(null);
-    }
-    setFormData({});
+  const openEditModal = (dayType: DayType) => {
+    setSelectedDayType(dayType);
+    setFormData({
+      code: dayType.code,
+      name: dayType.name,
+      description: dayType.description || '',
+      multiplier: dayType.multiplier,
+      color: dayType.color || '#C8102E',
+      isActive: dayType.isActive,
+    });
+    setShowEditModal(true);
   };
 
-  const handleCancel = () => {
-    setEditingId(null);
-    setIsAdding(false);
-    setFormData({});
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this day-type?')) {
-      setDayTypes(dayTypes.filter(dt => dt.id !== id));
-    }
-  };
-
-  return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Day-Type Manager</h1>
-        <p className="text-gray-600 mt-1">
-          Manage production day-types for morning and afternoon schedules
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Day-Types</CardTitle>
-            <Button onClick={handleAdd} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Add Day-Type
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2 text-sm font-semibold">Code</th>
-                  <th className="text-left p-2 text-sm font-semibold">Display Name</th>
-                  <th className="text-center p-2 text-sm font-semibold">Morning</th>
-                  <th className="text-center p-2 text-sm font-semibold">Evening</th>
-                  <th className="text-center p-2 text-sm font-semibold">Extra</th>
-                  <th className="text-center p-2 text-sm font-semibold">Active</th>
-                  <th className="text-center p-2 text-sm font-semibold">Sort</th>
-                  <th className="text-right p-2 text-sm font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isAdding && (
-                  <DayTypeRow
-                    dayType={formData as DayType}
-                    isEditing={true}
-                    onFormChange={setFormData}
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                  />
-                )}
-                {dayTypes.map(dayType => (
-                  <DayTypeRow
-                    key={dayType.id}
-                    dayType={dayType}
-                    isEditing={editingId === dayType.id}
-                    formData={editingId === dayType.id ? formData : dayType}
-                    onFormChange={setFormData}
-                    onEdit={() => handleEdit(dayType)}
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                    onDelete={() => handleDelete(dayType.id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-interface DayTypeRowProps {
-  dayType: DayType;
-  isEditing: boolean;
-  formData?: Partial<DayType>;
-  onFormChange?: (data: Partial<DayType>) => void;
-  onEdit?: () => void;
-  onSave?: () => void;
-  onCancel?: () => void;
-  onDelete?: () => void;
-}
-
-function DayTypeRow({
-  dayType,
-  isEditing,
-  formData,
-  onFormChange,
-  onEdit,
-  onSave,
-  onCancel,
-  onDelete
-}: DayTypeRowProps) {
-  const data = isEditing && formData ? formData : dayType;
-
-  if (isEditing) {
-    return (
-      <tr className="border-b bg-blue-50">
-        <td className="p-2">
-          <input
-            type="text"
-            value={data.code || ''}
-            onChange={(e) => onFormChange?.({ ...data, code: e.target.value })}
-            className="w-full px-2 py-1 border rounded"
-            placeholder="CODE"
-          />
-        </td>
-        <td className="p-2">
-          <input
-            type="text"
-            value={data.displayName || ''}
-            onChange={(e) => onFormChange?.({ ...data, displayName: e.target.value })}
-            className="w-full px-2 py-1 border rounded"
-            placeholder="Display Name"
-          />
-        </td>
-        <td className="p-2 text-center">
-          <input
-            type="checkbox"
-            checked={data.appliesToMorning || false}
-            onChange={(e) => onFormChange?.({ ...data, appliesToMorning: e.target.checked })}
-            className="w-4 h-4"
-          />
-        </td>
-        <td className="p-2 text-center">
-          <input
-            type="checkbox"
-            checked={data.appliesToEvening || false}
-            onChange={(e) => onFormChange?.({ ...data, appliesToEvening: e.target.checked })}
-            className="w-4 h-4"
-          />
-        </td>
-        <td className="p-2 text-center">
-          <input
-            type="checkbox"
-            checked={data.isExtraVariant || false}
-            onChange={(e) => onFormChange?.({ ...data, isExtraVariant: e.target.checked })}
-            className="w-4 h-4"
-          />
-        </td>
-        <td className="p-2 text-center">
-          <input
-            type="checkbox"
-            checked={data.isActive || false}
-            onChange={(e) => onFormChange?.({ ...data, isActive: e.target.checked })}
-            className="w-4 h-4"
-          />
-        </td>
-        <td className="p-2 text-center">
-          <input
-            type="number"
-            value={data.sortOrder || 0}
-            onChange={(e) => onFormChange?.({ ...data, sortOrder: parseInt(e.target.value) })}
-            className="w-16 px-2 py-1 border rounded"
-          />
-        </td>
-        <td className="p-2">
-          <div className="flex items-center justify-end gap-1">
-            <button
-              onClick={onSave}
-              className="p-1 text-green-600 hover:bg-green-100 rounded"
-              title="Save"
-            >
-              <Save className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onCancel}
-              className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-              title="Cancel"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr className="border-b hover:bg-gray-50">
-      <td className="p-2 font-mono text-sm">{dayType.code}</td>
-      <td className="p-2">
+  const columns = [
+    {
+      key: 'code',
+      label: 'Code',
+      render: (item: DayType) => (
+        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
+          {item.code}
+        </span>
+      ),
+    },
+    {
+      key: 'name',
+      label: 'Day Type Name',
+      render: (item: DayType) => (
         <div>
-          <div className="font-medium">{dayType.displayName}</div>
-          {dayType.description && (
-            <div className="text-xs text-gray-500">{dayType.description}</div>
+          <span className="font-medium">{item.name}</span>
+          {item.description && (
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+              {item.description}
+            </div>
           )}
         </div>
-      </td>
-      <td className="p-2 text-center">
-        {dayType.appliesToMorning && <span className="text-green-600">✓</span>}
-      </td>
-      <td className="p-2 text-center">
-        {dayType.appliesToEvening && <span className="text-green-600">✓</span>}
-      </td>
-      <td className="p-2 text-center">
-        {dayType.isExtraVariant && (
-          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">
-            Extra
-          </span>
-        )}
-      </td>
-      <td className="p-2 text-center">
-        <span className={`px-2 py-0.5 text-xs rounded ${dayType.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-          {dayType.isActive ? 'Active' : 'Inactive'}
-        </span>
-      </td>
-      <td className="p-2 text-center text-sm text-gray-600">
-        {dayType.sortOrder}
-      </td>
-      <td className="p-2">
-        <div className="flex items-center justify-end gap-1">
+      ),
+    },
+    {
+      key: 'multiplier',
+      label: 'Multiplier',
+      render: (item: DayType) => (
+        <Badge variant="neutral" size="sm">{item.multiplier}x</Badge>
+      ),
+    },
+    {
+      key: 'color',
+      label: 'Color',
+      render: (item: DayType) => (
+        <div className="flex items-center gap-2">
+          {item.color && (
+            <div
+              className="w-6 h-6 rounded border"
+              style={{ backgroundColor: item.color }}
+            />
+          )}
+          <span className="text-sm font-mono">{item.color}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (item: DayType) => (
+        item.isActive ? (
+          <Badge variant="success" size="sm">Active</Badge>
+        ) : (
+          <Badge variant="danger" size="sm">Inactive</Badge>
+        )
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (item: DayType) => (
+        <div className="flex items-center space-x-2">
           <button
-            onClick={onEdit}
-            className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+            onClick={() => openEditModal(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: 'var(--muted-foreground)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={onDelete}
-            className="p-1 text-red-600 hover:bg-red-100 rounded"
-            title="Delete"
+            onClick={() => handleToggleActive(item)}
+            className="p-1.5 rounded transition-colors"
+            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
-            <Trash2 className="w-4 h-4" />
+            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
           </button>
         </div>
-      </td>
-    </tr>
+      ),
+    },
+  ];
+
+  const renderDayTypeForm = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Day Type Code"
+          value={formData.code}
+          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+          placeholder="e.g., HOL, WKD"
+          fullWidth
+          required
+        />
+        <Input
+          label="Day Type Name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Holiday, Weekend"
+          fullWidth
+          required
+        />
+      </div>
+      <Input
+        label="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="Optional description"
+        fullWidth
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Multiplier"
+          type="number"
+          step="0.1"
+          value={formData.multiplier.toString()}
+          onChange={(e) => setFormData({ ...formData, multiplier: parseFloat(e.target.value) || 1.0 })}
+          fullWidth
+          required
+        />
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
+            Color
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="w-12 h-10 rounded cursor-pointer"
+            />
+            <Input
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              placeholder="#000000"
+              fullWidth
+            />
+          </div>
+        </div>
+      </div>
+      <div className="pt-2">
+        <Toggle
+          checked={formData.isActive}
+          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          label="Active Status"
+        />
+      </div>
+    </div>
+  );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <Calendar className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
+            Day Types
+          </h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Manage production day types for morning and afternoon schedules ({totalCount} types)
+          </p>
+        </div>
+        <Button variant="primary" size="md" onClick={() => {
+          resetForm();
+          setShowAddModal(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Day Type
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>Day Type List</CardTitle>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              <input
+                type="text"
+                placeholder="Search day types..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
+            </div>
+          ) : (
+            <DataTable
+              data={dayTypes}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Day Type"
+        size="md"
+      >
+        {renderDayTypeForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddDayType} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            {submitting ? 'Adding...' : 'Add Day Type'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedDayType(null);
+          resetForm();
+        }}
+        title="Edit Day Type"
+        size="md"
+      >
+        {renderDayTypeForm()}
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => {
+            setShowEditModal(false);
+            setSelectedDayType(null);
+            resetForm();
+          }} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleEditDayType} disabled={submitting}>
+            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
   );
 }
