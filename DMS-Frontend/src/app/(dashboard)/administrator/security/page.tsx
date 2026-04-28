@@ -177,7 +177,7 @@ export default function SecurityPage() {
       valueType: policy.valueType,
       isEnforced: policy.isEnforced,
       isSystemPolicy: policy.isSystemPolicy,
-      severityLevel: policy.severityLevel,
+      severityLevel: policy.severityLevel || 'Medium',
       lastReviewedAt: policy.lastReviewedAt,
       sortOrder: policy.sortOrder,
       isActive: policy.isActive,

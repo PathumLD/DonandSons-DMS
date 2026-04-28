@@ -38,12 +38,12 @@ export default function DeliveryPlanPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<DeliveryPlan | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     planDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     dayTypeId: '',
     useFreezerStock: false,
     notes: '',
-  });
+  }));
 
   const [editItems, setEditItems] = useState<{ [key: string]: DeliveryPlanItem }>({});
   const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
@@ -91,7 +91,7 @@ export default function DeliveryPlanPage() {
         undefined,
         statusFilter || undefined
       );
-      setPlans(response.deliveryPlans);
+      setPlans(response.deliveryPlans as any);
       setTotalCount(response.totalCount);
     } catch (error) {
       console.error('Error loading plans:', error);
@@ -122,14 +122,14 @@ export default function DeliveryPlanPage() {
     try {
       const defaults = await defaultQuantitiesApi.getAll(1, 1000, undefined, dayTypeId);
       
-      const items: BulkUpsertDeliveryPlanItemDto[] = defaults.defaultQuantities.map(dq => {
+      const items = defaults.defaultQuantities.map(dq => {
         const product = products.find(p => p.id === dq.productId);
         const defaultTurns = product?.defaultDeliveryTurns || [deliveryTurns[0]?.id];
         
         return defaultTurns.map(turnId => ({
           outletId: dq.outletId,
           productId: dq.productId,
-          deliveryTurnId: turnId,
+          deliveryTurnId: String(turnId),
           fullQuantity: dq.fullQuantity,
           miniQuantity: dq.miniQuantity,
           isExcluded: false,
@@ -137,7 +137,7 @@ export default function DeliveryPlanPage() {
       }).flat();
 
       if (items.length > 0) {
-        await deliveryPlansApi.bulkUpsertItems(planId, items);
+        await deliveryPlansApi.bulkUpsertItems(planId, items as any);
       }
     } catch (error) {
       console.error('Error loading default quantities:', error);

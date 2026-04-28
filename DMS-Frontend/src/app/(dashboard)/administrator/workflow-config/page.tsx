@@ -189,7 +189,7 @@ export default function WorkflowConfigPage() {
       autoApproveThreshold: config.autoApproveThreshold,
       approvalSteps: config.approvalSteps || '',
       notificationSettings: config.notificationSettings || '',
-      timeoutHours: config.timeoutHours,
+      timeoutHours: config.timeoutHours || 24,
       escalationConfig: config.escalationConfig || '',
       isEnabled: config.isEnabled,
       isActive: config.isActive,
@@ -370,7 +370,7 @@ export default function WorkflowConfigPage() {
           label="Timeout (Hours)"
           type="number"
           value={formData.timeoutHours?.toString() || ''}
-          onChange={(e) => setFormData({ ...formData, timeoutHours: e.target.value ? parseInt(e.target.value) : undefined })}
+          onChange={(e) => setFormData({ ...formData, timeoutHours: e.target.value ? parseInt(e.target.value) : 24 })}
           fullWidth
         />
       </div>

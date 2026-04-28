@@ -151,10 +151,11 @@ public sealed class OrderService : IOrderService
         Guid turnId,
         CancellationToken cancellationToken = default)
     {
+        date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var orders = await _context.Set<OrderHeader>()
             .Include(oh => oh.DeliveryPlan)
             .Include(oh => oh.OrderItems)
-            .Where(oh => oh.OrderDate.Date == date.Date &&
+            .Where(oh => oh.OrderDate.Date == date &&
                          oh.OrderItems.Any(oi => oi.DeliveryTurnId == turnId))
             .Select(oh => new OrderListDto
             {

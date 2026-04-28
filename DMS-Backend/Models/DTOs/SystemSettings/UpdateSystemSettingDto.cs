@@ -5,7 +5,7 @@ public sealed class UpdateSystemSettingDto
     public required string SettingKey { get; set; }
     public required string SettingName { get; set; }
     public string? SettingValue { get; set; }
-    public string SettingType { get; set; }
+    public required string SettingType { get; set; }
     public string? Description { get; set; }
     public string? Category { get; set; }
     public bool IsSystemSetting { get; set; }

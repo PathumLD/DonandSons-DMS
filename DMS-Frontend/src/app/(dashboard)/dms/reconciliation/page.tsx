@@ -62,7 +62,7 @@ export default function ReconciliationPage() {
       }));
 
       setReconciliations(mappedReconciliations);
-      setDeliveryPlans(plansRes.deliveryPlans);
+      setDeliveryPlans(plansRes.deliveryPlans as any);
       setOutlets(outletsRes.outlets);
     } catch (error) {
       console.error('Error loading initial data:', error);

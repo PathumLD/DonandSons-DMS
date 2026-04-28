@@ -33,7 +33,7 @@ export default function PrintReceiptCardsPage() {
         outletsApi.getAll(1, 100, undefined, undefined, true),
       ]);
 
-      setDeliveryPlans(plansRes.deliveryPlans);
+      setDeliveryPlans(plansRes.deliveryPlans as any);
       setOutlets(outletsRes.outlets);
     } catch (error) {
       console.error('Error loading initial data:', error);

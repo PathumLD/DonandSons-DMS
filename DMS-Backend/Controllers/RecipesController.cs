@@ -151,7 +151,7 @@ public class RecipesController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResponse(new { Message = "Recipe deleted successfully" }));
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(Error.NotFound("Recipe", id.ToString())));
         }

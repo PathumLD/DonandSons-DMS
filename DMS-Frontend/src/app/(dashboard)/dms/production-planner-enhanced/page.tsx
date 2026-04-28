@@ -38,7 +38,7 @@ export default function ProductionPlannerEnhancedPage() {
         productionSectionsApi.getAll(1, 100, undefined, true),
       ]);
 
-      setDeliveryPlans(plansRes.deliveryPlans);
+      setDeliveryPlans(plansRes.deliveryPlans as any);
       setProductionSections(sectionsRes.productionSections);
     } catch (error) {
       console.error('Error loading initial data:', error);

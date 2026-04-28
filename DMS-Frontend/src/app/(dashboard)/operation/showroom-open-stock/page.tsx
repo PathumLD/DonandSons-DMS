@@ -1,63 +1,51 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
-import { Edit, Save, AlertCircle, Calendar } from 'lucide-react';
+import { Edit, Save, AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { showroomOpenStockApi, type ShowroomOpenStock } from '@/lib/api/showroom-open-stock';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { isAdminUser } from '@/lib/date-restrictions';
-
-/**
- * 4.viii Showroom Open Stock
- *
- * Per spec:
- *  - Page shows each showroom with its "Last Stock BF Date" (Stock as at date).
- *  - Admin (only) can EDIT the Last Stock BF Date so that a Stock BF entered
- *    earlier (e.g. 01/01/2026) becomes the Opening Balance for a future date
- *    (e.g. 04/01/2026) when intermediate days were closed.
- *  - Non-admins can only view this page; the Edit Date control is hidden.
- */
-
-interface ShowroomOpenStock {
-  id: number;
-  showroomId: number;
-  showroomCode: string;
-  stockAsAt: string; // Last Stock BF Date
-}
-
-const mockShowroomOpenStock: ShowroomOpenStock[] = [
-  { id: 1, showroomId: 1, showroomCode: 'BC', stockAsAt: '2026-01-10' },
-  { id: 2, showroomId: 2, showroomCode: 'BW', stockAsAt: '2026-01-10' },
-  { id: 3, showroomId: 3, showroomCode: 'DAL', stockAsAt: '2026-01-10' },
-  { id: 4, showroomId: 4, showroomCode: 'DBG', stockAsAt: '2026-01-10' },
-  { id: 5, showroomId: 5, showroomCode: 'KAD', stockAsAt: '2026-01-10' },
-  { id: 6, showroomId: 6, showroomCode: 'KEL', stockAsAt: '2026-01-10' },
-  { id: 7, showroomId: 7, showroomCode: 'KML', stockAsAt: '2026-01-10' },
-  { id: 8, showroomId: 8, showroomCode: 'RAG', stockAsAt: '2026-01-10' },
-  { id: 9, showroomId: 9, showroomCode: 'RAN', stockAsAt: '2026-01-10' },
-  { id: 10, showroomId: 10, showroomCode: 'SGK', stockAsAt: '2026-01-10' },
-  { id: 11, showroomId: 11, showroomCode: 'SLE', stockAsAt: '2026-01-09' },
-  { id: 12, showroomId: 12, showroomCode: 'WED', stockAsAt: '2026-01-10' },
-  { id: 13, showroomId: 13, showroomCode: 'YRK', stockAsAt: '2026-01-10' },
-];
+import toast from 'react-hot-toast';
 
 export default function ShowroomOpenStockPage() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = isAdminUser(user);
 
-  const [showrooms, setShowrooms] = useState<ShowroomOpenStock[]>(mockShowroomOpenStock);
+  const [showrooms, setShowrooms] = useState<ShowroomOpenStock[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showEditDateModal, setShowEditDateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selected, setSelected] = useState<ShowroomOpenStock | null>(null);
   const [newStockAsAt, setNewStockAsAt] = useState('');
 
+  useEffect(() => {
+    fetchShowrooms();
+  }, []);
+
+  const fetchShowrooms = async () => {
+    try {
+      setIsLoading(true);
+      const response = await showroomOpenStockApi.getAll();
+      setShowrooms(Array.isArray(response) ? response : []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load showroom open stock');
+      setShowrooms([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     return showrooms.filter((s) => {
-      const matchesSearch = s.showroomCode.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (s.outlet?.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (s.outlet?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
   }, [showrooms, searchTerm]);
@@ -73,19 +61,27 @@ export default function ShowroomOpenStockPage() {
     setShowViewModal(true);
   };
 
-  const saveEditDate = () => {
+  const saveEditDate = async () => {
     if (!selected) return;
     if (!newStockAsAt) {
-      alert('Please select a stock as at date');
+      toast.error('Please select a stock as at date');
       return;
     }
-    setShowrooms((prev) =>
-      prev.map((s) =>
-        s.id === selected.id ? { ...s, stockAsAt: newStockAsAt } : s
-      )
-    );
-    setShowEditDateModal(false);
-    setSelected(null);
+    
+    try {
+      setIsSubmitting(true);
+      await showroomOpenStockApi.update(selected.id, {
+        stockAsAt: newStockAsAt,
+      });
+      toast.success('Stock as at date updated successfully');
+      setShowEditDateModal(false);
+      setSelected(null);
+      fetchShowrooms();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update stock as at date');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -103,141 +99,214 @@ export default function ShowroomOpenStockPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Showroom Open Stock</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr style={{ backgroundColor: 'var(--muted)', borderBottom: '1px solid var(--border)' }}>
-                  <th className="text-left py-3 px-4" style={{ color: 'var(--muted-foreground)', fontWeight: 600, fontSize: '0.875rem' }}>Showroom</th>
-                  <th className="text-left py-3 px-4" style={{ color: 'var(--muted-foreground)', fontWeight: 600, fontSize: '0.875rem' }}>Stock as at</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((showroom, index) => (
-                  <tr 
-                    key={showroom.id}
-                    style={{ 
-                      borderBottom: index < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-                      backgroundColor: 'var(--card)'
-                    }}
-                  >
-                    <td className="py-3 px-4">
-                      <span className="font-medium text-base">{showroom.showroomCode}</span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="font-medium">{new Date(showroom.stockAsAt).toLocaleDateString()}</span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2 justify-end">
-                        {isAdmin && (
-                          <button
-                            onClick={() => openEditDate(showroom)}
-                            className="p-1.5 rounded transition-colors"
-                            style={{ color: '#3B82F6' }}
-                            onMouseEnter={(ev) => (ev.currentTarget.style.backgroundColor = '#EFF6FF')}
-                            onMouseLeave={(ev) => (ev.currentTarget.style.backgroundColor = 'transparent')}
-                            title="Edit Stock BF Date"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openView(showroom)}
-                          className="p-1.5 rounded transition-colors"
-                          style={{ color: '#3B82F6' }}
-                          onMouseEnter={(ev) => (ev.currentTarget.style.backgroundColor = '#EFF6FF')}
-                          onMouseLeave={(ev) => (ev.currentTarget.style.backgroundColor = 'transparent')}
-                          title="View Details"
-                        >
-                          <AlertCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center justify-between">
+            <CardTitle>Showroom Stock As At Dates</CardTitle>
+            <div className="relative w-full sm:w-auto max-w-xs">
+              <input
+                type="text"
+                placeholder="Search showrooms..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-4 py-2 rounded-lg text-sm"
+                style={{ border: '1px solid var(--input)' }}
+              />
+            </div>
           </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--muted-foreground)' }} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Showroom Code
+                    </th>
+                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Showroom Name
+                    </th>
+                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Last Stock BF Date
+                    </th>
+                    <th className="text-center p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center p-8" style={{ color: 'var(--muted-foreground)' }}>
+                        <AlertCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--muted-foreground)' }} />
+                        <p>No showrooms found</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((s) => (
+                      <tr
+                        key={s.id}
+                        style={{ borderBottom: '1px solid var(--border)' }}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="p-3">
+                          <span className="font-mono font-semibold">{s.outlet?.code || '-'}</span>
+                        </td>
+                        <td className="p-3">
+                          <span className="font-medium">{s.outlet?.name || '-'}</span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" style={{ color: 'var(--muted-foreground)' }} />
+                            <span className="font-medium">
+                              {new Date(s.stockAsAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center space-x-2">
+                            <button
+                              onClick={() => openView(s)}
+                              className="px-3 py-1.5 rounded text-sm transition-colors"
+                              style={{
+                                backgroundColor: 'var(--secondary)',
+                                color: 'var(--secondary-foreground)',
+                              }}
+                            >
+                              View
+                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => openEditDate(s)}
+                                className="px-3 py-1.5 rounded text-sm transition-colors flex items-center"
+                                style={{
+                                  backgroundColor: 'var(--primary)',
+                                  color: 'var(--primary-foreground)',
+                                }}
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Edit Date
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Admin Edit Date Modal */}
       <Modal
         isOpen={showEditDateModal}
-        onClose={() => { setShowEditDateModal(false); setSelected(null); }}
-        title="Edit Stock BF Date"
+        onClose={() => {
+          setShowEditDateModal(false);
+          setSelected(null);
+        }}
+        title="Edit Last Stock BF Date"
         size="md"
       >
         {selected && (
           <div className="space-y-4">
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--muted)', border: '1px solid var(--border)' }}>
-              <div className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
-                Showroom: <strong>{selected.showroomCode}</strong>
-              </div>
-              <div className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-                Current Stock BF Date: <strong>{new Date(selected.stockAsAt).toLocaleDateString()}</strong>
-              </div>
+            <div>
+              <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
+                Showroom
+              </p>
+              <p className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>
+                {selected.outlet?.code} - {selected.outlet?.name}
+              </p>
             </div>
-
             <Input
-              label="Stock as at Date"
+              label="Last Stock BF Date"
               type="date"
               value={newStockAsAt}
               onChange={(e) => setNewStockAsAt(e.target.value)}
-              helperText="Edit this date if the showroom was closed for one or more days. This will affect the opening balance date."
               fullWidth
               required
+              helperText="This date will be used as the opening balance for future stock calculations"
             />
-
-            <div className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: '#FFFBEB', border: '1px solid #FFD100' }}>
-              <Calendar className="w-4 h-4 mt-0.5" style={{ color: '#92400E' }} />
-              <div className="text-xs" style={{ color: '#92400E' }}>
-                <strong>Example:</strong> Showroom Last Stock BF Date = 01/01/2026. Showroom closed at 02/01/2026 & 03/01/2026. Admin can edit to 04/01/2026, making that the opening balance date.
-              </div>
-            </div>
           </div>
         )}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowEditDateModal(false); setSelected(null); }}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowEditDateModal(false);
+              setSelected(null);
+            }}
+          >
             Cancel
           </Button>
-          <Button variant="primary" onClick={saveEditDate}>
-            <Save className="w-4 h-4 mr-2" />Save
+          <Button variant="primary" onClick={saveEditDate} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isSubmitting ? 'Saving...' : 'Save Date'}
           </Button>
         </ModalFooter>
       </Modal>
 
-      {/* View Details Modal */}
       <Modal
         isOpen={showViewModal}
-        onClose={() => { setShowViewModal(false); setSelected(null); }}
-        title="Showroom Stock Details"
+        onClose={() => {
+          setShowViewModal(false);
+          setSelected(null);
+        }}
+        title="Showroom Details"
         size="md"
       >
         {selected && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Showroom</p>
-                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selected.showroomCode}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Stock as at</p>
-                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selected.stockAsAt).toLocaleDateString()}</p>
-              </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                Showroom Code
+              </p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                {selected.outlet?.code}
+              </p>
             </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: '#EFF6FF', border: '1px solid #DBEAFE' }}>
-              <p className="text-sm" style={{ color: '#1E40AF' }}>
-                This represents the last Stock BF (Brought Forward) date for this showroom. Only Admin can edit this date.
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                Showroom Name
+              </p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                {selected.outlet?.name}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                Last Stock BF Date
+              </p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                {new Date(selected.stockAsAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
+                Last Updated
+              </p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+                {new Date(selected.updatedAt).toLocaleString()}
               </p>
             </div>
           </div>
         )}
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelected(null); }}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowViewModal(false);
+              setSelected(null);
+            }}
+          >
             Close
           </Button>
         </ModalFooter>

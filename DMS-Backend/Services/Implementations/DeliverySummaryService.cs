@@ -16,9 +16,10 @@ public class DeliverySummaryService : IDeliverySummaryService
 
     public async Task<DeliverySummaryDto?> GetDeliverySummaryAsync(DateTime date, int turnId, CancellationToken cancellationToken = default)
     {
+        date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var deliveryPlan = await _context.DeliveryPlans
             .Include(dp => dp.DeliveryTurn)
-            .FirstOrDefaultAsync(dp => dp.PlanDate.Date == date.Date && dp.DeliveryTurnId == new Guid(), cancellationToken);
+            .FirstOrDefaultAsync(dp => dp.PlanDate.Date == date && dp.DeliveryTurnId == new Guid(), cancellationToken);
 
         if (deliveryPlan == null)
             return null;
