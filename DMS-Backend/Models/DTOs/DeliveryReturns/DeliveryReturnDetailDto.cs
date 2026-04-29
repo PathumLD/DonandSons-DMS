@@ -9,6 +9,7 @@ public sealed class DeliveryReturnDetailDto
     public DateTime DeliveredDate { get; set; }
     public Guid OutletId { get; set; }
     public string OutletName { get; set; } = string.Empty;
+    public string OutletCode { get; set; } = string.Empty;
     public string Reason { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int TotalItems { get; set; }

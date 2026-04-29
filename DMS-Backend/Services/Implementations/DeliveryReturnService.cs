@@ -24,6 +24,8 @@ public class DeliveryReturnService : IDeliveryReturnService
     {
         var query = _context.DeliveryReturns
             .Include(dr => dr.Outlet)
+            .Include(dr => dr.UpdatedBy)
+            .Include(dr => dr.ApprovedBy)
             .AsQueryable();
 
         if (fromDate.HasValue)

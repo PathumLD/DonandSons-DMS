@@ -10,10 +10,14 @@ public sealed class DeliveryReturnProfile : Profile
     {
         CreateMap<DeliveryReturn, DeliveryReturnListDto>()
             .ForMember(dest => dest.OutletName, opt => opt.MapFrom(src => src.Outlet!.Name))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            .ForMember(dest => dest.OutletCode, opt => opt.MapFrom(src => src.Outlet!.Code))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedBy != null ? $"{src.UpdatedBy.FirstName} {src.UpdatedBy.LastName}" : null))
+            .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.ApprovedBy != null ? $"{src.ApprovedBy.FirstName} {src.ApprovedBy.LastName}" : null));
 
         CreateMap<DeliveryReturn, DeliveryReturnDetailDto>()
             .ForMember(dest => dest.OutletName, opt => opt.MapFrom(src => src.Outlet!.Name))
+            .ForMember(dest => dest.OutletCode, opt => opt.MapFrom(src => src.Outlet!.Code))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.ApprovedBy != null ? $"{src.ApprovedBy.FirstName} {src.ApprovedBy.LastName}" : null))
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));

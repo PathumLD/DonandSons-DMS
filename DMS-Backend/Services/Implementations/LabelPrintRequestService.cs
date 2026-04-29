@@ -24,6 +24,8 @@ public class LabelPrintRequestService : ILabelPrintRequestService
     {
         var query = _context.LabelPrintRequests
             .Include(l => l.Product)
+            .Include(l => l.UpdatedBy)
+            .Include(l => l.ApprovedBy)
             .AsQueryable();
 
         if (fromDate.HasValue)

@@ -5,7 +5,9 @@ export interface LabelPrintRequest {
   displayNo: string;
   date: string;
   productId: string;
-  product: {
+  productName: string;
+  productCode: string;
+  product?: {
     id: string;
     code: string;
     name: string;
@@ -23,11 +25,15 @@ export interface LabelPrintRequest {
     username: string;
     fullName: string;
   };
+  approvedByName?: string;
   approvedDate?: string;
+  rejectedByName?: string;
+  rejectedDate?: string;
   createdAt: string;
   updatedAt: string;
   createdById: string;
   updatedById: string;
+  updatedByName?: string;
 }
 
 export interface CreateLabelPrintRequestDto {

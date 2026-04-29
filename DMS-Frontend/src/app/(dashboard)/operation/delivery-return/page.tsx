@@ -11,6 +11,7 @@ import { Plus, Search, Edit, Eye, CheckCircle, XCircle, Clock, Info, Loader2 } f
 import { Badge } from '@/components/ui/badge';
 import { deliveryReturnsApi, type DeliveryReturn } from '@/lib/api/delivery-returns';
 import { outletsApi, type Outlet } from '@/lib/api/outlets';
+import { deliveriesApi, type Delivery } from '@/lib/api/deliveries';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useThemeStore } from '@/lib/stores/theme-store';
 import { getDateBounds, isAdminUser, todayISO } from '@/lib/date-restrictions';
@@ -27,6 +28,8 @@ export default function DeliveryReturnPage() {
 
   const [returns, setReturns] = useState<DeliveryReturn[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,7 +53,7 @@ export default function DeliveryReturnPage() {
 
   const isFormValid = () => {
     return formData.returnDate && formData.deliveryNo && formData.deliveredDate && 
-           formData.showroomId && formData.reason.trim();
+           formData.showroomId && formData.reason && formData.reason.trim();
   };
 
   useEffect(() => {
@@ -67,6 +70,72 @@ export default function DeliveryReturnPage() {
       setOutlets(response.outlets.filter(o => o.isActive));
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load outlets');
+    }
+  };
+
+  const fetchDeliveriesByDate = async (date: string) => {
+    if (!date) {
+      setDeliveries([]);
+      return;
+    }
+
+    try {
+      setIsLoadingDeliveries(true);
+      const selectedDate = new Date(date);
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      console.log('Fetching deliveries for date:', date, {
+        fromDate: startOfDay.toISOString(),
+        toDate: endOfDay.toISOString()
+      });
+
+      const response = await deliveriesApi.getAll(1, 100, {
+        fromDate: startOfDay.toISOString(),
+        toDate: endOfDay.toISOString(),
+        status: 'Approved'
+      });
+
+      console.log('Deliveries response:', response);
+
+      const foundDeliveries = response.deliveries || [];
+      setDeliveries(foundDeliveries);
+
+      if (foundDeliveries.length === 0) {
+        console.log('No approved deliveries found, fetching all deliveries...');
+        const allResponse = await deliveriesApi.getAll(1, 100, {
+          fromDate: startOfDay.toISOString(),
+          toDate: endOfDay.toISOString()
+        });
+        const allDeliveries = allResponse.deliveries || [];
+        setDeliveries(allDeliveries);
+        
+        if (allDeliveries.length > 0) {
+          toast.info(`Found ${allDeliveries.length} deliveries for this date (not all approved)`);
+        } else {
+          toast.info('No deliveries found for the selected date');
+        }
+      } else {
+        toast.success(`Found ${foundDeliveries.length} approved deliveries`);
+      }
+
+      if (foundDeliveries.length === 1) {
+        setFormData(prev => ({
+          ...prev,
+          deliveryNo: foundDeliveries[0].deliveryNo,
+          showroomId: foundDeliveries[0].outletId
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, deliveryNo: '', showroomId: '' }));
+      }
+    } catch (error: any) {
+      console.error('Error fetching deliveries:', error);
+      toast.error(error.response?.data?.message || 'Failed to load deliveries');
+      setDeliveries([]);
+    } finally {
+      setIsLoadingDeliveries(false);
     }
   };
 
@@ -93,7 +162,7 @@ export default function DeliveryReturnPage() {
       const matchesSearch = 
         r.returnNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.deliveryNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.outlet?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (r.outletName || r.outlet?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole =
         isAdmin ||
         (r.createdById === user?.id && (showPreviousRecords || r.returnDate === today));
@@ -192,18 +261,25 @@ export default function DeliveryReturnPage() {
       showroomId: '',
       reason: '',
     });
+    setDeliveries([]);
   };
 
-  const openEditModal = (item: DeliveryReturn) => {
-    setSelectedReturn(item);
-    setFormData({
-      returnDate: item.returnDate,
-      deliveryNo: item.deliveryNo,
-      deliveredDate: item.deliveredDate || '',
-      showroomId: item.outletId,
-      reason: item.reason,
-    });
-    setShowEditModal(true);
+  const openEditModal = async (item: DeliveryReturn) => {
+    try {
+      const detail = await deliveryReturnsApi.getById(item.id);
+      const fullData = detail.data || detail;
+      setSelectedReturn(fullData);
+      setFormData({
+        returnDate: fullData.returnDate,
+        deliveryNo: fullData.deliveryNo,
+        deliveredDate: fullData.deliveredDate || '',
+        showroomId: fullData.outletId,
+        reason: fullData.reason,
+      });
+      setShowEditModal(true);
+    } catch (error) {
+      toast.error('Failed to load delivery return details');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -216,6 +292,20 @@ export default function DeliveryReturnPage() {
       default:
         return <Badge variant="neutral" size="sm">Draft</Badge>;
     }
+  };
+
+  const formatApproverCell = (item: DeliveryReturn) => {
+    if (item.status === 'Approved' && item.approvedByName) {
+      const date = item.approvedDate
+        ? new Date(item.approvedDate).toLocaleDateString()
+        : '';
+      return (
+        <span className="text-sm">
+          {item.approvedByName} {date && `- ${date}`}
+        </span>
+      );
+    }
+    return <span className="text-sm">-</span>;
   };
 
   const columns = [
@@ -236,24 +326,17 @@ export default function DeliveryReturnPage() {
       ),
     },
     {
-      key: 'deliveryNo',
-      label: 'Delivery No',
-      render: (item: DeliveryReturn) => (
-        <span className="font-medium">{item.deliveryNo}</span>
-      ),
-    },
-    {
       key: 'showroom',
       label: 'Showroom',
       render: (item: DeliveryReturn) => (
-        <span className="font-medium">{item.outlet?.name || '-'}</span>
+        <span className="font-medium">{item.outletName || item.outlet?.name || '-'}</span>
       ),
     },
     {
-      key: 'totalItems',
-      label: 'Items',
+      key: 'deliveredDate',
+      label: 'Delivered Date',
       render: (item: DeliveryReturn) => (
-        <span className="font-semibold">{item.totalItems}</span>
+        <span className="text-sm">{item.deliveredDate ? new Date(item.deliveredDate).toLocaleDateString() : '-'}</span>
       ),
     },
     {
@@ -262,18 +345,23 @@ export default function DeliveryReturnPage() {
       render: (item: DeliveryReturn) => getStatusBadge(item.status),
     },
     {
-      key: 'createdBy',
-      label: 'Created By',
+      key: 'editUser',
+      label: 'Edit User',
       render: (item: DeliveryReturn) => (
-        <span className="text-sm">{item.createdById || '-'}</span>
+        <span className="text-sm">{item.updatedByName || '-'}</span>
+      ),
+    },
+    {
+      key: 'editDate',
+      label: 'Edit Date',
+      render: (item: DeliveryReturn) => (
+        <span className="text-sm">{new Date(item.updatedAt).toLocaleDateString()}</span>
       ),
     },
     {
       key: 'approvedBy',
-      label: 'Approved By',
-      render: (item: DeliveryReturn) => (
-        <span className="text-sm">{item.approvedBy?.fullName || '-'}</span>
-      ),
+      label: 'Approved/Rejected By',
+      render: (item: DeliveryReturn) => formatApproverCell(item),
     },
     {
       key: 'actions',
@@ -281,9 +369,14 @@ export default function DeliveryReturnPage() {
       render: (item: DeliveryReturn) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => {
-              setSelectedReturn(item);
-              setShowViewModal(true);
+            onClick={async () => {
+              try {
+                const detail = await deliveryReturnsApi.getById(item.id);
+                setSelectedReturn(detail.data || detail);
+                setShowViewModal(true);
+              } catch (error) {
+                toast.error('Failed to load delivery return details');
+              }
             }}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
@@ -433,7 +526,10 @@ export default function DeliveryReturnPage() {
 
       <Modal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          resetForm();
+        }}
         title="Add New Delivery Return"
         size="lg"
       >
@@ -454,18 +550,52 @@ export default function DeliveryReturnPage() {
               label="Delivered Date"
               type="date"
               value={formData.deliveredDate}
-              onChange={(e) => setFormData({ ...formData, deliveredDate: e.target.value })}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                setFormData({ ...formData, deliveredDate: newDate });
+                fetchDeliveriesByDate(newDate);
+              }}
               fullWidth
+              required
             />
           </div>
-          <Input
-            label="Delivery No"
-            value={formData.deliveryNo}
-            onChange={(e) => setFormData({ ...formData, deliveryNo: e.target.value })}
-            placeholder="DN-2026-XXXXXX"
-            fullWidth
-            required
-          />
+          <div>
+            <Select
+              label="Delivery No"
+              value={formData.deliveryNo}
+              onChange={(e) => {
+                const selectedDelivery = deliveries.find(d => d.deliveryNo === e.target.value);
+                setFormData({
+                  ...formData,
+                  deliveryNo: e.target.value,
+                  showroomId: selectedDelivery?.outletId || formData.showroomId
+                });
+              }}
+              options={deliveries.map(d => ({
+                value: d.deliveryNo,
+                label: `${d.deliveryNo} - ${d.outlet?.name || d.outletName || ''}`
+              }))}
+              placeholder={
+                isLoadingDeliveries
+                  ? "Loading deliveries..."
+                  : !formData.deliveredDate
+                  ? "Select delivered date first"
+                  : deliveries.length === 0
+                  ? "No deliveries found for this date"
+                  : "Select delivery"
+              }
+              fullWidth
+              required
+              disabled={!formData.deliveredDate || isLoadingDeliveries}
+            />
+            {formData.deliveredDate && !isLoadingDeliveries && (
+              <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
+                {deliveries.length > 0 
+                  ? `${deliveries.length} ${deliveries.length === 1 ? 'delivery' : 'deliveries'} found for this date`
+                  : 'No deliveries found for this date'}
+              </p>
+            )}
+          </div>
           <Select
             label="Showroom"
             value={formData.showroomId}
@@ -604,7 +734,7 @@ export default function DeliveryReturnPage() {
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Showroom</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedReturn.outlet?.name || '-'}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedReturn.outletName || selectedReturn.outlet?.name || '-'}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Total Items</p>
@@ -617,9 +747,17 @@ export default function DeliveryReturnPage() {
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Created / Updated</p>
               <p className="text-sm" style={{ color: 'var(--foreground)' }}>
-                {new Date(selectedReturn.createdAt).toLocaleString()} • {new Date(selectedReturn.updatedAt).toLocaleString()}
+                {new Date(selectedReturn.createdAt).toLocaleDateString()} • {new Date(selectedReturn.updatedAt).toLocaleDateString()}
               </p>
             </div>
+            {selectedReturn.approvedByName && (
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Approved By</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+                  {selectedReturn.approvedByName} • {selectedReturn.approvedDate ? new Date(selectedReturn.approvedDate).toLocaleDateString() : ''}
+                </p>
+              </div>
+            )}
           </div>
         )}
         <ModalFooter>

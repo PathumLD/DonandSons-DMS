@@ -12,6 +12,55 @@ import { Badge } from '@/components/ui/badge';
 import { outletsApi, type Outlet, type CreateOutletDto, type UpdateOutletDto } from '@/lib/api/outlets';
 import toast from 'react-hot-toast';
 
+// Helper function to convert 12-hour time to 24-hour format
+const convertTo24Hour = (time12h: string): string => {
+  if (!time12h) return '';
+  
+  // Handle formats: "8:00 AM", "08:00", "8:00"
+  const time12hTrimmed = time12h.trim().toUpperCase();
+  
+  // If already in 24-hour format (no AM/PM), return as is
+  if (!time12hTrimmed.includes('AM') && !time12hTrimmed.includes('PM')) {
+    // Ensure it has leading zero (e.g., "8:00" -> "08:00")
+    const parts = time12hTrimmed.split(':');
+    if (parts.length === 2) {
+      const hours = parts[0].padStart(2, '0');
+      return `${hours}:${parts[1]}`;
+    }
+    return time12hTrimmed;
+  }
+  
+  const isPM = time12hTrimmed.includes('PM');
+  const timeWithoutPeriod = time12hTrimmed.replace(/\s*(AM|PM)/g, '').trim();
+  const [hoursStr, minutes] = timeWithoutPeriod.split(':');
+  let hours = parseInt(hoursStr, 10);
+  
+  if (isPM && hours !== 12) {
+    hours += 12;
+  } else if (!isPM && hours === 12) {
+    hours = 0;
+  }
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes}`;
+};
+
+// Helper function to convert 24-hour time to 12-hour format
+const convertTo12Hour = (time24h: string): string => {
+  if (!time24h) return '';
+  
+  const [hoursStr, minutes] = time24h.split(':');
+  let hours = parseInt(hoursStr, 10);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  
+  if (hours === 0) {
+    hours = 12;
+  } else if (hours > 12) {
+    hours -= 12;
+  }
+  
+  return `${hours}:${minutes} ${period}`;
+};
+
 export default function ShowroomPage() {
   const [showrooms, setShowrooms] = useState<Outlet[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,10 +132,13 @@ export default function ShowroomPage() {
   const handleAddShowroom = async () => {
     try {
       setSubmitting(true);
-      // Combine opening and closing times
-      const operatingHours = openingTime && closingTime 
-        ? `${openingTime} - ${closingTime}` 
-        : formData.operatingHours;
+      // Combine opening and closing times and convert to 12-hour format
+      let operatingHours = formData.operatingHours;
+      if (openingTime && closingTime) {
+        const opening12 = convertTo12Hour(openingTime);
+        const closing12 = convertTo12Hour(closingTime);
+        operatingHours = `${opening12} - ${closing12}`;
+      }
 
       const createData: CreateOutletDto = {
         code: formData.code!,
@@ -115,10 +167,13 @@ export default function ShowroomPage() {
     if (selectedShowroom) {
       try {
         setSubmitting(true);
-        // Combine opening and closing times
-        const operatingHours = openingTime && closingTime 
-          ? `${openingTime} - ${closingTime}` 
-          : formData.operatingHours;
+        // Combine opening and closing times and convert to 12-hour format
+        let operatingHours = formData.operatingHours;
+        if (openingTime && closingTime) {
+          const opening12 = convertTo12Hour(openingTime);
+          const closing12 = convertTo12Hour(closingTime);
+          operatingHours = `${opening12} - ${closing12}`;
+        }
 
         const updateData: UpdateOutletDto = {
           code: formData.code!,
@@ -178,13 +233,27 @@ export default function ShowroomPage() {
       isActive: showroom.isActive,
     });
     
-    // Parse operating hours if it exists (e.g., "08:00 - 20:00")
-    if (showroom.operatingHours) {
+    // Reset times first
+    setOpeningTime('');
+    setClosingTime('');
+    
+    // Parse operating hours if it exists (handles both "8:00 AM - 10:00 PM" and "08:00 - 20:00" formats)
+    if (showroom.operatingHours && showroom.operatingHours.trim()) {
+      console.log('Parsing operating hours:', showroom.operatingHours);
       const times = showroom.operatingHours.split('-').map(t => t.trim());
-      if (times.length === 2) {
-        setOpeningTime(times[0]);
-        setClosingTime(times[1]);
+      console.log('Split times:', times);
+      if (times.length === 2 && times[0] && times[1]) {
+        // Convert to 24-hour format for HTML time input
+        const opening24 = convertTo24Hour(times[0]);
+        const closing24 = convertTo24Hour(times[1]);
+        setOpeningTime(opening24);
+        setClosingTime(closing24);
+        console.log('Set opening time:', opening24, 'closing time:', closing24);
+      } else {
+        console.warn('Operating hours format unexpected:', showroom.operatingHours);
       }
+    } else {
+      console.log('No operating hours found for showroom:', showroom.code);
     }
     
     setShowEditModal(true);

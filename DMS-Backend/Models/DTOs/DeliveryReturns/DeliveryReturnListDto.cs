@@ -9,7 +9,15 @@ public sealed class DeliveryReturnListDto
     public DateTime DeliveredDate { get; set; }
     public Guid OutletId { get; set; }
     public string OutletName { get; set; } = string.Empty;
+    public string OutletCode { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int TotalItems { get; set; }
+    public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public Guid CreatedById { get; set; }
+    public Guid UpdatedById { get; set; }
+    public string? UpdatedByName { get; set; }
+    public string? ApprovedByName { get; set; }
+    public DateTime? ApprovedDate { get; set; }
 }

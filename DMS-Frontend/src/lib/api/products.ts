@@ -12,20 +12,20 @@ export interface Product {
   unitPrice: number;
   productType?: string;
   productionSection?: string;
-  hasFullSize: boolean;
-  hasMiniSize: boolean;
-  allowDecimal: boolean;
-  decimalPlaces: number;
-  roundingValue: number;
-  isPlainRollItem: boolean;
+  hasFullSize?: boolean;
+  hasMiniSize?: boolean;
+  allowDecimal?: boolean;
+  decimalPlaces?: number;
+  roundingValue?: number;
+  isPlainRollItem?: boolean;
   requireOpenStock: boolean;
   enableLabelPrint: boolean;
   allowFutureLabelPrint: boolean;
-  sortOrder: number;
-  defaultDeliveryTurns: number[];
-  availableInTurns: number[];
+  sortOrder?: number;
+  defaultDeliveryTurns?: number[];
+  availableInTurns?: number[];
   isActive: boolean;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 

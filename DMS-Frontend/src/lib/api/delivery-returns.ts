@@ -18,12 +18,14 @@ export interface DeliveryReturn {
   deliveryNo: string;
   deliveredDate?: string;
   outletId: string;
-  outlet: {
+  outletName: string;
+  outletCode: string;
+  outlet?: {
     id: string;
     code: string;
     name: string;
   };
-  reason: string;
+  reason?: string;
   status: 'Draft' | 'Pending' | 'Approved' | 'Processed';
   totalItems: number;
   items?: DeliveryReturnItem[];
@@ -33,11 +35,13 @@ export interface DeliveryReturn {
     username: string;
     fullName: string;
   };
+  approvedByName?: string;
   approvedDate?: string;
   createdAt: string;
   updatedAt: string;
   createdById: string;
   updatedById: string;
+  updatedByName?: string;
 }
 
 export interface CreateDeliveryReturnItemDto {

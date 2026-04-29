@@ -1,18 +1,18 @@
-2026-04-28 14:17:17.239 +05:30 [INF] Starting DMS Backend API
-2026-04-28 14:17:20.500 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:20.510 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:20.511 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:20.512 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:20.512 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:20.512 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
-2026-04-28 14:17:23.624 +05:30 [INF] Dev seed is enabled, seeding development data
-2026-04-28 14:17:23.627 +05:30 [INF] Starting dev data seed
-2026-04-28 14:17:23.659 +05:30 [INF] Demo users already exist, skipping
-2026-04-28 14:17:23.670 +05:30 [INF] Demo roles already exist, skipping
-2026-04-28 14:17:23.670 +05:30 [INF] Dev data seed completed successfully
-2026-04-28 14:17:23.670 +05:30 [INF] Database seeded successfully
-2026-04-28 14:17:23.958 +05:30 [INF] DMS Backend API started successfully
-2026-04-28 14:17:24.043 +05:30 [ERR] Hosting failed to start
+2026-04-28 18:10:01.605 +05:30 [INF] Starting DMS Backend API
+2026-04-28 18:10:04.749 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:04.758 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:04.762 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:04.765 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:04.771 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:04.774 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-28 18:10:07.312 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-28 18:10:07.318 +05:30 [INF] Starting dev data seed
+2026-04-28 18:10:07.351 +05:30 [INF] Demo users already exist, skipping
+2026-04-28 18:10:07.365 +05:30 [INF] Demo roles already exist, skipping
+2026-04-28 18:10:07.369 +05:30 [INF] Dev data seed completed successfully
+2026-04-28 18:10:07.371 +05:30 [INF] Database seeded successfully
+2026-04-28 18:10:07.615 +05:30 [INF] DMS Backend API started successfully
+2026-04-28 18:10:07.957 +05:30 [ERR] Hosting failed to start
 System.IO.IOException: Failed to bind to address http://127.0.0.1:5126: address already in use.
  ---> Microsoft.AspNetCore.Connections.AddressInUseException: Only one usage of each socket address (protocol/network address/port) is normally permitted.
  ---> System.Net.Sockets.SocketException (10048): Only one usage of each socket address (protocol/network address/port) is normally permitted.
@@ -37,7 +37,7 @@ System.IO.IOException: Failed to bind to address http://127.0.0.1:5126: address 
    at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
    at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
    at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
-2026-04-28 14:17:24.059 +05:30 [FTL] DMS Backend API terminated unexpectedly
+2026-04-28 18:10:08.100 +05:30 [FTL] DMS Backend API terminated unexpectedly
 System.IO.IOException: Failed to bind to address http://127.0.0.1:5126: address already in use.
  ---> Microsoft.AspNetCore.Connections.AddressInUseException: Only one usage of each socket address (protocol/network address/port) is normally permitted.
  ---> System.Net.Sockets.SocketException (10048): Only one usage of each socket address (protocol/network address/port) is normally permitted.
