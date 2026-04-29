@@ -21,7 +21,7 @@ public class DashboardPivotService : IDashboardPivotService
         toDate = DateTime.SpecifyKind(toDate.Date, DateTimeKind.Utc);
 
         var deliveryPlans = await _context.DeliveryPlans
-            .Where(dp => dp.PlanDate.Date >= fromDate.Date && dp.PlanDate.Date <= toDate.Date)
+            .Where(dp => dp.PlanDate >= fromDate && dp.PlanDate <= toDate)
             .ToListAsync(cancellationToken);
 
         var deliveryPlanIds = deliveryPlans.Select(dp => dp.Id).ToList();
@@ -34,8 +34,8 @@ public class DashboardPivotService : IDashboardPivotService
             .Where(oi => oi.OrderHeader!.DeliveryPlanId != null && deliveryPlanIds.Contains(oi.OrderHeader.DeliveryPlanId.Value))
             .ToListAsync(cancellationToken);
 
-        var dateColumns = Enumerable.Range(0, (toDate.Date - fromDate.Date).Days + 1)
-            .Select(offset => fromDate.Date.AddDays(offset).ToString("yyyy-MM-dd"))
+        var dateColumns = Enumerable.Range(0, (toDate - fromDate).Days + 1)
+            .Select(offset => fromDate.AddDays(offset).ToString("yyyy-MM-dd"))
             .ToList();
 
         var allProducts = orderItems
@@ -51,9 +51,9 @@ public class DashboardPivotService : IDashboardPivotService
 
             foreach (var dateStr in dateColumns)
             {
-                var date = DateTime.Parse(dateStr);
+                var date = DateTime.SpecifyKind(DateTime.Parse(dateStr), DateTimeKind.Utc);
                 var dayItems = orderItems
-                    .Where(oi => oi.OrderHeader!.DeliveryPlan!.PlanDate.Date == date.Date && oi.ProductId == product!.Id)
+                    .Where(oi => oi.OrderHeader!.DeliveryPlan!.PlanDate.Date == date && oi.ProductId == product!.Id)
                     .ToList();
 
                 var dayQuantity = dayItems.Sum(oi => oi.FullQuantity + oi.MiniQuantity);

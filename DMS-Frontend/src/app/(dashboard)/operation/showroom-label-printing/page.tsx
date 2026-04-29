@@ -1,94 +1,139 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Printer } from 'lucide-react';
-import { mockShowrooms } from '@/lib/mock-data/showrooms';
-
-/**
- * 4.ix Showroom Label Printing
- *
- * Per spec:
- *  - Print Showroom Code Name as a label.
- *  - User selects showroom from dropdown and can add custom text.
- */
+import { Printer, Loader2 } from 'lucide-react';
+import { showroomLabelsApi } from '@/lib/api/showroom-labels';
+import { outletsApi, type Outlet } from '@/lib/api/outlets';
+import toast from 'react-hot-toast';
 
 export default function ShowroomLabelPrintingPage() {
-  const activeShowrooms = mockShowrooms.filter((s) => s.active);
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     showroomCode: '',
     text1: '',
     text2: '',
-    labelCount: '1',
+    labelCount: '',
   });
 
-  const handleSubmit = () => {
-    if (!formData.showroomCode) {
-      alert('Please select a showroom code');
-      return;
+  useEffect(() => {
+    fetchOutlets();
+  }, []);
+
+  const fetchOutlets = async () => {
+    try {
+      const response = await outletsApi.getAll();
+      setOutlets(response.outlets.filter(o => o.isActive));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load outlets');
     }
-    if (!formData.labelCount || Number(formData.labelCount) < 1) {
-      alert('Please enter a valid label count');
-      return;
-    }
-    alert(`Submitting label print request for ${formData.showroomCode} - ${formData.labelCount} label(s)`);
-    // Reset form after submit
+  };
+
+  const handleShowroomChange = (showroomCode: string) => {
+    const selectedOutlet = outlets.find(o => o.code === showroomCode);
     setFormData({
-      showroomCode: '',
-      text1: '',
-      text2: '',
-      labelCount: '1',
+      ...formData,
+      showroomCode,
+      text1: showroomCode, // Auto-fill Text 1 with showroom code
     });
   };
 
-  const selectedShowroom = activeShowrooms.find(s => String(s.id) === formData.showroomCode);
+  const handleSubmit = async () => {
+    if (!formData.showroomCode) {
+      toast.error('Please select a showroom');
+      return;
+    }
+    if (!formData.text1) {
+      toast.error('Text 1 is required');
+      return;
+    }
+    if (!formData.labelCount || Number(formData.labelCount) < 1) {
+      toast.error('Please enter a valid label count');
+      return;
+    }
+
+    const selectedOutlet = outlets.find(o => o.code === formData.showroomCode);
+    if (!selectedOutlet) {
+      toast.error('Selected showroom not found');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await showroomLabelsApi.create({
+        outletId: selectedOutlet.id,
+        text1: formData.text1,
+        text2: formData.text2 || undefined,
+        labelCount: Number(formData.labelCount),
+      });
+      toast.success(`Showroom label request created for ${formData.labelCount} label(s)`);
+      setFormData({
+        showroomCode: '',
+        text1: '',
+        text2: '',
+        labelCount: '',
+      });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create label request');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectedOutlet = outlets.find(o => o.code === formData.showroomCode);
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>New Showroom Label Print Request</h1>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+          Showroom Label Printing
+        </h1>
         <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-          Print Showroom Code Name labels. Select showroom and customize label text.
+          Print Showroom Code Name labels. Select showroom code from list.
         </p>
       </div>
 
       <div className="max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Label Configuration</CardTitle>
+            <CardTitle>New Showroom Label Print Request</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Select
                 label="Showroom Code"
                 value={formData.showroomCode}
-                onChange={(e) => setFormData({ ...formData, showroomCode: e.target.value })}
-                options={activeShowrooms.map((s) => ({ 
-                  value: s.id, 
-                  label: `${s.code} - ${s.name}` 
+                onChange={(e) => handleShowroomChange(e.target.value)}
+                options={outlets.map((o) => ({ 
+                  value: o.code, 
+                  label: o.code
                 }))}
-                placeholder="Select showroom"
+                placeholder="Select showroom code"
                 fullWidth
                 required
               />
 
               <Input
                 label="Text 1"
+                type="text"
                 value={formData.text1}
                 onChange={(e) => setFormData({ ...formData, text1: e.target.value })}
-                placeholder={selectedShowroom?.code || 'Text 1'}
+                placeholder="Enter text 1"
                 fullWidth
+                required
               />
 
               <Input
                 label="Text 2"
+                type="text"
                 value={formData.text2}
                 onChange={(e) => setFormData({ ...formData, text2: e.target.value })}
-                placeholder="Text 2"
+                placeholder="Enter text 2 (optional)"
                 fullWidth
               />
 
@@ -98,56 +143,47 @@ export default function ShowroomLabelPrintingPage() {
                 min="1"
                 value={formData.labelCount}
                 onChange={(e) => setFormData({ ...formData, labelCount: e.target.value })}
-                placeholder="Label Count"
+                placeholder="Enter label count"
                 fullWidth
                 required
               />
 
-              <div className="pt-4 flex justify-end">
-                <Button 
-                  variant="primary" 
-                  size="md" 
+              {selectedOutlet && formData.text1 && (
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)', border: '1px solid var(--border)' }}>
+                  <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
+                    Label Preview
+                  </p>
+                  <div className="p-4 bg-white rounded border-2 border-dashed border-gray-300 text-center">
+                    <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
+                      {formData.text1}
+                    </p>
+                    {formData.text2 && (
+                      <p className="text-lg font-medium mt-1" style={{ color: 'var(--muted-foreground)' }}>
+                        {formData.text2}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-4">
+                <Button
+                  variant="primary"
+                  size="lg"
                   onClick={handleSubmit}
-                  disabled={!formData.showroomCode || !formData.labelCount}
+                  disabled={isLoading || !formData.showroomCode || !formData.text1 || !formData.labelCount}
                 >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Submit
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Printer className="w-5 h-5 mr-2" />
+                  )}
+                  {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Preview */}
-        {formData.showroomCode && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Label Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-center">
-                <div className="p-6 bg-white rounded-lg shadow-md text-center space-y-2" style={{ border: '2px solid #C8102E', minWidth: '250px' }}>
-                  <div className="text-xs font-semibold" style={{ color: 'var(--muted-foreground)' }}>DON & SONS</div>
-                  <div className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>
-                    {selectedShowroom?.name || 'Showroom'}
-                  </div>
-                  <div className="text-base font-mono font-semibold" style={{ color: '#C8102E' }}>
-                    {selectedShowroom?.code || ''}
-                  </div>
-                  {formData.text1 && (
-                    <div className="text-sm" style={{ color: 'var(--foreground)' }}>{formData.text1}</div>
-                  )}
-                  {formData.text2 && (
-                    <div className="text-sm" style={{ color: 'var(--foreground)' }}>{formData.text2}</div>
-                  )}
-                  <div className="text-xs pt-2" style={{ color: 'var(--muted-foreground)' }}>
-                    Quantity: {formData.labelCount}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ public class RecipeTemplatesController : ControllerBase
 
             return Ok(ApiResponse<object>.SuccessResponse(new { Message = "Recipe template deleted successfully" }));
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return NotFound(ApiResponse<object>.FailureResponse(Error.NotFound("RecipeTemplate", id.ToString())));
         }

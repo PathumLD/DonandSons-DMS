@@ -7,6 +7,11 @@
     <RootNamespace>DMS_Backend</RootNamespace>
   </PropertyGroup>
 
+  <!-- Avoid sourcelink.json write contention when VS + dotnet/API/watch compete for obj\Debug -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <EnableSourceLink>false</EnableSourceLink>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />

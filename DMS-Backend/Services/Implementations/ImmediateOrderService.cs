@@ -98,11 +98,12 @@ public sealed class ImmediateOrderService : IImmediateOrderService
         Guid turnId,
         CancellationToken cancellationToken = default)
     {
+        date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var orders = await _context.Set<ImmediateOrder>()
             .Include(io => io.DeliveryTurn)
             .Include(io => io.Outlet)
             .Include(io => io.Product)
-            .Where(io => io.OrderDate.Date == date.Date && io.DeliveryTurnId == turnId)
+            .Where(io => io.OrderDate.Date == date && io.DeliveryTurnId == turnId)
             .Select(io => new ImmediateOrderListDto
             {
                 Id = io.Id,

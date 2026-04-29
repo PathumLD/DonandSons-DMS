@@ -49,6 +49,7 @@ public sealed class UserService : IUserService
             .SelectMany(ur => ur.Role.RolePermissions ?? Enumerable.Empty<RolePermission>())
             .Select(rp => rp.Permission?.Code)
             .Where(code => !string.IsNullOrEmpty(code))
+            .Cast<string>()
             .Distinct()
             .ToList() ?? new List<string>();
     }
@@ -126,7 +127,7 @@ public sealed class UserService : IUserService
                     {
                         Id = ur.Role!.Id,
                         Name = ur.Role.Name,
-                        Description = ur.Role.Description
+                        Description = ur.Role.Description ?? string.Empty
                     })
                     .ToList(),
                 CreatedAt = u.CreatedAt,
@@ -175,7 +176,7 @@ public sealed class UserService : IUserService
                 {
                     Id = ur.Role!.Id,
                     Name = ur.Role.Name,
-                    Description = ur.Role.Description
+                    Description = ur.Role.Description ?? string.Empty
                 })
                 .ToList(),
             Permissions = permissions,

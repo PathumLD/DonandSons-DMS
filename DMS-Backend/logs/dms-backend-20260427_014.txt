@@ -1,8 +1,0 @@
-2026-04-27 10:47:17.140 +05:30 [INF] Starting DMS Backend API
-2026-04-27 10:47:22.729 +05:30 [INF] Dev seed is enabled, seeding development data
-2026-04-27 10:47:22.734 +05:30 [INF] Starting dev data seed
-2026-04-27 10:47:22.783 +05:30 [INF] Demo users already exist, skipping
-2026-04-27 10:47:22.798 +05:30 [INF] Demo roles already exist, skipping
-2026-04-27 10:47:22.798 +05:30 [INF] Dev data seed completed successfully
-2026-04-27 10:47:22.799 +05:30 [INF] Database seeded successfully
-2026-04-27 10:47:23.011 +05:30 [INF] DMS Backend API started successfully

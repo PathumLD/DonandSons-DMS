@@ -80,7 +80,7 @@ export default function RecipeManagementPage() {
     } catch (error: any) {
       if (error?.response?.status === 404) {
         setRecipe(null);
-        toast.info('No recipe found for this product. Create a new recipe or load from template.');
+        toast('No recipe found for this product. Create a new recipe or load from template.');
       } else {
         const errorMsg = error?.response?.data?.message || error.message || 'Failed to fetch recipe';
         toast.error(errorMsg);

@@ -89,7 +89,7 @@ export default function ImmediateOrdersPage() {
         undefined,
         statusFilter || undefined
       );
-      setOrders(response.immediateOrders);
+      setOrders(response.immediateOrders as any);
       setTotalCount(response.totalCount);
     } catch (error) {
       console.error('Error loading orders:', error);

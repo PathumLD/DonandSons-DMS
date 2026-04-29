@@ -1,4 +1,4 @@
-import apiClient, { type ApiEnvelope } from './client';
+import apiClient, { type ApiEnvelope } from './api-client';
 
 export interface DefaultQuantity {
   id: string;

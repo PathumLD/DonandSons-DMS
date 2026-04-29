@@ -74,6 +74,187 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Reconciliation> Reconciliations => Set<Reconciliation>();
     public DbSet<ReconciliationItem> ReconciliationItems => Set<ReconciliationItem>();
 
+    // Phase 6: Operations entities
+    public DbSet<Delivery> Deliveries => Set<Delivery>();
+    public DbSet<DeliveryItem> DeliveryItems => Set<DeliveryItem>();
+    public DbSet<Disposal> Disposals => Set<Disposal>();
+    public DbSet<DisposalItem> DisposalItems => Set<DisposalItem>();
+    public DbSet<Transfer> Transfers => Set<Transfer>();
+    public DbSet<TransferItem> TransferItems => Set<TransferItem>();
+    public DbSet<Cancellation> Cancellations => Set<Cancellation>();
+    public DbSet<DeliveryReturn> DeliveryReturns => Set<DeliveryReturn>();
+    public DbSet<DeliveryReturnItem> DeliveryReturnItems => Set<DeliveryReturnItem>();
+    public DbSet<StockBF> StockBFs => Set<StockBF>();
+    public DbSet<ShowroomOpenStock> ShowroomOpenStocks => Set<ShowroomOpenStock>();
+    public DbSet<LabelPrintRequest> LabelPrintRequests => Set<LabelPrintRequest>();
+    public DbSet<ShowroomLabelRequest> ShowroomLabelRequests => Set<ShowroomLabelRequest>();
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Auto-generate document numbers for Phase 6 entities
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added)
+            .ToList();
+
+        foreach (var entry in entries)
+        {
+            switch (entry.Entity)
+            {
+                case Delivery delivery when string.IsNullOrEmpty(delivery.DeliveryNo):
+                    delivery.DeliveryNo = await GenerateDeliveryNoAsync(cancellationToken);
+                    break;
+
+                case Disposal disposal when string.IsNullOrEmpty(disposal.DisposalNo):
+                    disposal.DisposalNo = await GenerateDisposalNoAsync(cancellationToken);
+                    break;
+
+                case Transfer transfer when string.IsNullOrEmpty(transfer.TransferNo):
+                    transfer.TransferNo = await GenerateTransferNoAsync(cancellationToken);
+                    break;
+
+                case Cancellation cancellation when string.IsNullOrEmpty(cancellation.CancellationNo):
+                    cancellation.CancellationNo = await GenerateCancellationNoAsync(cancellationToken);
+                    break;
+
+                case DeliveryReturn deliveryReturn when string.IsNullOrEmpty(deliveryReturn.ReturnNo):
+                    deliveryReturn.ReturnNo = await GenerateDeliveryReturnNoAsync(cancellationToken);
+                    break;
+
+                case StockBF stockBF when string.IsNullOrEmpty(stockBF.BFNo):
+                    stockBF.BFNo = await GenerateStockBFNoAsync(cancellationToken);
+                    break;
+
+                case LabelPrintRequest labelPrintRequest when string.IsNullOrEmpty(labelPrintRequest.DisplayNo):
+                    labelPrintRequest.DisplayNo = await GenerateLabelPrintRequestNoAsync(cancellationToken);
+                    break;
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<string> GenerateDeliveryNoAsync(CancellationToken cancellationToken)
+    {
+        var year = DateTime.UtcNow.Year;
+        var prefix = $"DN-{year}-";
+        
+        var lastDelivery = await Deliveries
+            .Where(d => d.DeliveryNo.StartsWith(prefix))
+            .OrderByDescending(d => d.DeliveryNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastDelivery != null && int.TryParse(lastDelivery.DeliveryNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D6}";
+        }
+
+        return $"{prefix}000001";
+    }
+
+    private async Task<string> GenerateDisposalNoAsync(CancellationToken cancellationToken)
+    {
+        var year = DateTime.UtcNow.Year;
+        var prefix = $"DS-{year}-";
+        
+        var lastDisposal = await Disposals
+            .Where(d => d.DisposalNo.StartsWith(prefix))
+            .OrderByDescending(d => d.DisposalNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastDisposal != null && int.TryParse(lastDisposal.DisposalNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D6}";
+        }
+
+        return $"{prefix}000001";
+    }
+
+    private async Task<string> GenerateTransferNoAsync(CancellationToken cancellationToken)
+    {
+        var year = DateTime.UtcNow.Year;
+        var prefix = $"TR-{year}-";
+        
+        var lastTransfer = await Transfers
+            .Where(t => t.TransferNo.StartsWith(prefix))
+            .OrderByDescending(t => t.TransferNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastTransfer != null && int.TryParse(lastTransfer.TransferNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D6}";
+        }
+
+        return $"{prefix}000001";
+    }
+
+    private async Task<string> GenerateCancellationNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "DCN";
+        
+        var lastCancellation = await Cancellations
+            .Where(c => c.CancellationNo.StartsWith(prefix))
+            .OrderByDescending(c => c.CancellationNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastCancellation != null && int.TryParse(lastCancellation.CancellationNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D8}";
+        }
+
+        return $"{prefix}00000001";
+    }
+
+    private async Task<string> GenerateDeliveryReturnNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "RET";
+        
+        var lastReturn = await DeliveryReturns
+            .Where(r => r.ReturnNo.StartsWith(prefix))
+            .OrderByDescending(r => r.ReturnNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastReturn != null && int.TryParse(lastReturn.ReturnNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D8}";
+        }
+
+        return $"{prefix}00000001";
+    }
+
+    private async Task<string> GenerateStockBFNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "SBF";
+        
+        var lastBF = await StockBFs
+            .Where(s => s.BFNo.StartsWith(prefix))
+            .OrderByDescending(s => s.BFNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastBF != null && int.TryParse(lastBF.BFNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D8}";
+        }
+
+        return $"{prefix}00000001";
+    }
+
+    private async Task<string> GenerateLabelPrintRequestNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "LBL";
+        
+        var lastLabel = await LabelPrintRequests
+            .Where(l => l.DisplayNo.StartsWith(prefix))
+            .OrderByDescending(l => l.DisplayNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastLabel != null && int.TryParse(lastLabel.DisplayNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D8}";
+        }
+
+        return $"{prefix}00000001";
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -923,6 +1104,357 @@ public sealed class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => new { e.ReconciliationId, e.ProductId }).IsUnique();
             entity.HasIndex(e => e.VarianceType);
+        });
+
+        // Phase 6: Operations entities configuration
+
+        // Delivery entity configuration
+        modelBuilder.Entity<Delivery>(entity =>
+        {
+            entity.ToTable("deliveries");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DeliveryNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DeliveryDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.TotalValue).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.DeliveryNo).IsUnique();
+            entity.HasIndex(e => e.DeliveryDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OutletId);
+        });
+
+        // DeliveryItem entity configuration
+        modelBuilder.Entity<DeliveryItem>(entity =>
+        {
+            entity.ToTable("delivery_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Total).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Delivery)
+                .WithMany(d => d.Items)
+                .HasForeignKey(e => e.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.DeliveryId);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // Disposal entity configuration
+        modelBuilder.Entity<Disposal>(entity =>
+        {
+            entity.ToTable("disposals");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DisposalNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DisposalDate).IsRequired();
+            entity.Property(e => e.DeliveredDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.DisposalNo).IsUnique();
+            entity.HasIndex(e => e.DisposalDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OutletId);
+        });
+
+        // DisposalItem entity configuration
+        modelBuilder.Entity<DisposalItem>(entity =>
+        {
+            entity.ToTable("disposal_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Disposal)
+                .WithMany(d => d.Items)
+                .HasForeignKey(e => e.DisposalId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.DisposalId);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // Transfer entity configuration
+        modelBuilder.Entity<Transfer>(entity =>
+        {
+            entity.ToTable("transfers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TransferNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TransferDate).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.FromOutlet)
+                .WithMany()
+                .HasForeignKey(e => e.FromOutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ToOutlet)
+                .WithMany()
+                .HasForeignKey(e => e.ToOutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.TransferNo).IsUnique();
+            entity.HasIndex(e => e.TransferDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.FromOutletId);
+            entity.HasIndex(e => e.ToOutletId);
+        });
+
+        // TransferItem entity configuration
+        modelBuilder.Entity<TransferItem>(entity =>
+        {
+            entity.ToTable("transfer_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Transfer)
+                .WithMany(t => t.Items)
+                .HasForeignKey(e => e.TransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.TransferId);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // Cancellation entity configuration
+        modelBuilder.Entity<Cancellation>(entity =>
+        {
+            entity.ToTable("cancellations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CancellationNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CancellationDate).IsRequired();
+            entity.Property(e => e.DeliveryNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DeliveredDate).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.CancellationNo).IsUnique();
+            entity.HasIndex(e => e.CancellationDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OutletId);
+        });
+
+        // DeliveryReturn entity configuration
+        modelBuilder.Entity<DeliveryReturn>(entity =>
+        {
+            entity.ToTable("delivery_returns");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReturnNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ReturnDate).IsRequired();
+            entity.Property(e => e.DeliveryNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DeliveredDate).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.ReturnNo).IsUnique();
+            entity.HasIndex(e => e.ReturnDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OutletId);
+        });
+
+        // DeliveryReturnItem entity configuration
+        modelBuilder.Entity<DeliveryReturnItem>(entity =>
+        {
+            entity.ToTable("delivery_return_items");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.DeliveryReturn)
+                .WithMany(dr => dr.Items)
+                .HasForeignKey(e => e.DeliveryReturnId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.DeliveryReturnId);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // StockBF entity configuration
+        modelBuilder.Entity<StockBF>(entity =>
+        {
+            entity.ToTable("stock_bf");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.BFNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.BFDate).IsRequired();
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.RejectedBy)
+                .WithMany()
+                .HasForeignKey(e => e.RejectedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.BFNo).IsUnique();
+            entity.HasIndex(e => new { e.OutletId, e.BFDate, e.ProductId }).IsUnique();
+            entity.HasIndex(e => e.Status);
+        });
+
+        // ShowroomOpenStock entity configuration
+        modelBuilder.Entity<ShowroomOpenStock>(entity =>
+        {
+            entity.ToTable("showroom_open_stock");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StockAsAt).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Outlet)
+                .WithMany()
+                .HasForeignKey(e => e.OutletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.OutletId).IsUnique();
+        });
+
+        // LabelPrintRequest entity configuration
+        modelBuilder.Entity<LabelPrintRequest>(entity =>
+        {
+            entity.ToTable("label_print_requests");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DisplayNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.StartDate).IsRequired();
+            entity.Property(e => e.PriceOverride).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.DisplayNo).IsUnique();
+            entity.HasIndex(e => e.Date);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProductId);
         });
     }
 }

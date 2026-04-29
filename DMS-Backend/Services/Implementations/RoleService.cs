@@ -33,7 +33,7 @@ public sealed class RoleService : IRoleService
             var searchLower = search.ToLower();
             query = query.Where(r =>
                 r.Name.ToLower().Contains(searchLower) ||
-                r.Description.ToLower().Contains(searchLower));
+                (r.Description ?? string.Empty).ToLower().Contains(searchLower));
         }
 
         if (isActive.HasValue)
@@ -51,7 +51,7 @@ public sealed class RoleService : IRoleService
             {
                 Id = r.Id,
                 Name = r.Name,
-                Description = r.Description,
+                Description = r.Description ?? string.Empty,
                 IsActive = r.IsActive,
                 PermissionCount = r.RolePermissions.Count,
                 CreatedAt = r.CreatedAt,
@@ -76,7 +76,7 @@ public sealed class RoleService : IRoleService
         {
             Id = role.Id,
             Name = role.Name,
-            Description = role.Description,
+            Description = role.Description ?? string.Empty,
             IsActive = role.IsActive,
             Permissions = role.RolePermissions
                 .Where(rp => rp.Permission != null)

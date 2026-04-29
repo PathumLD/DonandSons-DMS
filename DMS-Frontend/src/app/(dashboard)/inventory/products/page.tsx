@@ -206,22 +206,22 @@ export default function ProductsPage() {
         description: formData.description,
         categoryId: formData.categoryId!,
         unitOfMeasureId: formData.unitOfMeasureId!,
-        unitPrice: Number(formData.unitPrice),
+        unitPrice: Number(formData.unitPrice) || 0,
         productType: formData.productType,
         productionSection: formData.productionSection,
-        hasFullSize: formData.hasFullSize!,
-        hasMiniSize: formData.hasMiniSize!,
-        allowDecimal: formData.allowDecimal!,
-        decimalPlaces: Number(formData.decimalPlaces),
+        hasFullSize: formData.hasFullSize ?? true,
+        hasMiniSize: formData.hasMiniSize ?? false,
+        allowDecimal: formData.allowDecimal ?? false,
+        decimalPlaces: Number(formData.decimalPlaces) || 0,
         roundingValue: Math.floor(Number(formData.roundingValue) || 1),
-        isPlainRollItem: formData.isPlainRollItem!,
-        requireOpenStock: formData.requireOpenStock!,
-        enableLabelPrint: formData.enableLabelPrint!,
-        allowFutureLabelPrint: formData.allowFutureLabelPrint!,
-        sortOrder: Number(formData.sortOrder),
+        isPlainRollItem: formData.isPlainRollItem ?? false,
+        requireOpenStock: formData.requireOpenStock ?? true,
+        enableLabelPrint: formData.enableLabelPrint ?? true,
+        allowFutureLabelPrint: formData.allowFutureLabelPrint ?? false,
+        sortOrder: Number(formData.sortOrder) || 0,
         defaultDeliveryTurns: formData.defaultDeliveryTurns || [],
         availableInTurns: formData.availableInTurns || [],
-        isActive: formData.isActive!,
+        isActive: formData.isActive ?? true,
       };
       
       await productsApi.update(selectedProduct.id, dto);
@@ -264,32 +264,42 @@ export default function ProductsPage() {
     });
   };
 
-  const openEditModal = (product: Product) => {
-    setSelectedProduct(product);
-    setFormData({
-      code: product.code,
-      name: product.name,
-      description: product.description,
-      categoryId: product.categoryId,
-      unitOfMeasureId: product.unitOfMeasureId,
-      unitPrice: product.unitPrice,
-      productType: product.productType,
-      productionSection: product.productionSection,
-      hasFullSize: product.hasFullSize,
-      hasMiniSize: product.hasMiniSize,
-      allowDecimal: product.allowDecimal,
-      decimalPlaces: product.decimalPlaces,
-      roundingValue: product.roundingValue,
-      isPlainRollItem: product.isPlainRollItem,
-      requireOpenStock: product.requireOpenStock,
-      enableLabelPrint: product.enableLabelPrint,
-      allowFutureLabelPrint: product.allowFutureLabelPrint,
-      sortOrder: product.sortOrder,
-      defaultDeliveryTurns: product.defaultDeliveryTurns,
-      availableInTurns: product.availableInTurns,
-      isActive: product.isActive,
-    });
-    setShowEditModal(true);
+  const openEditModal = async (product: Product) => {
+    try {
+      setSubmitting(true);
+      const fullProduct = await productsApi.getById(product.id);
+      
+      setSelectedProduct(fullProduct);
+      setFormData({
+        code: fullProduct.code,
+        name: fullProduct.name,
+        description: fullProduct.description,
+        categoryId: fullProduct.categoryId,
+        unitOfMeasureId: fullProduct.unitOfMeasureId,
+        unitPrice: fullProduct.unitPrice,
+        productType: fullProduct.productType,
+        productionSection: fullProduct.productionSection,
+        hasFullSize: fullProduct.hasFullSize ?? true,
+        hasMiniSize: fullProduct.hasMiniSize ?? false,
+        allowDecimal: fullProduct.allowDecimal ?? false,
+        decimalPlaces: fullProduct.decimalPlaces ?? 0,
+        roundingValue: fullProduct.roundingValue ?? 1,
+        isPlainRollItem: fullProduct.isPlainRollItem ?? false,
+        requireOpenStock: fullProduct.requireOpenStock,
+        enableLabelPrint: fullProduct.enableLabelPrint,
+        allowFutureLabelPrint: fullProduct.allowFutureLabelPrint,
+        sortOrder: fullProduct.sortOrder ?? 0,
+        defaultDeliveryTurns: fullProduct.defaultDeliveryTurns || [],
+        availableInTurns: fullProduct.availableInTurns || [],
+        isActive: fullProduct.isActive,
+      });
+      setShowEditModal(true);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Failed to load product details';
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const columns = [

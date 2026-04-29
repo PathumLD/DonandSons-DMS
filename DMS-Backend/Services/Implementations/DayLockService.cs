@@ -18,7 +18,7 @@ public sealed class DayLockService : IDayLockService
 
     public async Task<bool> IsDateLockedAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        var lockDate = date.Date;
+        var lockDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var dayLock = await _context.DayLocks
             .FirstOrDefaultAsync(dl => dl.LockDate == lockDate && dl.IsLocked, cancellationToken);
 
@@ -45,12 +45,12 @@ public sealed class DayLockService : IDayLockService
         }
 
         // If no day-end has been run, allow any date from today onwards
-        return DateTime.Today;
+        return DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
     }
 
     public async Task LockDateAsync(DateTime date, Guid? lockedBy, CancellationToken cancellationToken = default)
     {
-        var lockDate = date.Date;
+        var lockDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var existingLock = await _context.DayLocks
             .FirstOrDefaultAsync(dl => dl.LockDate == lockDate, cancellationToken);
 
@@ -82,7 +82,7 @@ public sealed class DayLockService : IDayLockService
 
     public async Task UnlockDateAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        var lockDate = date.Date;
+        var lockDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var existingLock = await _context.DayLocks
             .FirstOrDefaultAsync(dl => dl.LockDate == lockDate, cancellationToken);
 
@@ -100,8 +100,8 @@ public sealed class DayLockService : IDayLockService
         DateTime endDate,
         CancellationToken cancellationToken = default)
     {
-        var start = startDate.Date;
-        var end = endDate.Date;
+        var start = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Utc);
 
         return await _context.DayLocks
             .Where(dl => dl.IsLocked && dl.LockDate >= start && dl.LockDate <= end)
@@ -111,7 +111,7 @@ public sealed class DayLockService : IDayLockService
 
     public async Task<dynamic> LockDayAsync(DateTime date, Guid? lockedBy, CancellationToken cancellationToken = default)
     {
-        var lockDate = date.Date;
+        var lockDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var existingLock = await _context.DayLocks
             .FirstOrDefaultAsync(dl => dl.LockDate == lockDate, cancellationToken);
 
