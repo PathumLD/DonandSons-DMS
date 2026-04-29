@@ -15,8 +15,10 @@ export default function ShowroomLabelPrintingPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    showroomId: '',
-    labelCount: '1',
+    showroomCode: '',
+    text1: '',
+    text2: '',
+    labelCount: '',
   });
 
   useEffect(() => {
@@ -32,9 +34,22 @@ export default function ShowroomLabelPrintingPage() {
     }
   };
 
+  const handleShowroomChange = (showroomCode: string) => {
+    const selectedOutlet = outlets.find(o => o.code === showroomCode);
+    setFormData({
+      ...formData,
+      showroomCode,
+      text1: showroomCode, // Auto-fill Text 1 with showroom code
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!formData.showroomId) {
+    if (!formData.showroomCode) {
       toast.error('Please select a showroom');
+      return;
+    }
+    if (!formData.text1) {
+      toast.error('Text 1 is required');
       return;
     }
     if (!formData.labelCount || Number(formData.labelCount) < 1) {
@@ -42,22 +57,35 @@ export default function ShowroomLabelPrintingPage() {
       return;
     }
 
+    const selectedOutlet = outlets.find(o => o.code === formData.showroomCode);
+    if (!selectedOutlet) {
+      toast.error('Selected showroom not found');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      await showroomLabelsApi.generatePrintData(formData.showroomId);
-      toast.success(`Label print data generated for ${formData.labelCount} label(s)`);
+      await showroomLabelsApi.create({
+        outletId: selectedOutlet.id,
+        text1: formData.text1,
+        text2: formData.text2 || undefined,
+        labelCount: Number(formData.labelCount),
+      });
+      toast.success(`Showroom label request created for ${formData.labelCount} label(s)`);
       setFormData({
-        showroomId: '',
-        labelCount: '1',
+        showroomCode: '',
+        text1: '',
+        text2: '',
+        labelCount: '',
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to generate label print data');
+      toast.error(error.response?.data?.message || 'Failed to create label request');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const selectedOutlet = outlets.find(o => o.id === formData.showroomId);
+  const selectedOutlet = outlets.find(o => o.code === formData.showroomCode);
 
   return (
     <div className="p-6 space-y-6">
@@ -66,28 +94,47 @@ export default function ShowroomLabelPrintingPage() {
           Showroom Label Printing
         </h1>
         <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-          Print Showroom Code Name labels. Select showroom and generate labels.
+          Print Showroom Code Name labels. Select showroom code from list.
         </p>
       </div>
 
       <div className="max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Label Configuration</CardTitle>
+            <CardTitle>New Showroom Label Print Request</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Select
-                label="Showroom"
-                value={formData.showroomId}
-                onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })}
+                label="Showroom Code"
+                value={formData.showroomCode}
+                onChange={(e) => handleShowroomChange(e.target.value)}
                 options={outlets.map((o) => ({ 
-                  value: o.id, 
-                  label: `${o.code} - ${o.name}` 
+                  value: o.code, 
+                  label: o.code
                 }))}
-                placeholder="Select showroom"
+                placeholder="Select showroom code"
                 fullWidth
                 required
+              />
+
+              <Input
+                label="Text 1"
+                type="text"
+                value={formData.text1}
+                onChange={(e) => setFormData({ ...formData, text1: e.target.value })}
+                placeholder="Enter text 1"
+                fullWidth
+                required
+              />
+
+              <Input
+                label="Text 2"
+                type="text"
+                value={formData.text2}
+                onChange={(e) => setFormData({ ...formData, text2: e.target.value })}
+                placeholder="Enter text 2 (optional)"
+                fullWidth
               />
 
               <Input
@@ -96,23 +143,25 @@ export default function ShowroomLabelPrintingPage() {
                 min="1"
                 value={formData.labelCount}
                 onChange={(e) => setFormData({ ...formData, labelCount: e.target.value })}
-                placeholder="Number of labels to print"
+                placeholder="Enter label count"
                 fullWidth
                 required
               />
 
-              {selectedOutlet && (
+              {selectedOutlet && formData.text1 && (
                 <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--muted)', border: '1px solid var(--border)' }}>
                   <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
                     Label Preview
                   </p>
                   <div className="p-4 bg-white rounded border-2 border-dashed border-gray-300 text-center">
                     <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
-                      {selectedOutlet.code}
+                      {formData.text1}
                     </p>
-                    <p className="text-lg font-medium mt-1" style={{ color: 'var(--muted-foreground)' }}>
-                      {selectedOutlet.name}
-                    </p>
+                    {formData.text2 && (
+                      <p className="text-lg font-medium mt-1" style={{ color: 'var(--muted-foreground)' }}>
+                        {formData.text2}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -122,35 +171,20 @@ export default function ShowroomLabelPrintingPage() {
                   variant="primary"
                   size="lg"
                   onClick={handleSubmit}
-                  disabled={isLoading || !formData.showroomId}
+                  disabled={isLoading || !formData.showroomCode || !formData.text1 || !formData.labelCount}
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   ) : (
                     <Printer className="w-5 h-5 mr-2" />
                   )}
-                  {isLoading ? 'Generating...' : 'Generate Labels'}
+                  {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Instructions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-            <p>1. Select the showroom from the dropdown menu</p>
-            <p>2. Enter the number of labels you want to print</p>
-            <p>3. Click "Generate Labels" to create the print data</p>
-            <p>4. The system will prepare the labels with the showroom code and name</p>
-            <p>5. Print labels will be ready for your label printer</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

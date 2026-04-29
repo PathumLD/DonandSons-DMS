@@ -1,22 +1,21 @@
 using AutoMapper;
-using DMS_Backend.Models.DTOs.ShowroomOpenStock;
+using DMS_Backend.Models.DTOs.ShowroomLabelRequest;
 using DMS_Backend.Models.Entities;
 
 namespace DMS_Backend.Mapping;
 
-public sealed class ShowroomOpenStockProfile : Profile
+public sealed class ShowroomLabelRequestProfile : Profile
 {
-    public ShowroomOpenStockProfile()
+    public ShowroomLabelRequestProfile()
     {
-        CreateMap<ShowroomOpenStock, ShowroomOpenStockListDto>()
+        CreateMap<ShowroomLabelRequest, ShowroomLabelRequestListDto>()
             .ForMember(dest => dest.OutletCode, opt => opt.MapFrom(src => src.Outlet!.Code))
             .ForMember(dest => dest.OutletName, opt => opt.MapFrom(src => src.Outlet!.Name));
 
-        CreateMap<ShowroomOpenStock, ShowroomOpenStockDetailDto>()
+        CreateMap<ShowroomLabelRequest, ShowroomLabelRequestDetailDto>()
             .ForMember(dest => dest.OutletCode, opt => opt.MapFrom(src => src.Outlet!.Code))
             .ForMember(dest => dest.OutletName, opt => opt.MapFrom(src => src.Outlet!.Name));
 
-        CreateMap<CreateShowroomOpenStockDto, ShowroomOpenStock>();
-        CreateMap<UpdateShowroomOpenStockDto, ShowroomOpenStock>();
+        CreateMap<CreateShowroomLabelRequestDto, ShowroomLabelRequest>();
     }
 }

@@ -152,6 +152,7 @@ builder.Services.AddScoped<IDeliveryReturnService, DeliveryReturnService>();
 builder.Services.AddScoped<IStockBFService, StockBFService>();
 builder.Services.AddScoped<IShowroomOpenStockService, ShowroomOpenStockService>();
 builder.Services.AddScoped<ILabelPrintRequestService, LabelPrintRequestService>();
+builder.Services.AddScoped<IShowroomLabelRequestService, ShowroomLabelRequestService>();
 
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));

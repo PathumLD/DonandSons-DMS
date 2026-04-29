@@ -87,6 +87,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<StockBF> StockBFs => Set<StockBF>();
     public DbSet<ShowroomOpenStock> ShowroomOpenStocks => Set<ShowroomOpenStock>();
     public DbSet<LabelPrintRequest> LabelPrintRequests => Set<LabelPrintRequest>();
+    public DbSet<ShowroomLabelRequest> ShowroomLabelRequests => Set<ShowroomLabelRequest>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

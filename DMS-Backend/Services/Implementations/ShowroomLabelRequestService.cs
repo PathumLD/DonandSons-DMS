@@ -1,0 +1,112 @@
+using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using DMS_Backend.Data;
+using DMS_Backend.Models.Entities;
+using DMS_Backend.Models.DTOs.ShowroomLabelRequest;
+using DMS_Backend.Services.Interfaces;
+
+namespace DMS_Backend.Services.Implementations;
+
+public class ShowroomLabelRequestService : IShowroomLabelRequestService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
+
+    public ShowroomLabelRequestService(ApplicationDbContext context, IMapper mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<List<ShowroomLabelRequestListDto>> GetAllAsync(
+        int page = 1,
+        int pageSize = 10,
+        Guid? outletId = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.ShowroomLabelRequests
+            .Include(r => r.Outlet)
+            .Where(r => r.IsActive)
+            .AsQueryable();
+
+        if (outletId.HasValue)
+            query = query.Where(r => r.OutletId == outletId.Value);
+
+        if (fromDate.HasValue)
+            query = query.Where(r => r.RequestDate >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(r => r.RequestDate <= toDate.Value);
+
+        var requests = await query
+            .OrderByDescending(r => r.RequestDate)
+            .ThenByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return _mapper.Map<List<ShowroomLabelRequestListDto>>(requests);
+    }
+
+    public async Task<ShowroomLabelRequestDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var request = await _context.ShowroomLabelRequests
+            .Include(r => r.Outlet)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+            return null;
+
+        return _mapper.Map<ShowroomLabelRequestDetailDto>(request);
+    }
+
+    public async Task<ShowroomLabelRequestDetailDto> CreateAsync(
+        CreateShowroomLabelRequestDto dto,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // Validate outlet exists
+        var outlet = await _context.Outlets
+            .FirstOrDefaultAsync(o => o.Id == dto.OutletId && o.IsActive, cancellationToken);
+
+        if (outlet == null)
+            throw new InvalidOperationException("Outlet not found or is inactive");
+
+        var request = new ShowroomLabelRequest
+        {
+            Id = Guid.NewGuid(),
+            OutletId = dto.OutletId,
+            Text1 = dto.Text1,
+            Text2 = dto.Text2,
+            LabelCount = dto.LabelCount,
+            RequestDate = DateTime.UtcNow,
+            CreatedById = userId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.ShowroomLabelRequests.Add(request);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new InvalidOperationException("Failed to retrieve created showroom label request");
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var request = await _context.ShowroomLabelRequests
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (request == null)
+            return false;
+
+        request.IsActive = false;
+        request.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+}

@@ -33,7 +33,7 @@ export default function ShowroomOpenStockPage() {
     try {
       setIsLoading(true);
       const response = await showroomOpenStockApi.getAll();
-      setShowrooms(Array.isArray(response) ? response : []);
+      setShowrooms(response);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load showroom open stock');
       setShowrooms([]);
@@ -44,8 +44,8 @@ export default function ShowroomOpenStockPage() {
 
   const filtered = useMemo(() => {
     return showrooms.filter((s) => {
-      const matchesSearch = (s.outlet?.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (s.outlet?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (s.outletCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (s.outletName || '').toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
   }, [showrooms, searchTerm]);
@@ -153,10 +153,10 @@ export default function ShowroomOpenStockPage() {
                         className="hover:bg-gray-50 transition-colors"
                       >
                         <td className="p-3">
-                          <span className="font-mono font-semibold">{s.outlet?.code || '-'}</span>
+                          <span className="font-mono font-semibold">{s.outletCode || '-'}</span>
                         </td>
                         <td className="p-3">
-                          <span className="font-medium">{s.outlet?.name || '-'}</span>
+                          <span className="font-medium">{s.outletName || '-'}</span>
                         </td>
                         <td className="p-3">
                           <div className="flex items-center">
@@ -219,7 +219,7 @@ export default function ShowroomOpenStockPage() {
                 Showroom
               </p>
               <p className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outlet?.code} - {selected.outlet?.name}
+                {selected.outletCode} - {selected.outletName}
               </p>
             </div>
             <Input
@@ -270,7 +270,7 @@ export default function ShowroomOpenStockPage() {
                 Showroom Code
               </p>
               <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outlet?.code}
+                {selected.outletCode}
               </p>
             </div>
             <div>
@@ -278,7 +278,7 @@ export default function ShowroomOpenStockPage() {
                 Showroom Name
               </p>
               <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outlet?.name}
+                {selected.outletName}
               </p>
             </div>
             <div>
