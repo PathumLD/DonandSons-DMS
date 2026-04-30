@@ -1,417 +1,414 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
-import { Shield, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
+import { Shield, Plus, Search, Edit, X, Key, Users, ChevronDown, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { securityPoliciesApi, type SecurityPolicy, type CreateSecurityPolicyDto, type UpdateSecurityPolicyDto } from '@/lib/api/security-policies';
+import { usersApi, type User, type UpdateUserRequest } from '@/lib/api/users';
+import { rolesApi, type Role, type UpdateRoleRequest } from '@/lib/api/roles';
+import { permissionsApi, type Permission, type PermissionsByModule } from '@/lib/api/permissions';
 import toast from 'react-hot-toast';
 
+interface ModulePermissions {
+  module: string;
+  view: Permission[];
+  create: Permission[];
+  update: Permission[];
+  delete: Permission[];
+}
+
+type PermissionScope = 'all' | 'team' | 'own' | 'none';
+
+type TabType = 'users' | 'permissions';
+
 export default function SecurityPage() {
-  const [policies, setPolicies] = useState<SecurityPolicy[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState<SecurityPolicy | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    policyKey: '',
-    policyName: '',
-    description: '',
-    category: 'Authentication',
-    policyValue: '',
-    valueType: 'String',
-    isEnforced: true,
-    isSystemPolicy: false,
-    severityLevel: 'Medium',
-    lastReviewedAt: undefined as string | undefined,
-    sortOrder: 0,
-    isActive: true,
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab') as TabType | null;
+  const [activeTab, setActiveTab] = useState<TabType>(tabParam || 'users');
+
+  // Users state
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
+  const [usersSearchTerm, setUsersSearchTerm] = useState('');
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const [usersPageSize, setUsersPageSize] = useState(10);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userSubmitting, setUserSubmitting] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({
+    password: '',
+    confirmPassword: '',
   });
 
+  // Roles state
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+  const [rolesTotalCount, setRolesTotalCount] = useState(0);
+  const [rolesSearchTerm, setRolesSearchTerm] = useState('');
+  const [rolesCurrentPage, setRolesCurrentPage] = useState(1);
+  const [rolesPageSize, setRolesPageSize] = useState(10);
+
+  // Permissions state
+  const [permissionsRoles, setPermissionsRoles] = useState<Role[]>([]);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [groupedPermissions, setGroupedPermissions] = useState<PermissionsByModule[]>([]);
+  const [rolePermissions, setRolePermissions] = useState<Set<string>>(new Set());
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Update URL when tab changes. The "permissions" tab now redirects to the
+  // dedicated /administrator/permissions page (which uses the canonical
+  // sidebar-driven matrix UI with full View/Create/Edit/Delete/Approve/Reject
+  // support). Keeping a thin redirect here so existing bookmarks still work.
+  const handleTabChange = (tab: TabType) => {
+    if (tab === 'permissions') {
+      router.replace('/administrator/permissions');
+      return;
+    }
+    setActiveTab(tab);
+    router.push(`/administrator/security?tab=${tab}`, { scroll: false });
+  };
+
+  // Auto-redirect if user lands here with ?tab=permissions
   useEffect(() => {
-    loadPolicies();
-  }, [currentPage, pageSize, searchTerm]);
+    if (tabParam === 'permissions') {
+      router.replace('/administrator/permissions');
+    }
+  }, [tabParam, router]);
 
-  const loadPolicies = async () => {
+  // Load data when tab changes
+  useEffect(() => {
+    if (activeTab === 'users') {
+      loadUsers();
+    } else if (activeTab === 'permissions') {
+      loadPermissionsData();
+    }
+  }, [activeTab, usersCurrentPage, usersPageSize, usersSearchTerm]);
+
+  useEffect(() => {
+    if (selectedRole && activeTab === 'permissions') {
+      loadRolePermissions();
+    }
+  }, [selectedRole]);
+
+  // Users functions
+  const loadUsers = async () => {
     try {
-      setLoading(true);
-      const response = await securityPoliciesApi.getAll(currentPage, pageSize, searchTerm, undefined, undefined);
-      setPolicies(response.securityPolicies);
-      setTotalCount(response.totalCount);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load security policies');
+      setUsersLoading(true);
+      const response = await usersApi.getAll(usersCurrentPage, usersPageSize, usersSearchTerm);
+      setUsers(response.users);
+      setUsersTotalCount(response.totalCount);
+    } catch (error) {
+      console.error('Failed to load users:', error);
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
     }
   };
 
-  const handleToggleActive = async (policy: SecurityPolicy) => {
+  const handleToggleUserActive = async (user: User) => {
     try {
-      const updateData: UpdateSecurityPolicyDto = {
-        policyKey: policy.policyKey,
-        policyName: policy.policyName,
-        description: policy.description,
-        category: policy.category,
-        policyValue: policy.policyValue,
-        valueType: policy.valueType,
-        isEnforced: policy.isEnforced,
-        isSystemPolicy: policy.isSystemPolicy,
-        severityLevel: policy.severityLevel,
-        lastReviewedAt: policy.lastReviewedAt,
-        sortOrder: policy.sortOrder,
-        isActive: !policy.isActive,
+      const updateData: UpdateUserRequest = {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        isActive: !user.isActive,
       };
-      await securityPoliciesApi.update(policy.id, updateData);
-      toast.success(`Security policy ${policy.isActive ? 'deactivated' : 'activated'}`);
-      loadPolicies();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update policy');
+      await usersApi.update(user.id, updateData);
+      await loadUsers();
+    } catch (error) {
+      console.error('Failed to toggle user status:', error);
+      alert('Failed to update user status');
     }
   };
 
-  const handleAddPolicy = async () => {
-    if (!formData.policyKey || !formData.policyName) {
-      toast.error('Please fill in all required fields');
+  const handleResetPassword = async () => {
+    if (!selectedUser) return;
+    if (resetPasswordData.password !== resetPasswordData.confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
 
     try {
-      setSubmitting(true);
-      const createData: CreateSecurityPolicyDto = {
-        policyKey: formData.policyKey,
-        policyName: formData.policyName,
-        description: formData.description,
-        category: formData.category,
-        policyValue: formData.policyValue,
-        valueType: formData.valueType,
-        isEnforced: formData.isEnforced,
-        isSystemPolicy: formData.isSystemPolicy,
-        severityLevel: formData.severityLevel,
-        lastReviewedAt: formData.lastReviewedAt,
-        sortOrder: formData.sortOrder,
-        isActive: formData.isActive,
-      };
-      await securityPoliciesApi.create(createData);
-      toast.success('Security policy created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadPolicies();
+      setUserSubmitting(true);
+      await usersApi.resetPassword(selectedUser.id, resetPasswordData.password);
+      setShowResetPasswordModal(false);
+      setSelectedUser(null);
+      setResetPasswordData({ password: '', confirmPassword: '' });
+      alert('Password reset successfully');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create policy');
+      console.error('Failed to reset password:', error);
+      alert(error.response?.data?.error?.message || 'Failed to reset password');
     } finally {
-      setSubmitting(false);
+      setUserSubmitting(false);
     }
   };
 
-  const handleEditPolicy = async () => {
-    if (!selectedPolicy || !formData.policyKey || !formData.policyName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUser(user);
+    setResetPasswordData({ password: '', confirmPassword: '' });
+    setShowResetPasswordModal(true);
+  };
 
+  // Roles functions
+  const loadRoles = async () => {
     try {
-      setSubmitting(true);
-      const updateData: UpdateSecurityPolicyDto = {
-        policyKey: formData.policyKey,
-        policyName: formData.policyName,
-        description: formData.description,
-        category: formData.category,
-        policyValue: formData.policyValue,
-        valueType: formData.valueType,
-        isEnforced: formData.isEnforced,
-        isSystemPolicy: formData.isSystemPolicy,
-        severityLevel: formData.severityLevel,
-        lastReviewedAt: formData.lastReviewedAt,
-        sortOrder: formData.sortOrder,
-        isActive: formData.isActive,
-      };
-      await securityPoliciesApi.update(selectedPolicy.id, updateData);
-      toast.success('Security policy updated successfully');
-      setShowEditModal(false);
-      setSelectedPolicy(null);
-      resetForm();
-      loadPolicies();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update policy');
+      setRolesLoading(true);
+      const response = await rolesApi.getAll(rolesCurrentPage, rolesPageSize, rolesSearchTerm);
+      setRoles(response.roles);
+      setRolesTotalCount(response.totalCount);
+    } catch (error) {
+      console.error('Failed to load roles:', error);
     } finally {
-      setSubmitting(false);
+      setRolesLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      policyKey: '',
-      policyName: '',
-      description: '',
-      category: 'Authentication',
-      policyValue: '',
-      valueType: 'String',
-      isEnforced: true,
-      isSystemPolicy: false,
-      severityLevel: 'Medium',
-      lastReviewedAt: undefined,
-      sortOrder: 0,
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (policy: SecurityPolicy) => {
-    setSelectedPolicy(policy);
-    setFormData({
-      policyKey: policy.policyKey,
-      policyName: policy.policyName,
-      description: policy.description || '',
-      category: policy.category,
-      policyValue: policy.policyValue || '',
-      valueType: policy.valueType,
-      isEnforced: policy.isEnforced,
-      isSystemPolicy: policy.isSystemPolicy,
-      severityLevel: policy.severityLevel || 'Medium',
-      lastReviewedAt: policy.lastReviewedAt,
-      sortOrder: policy.sortOrder,
-      isActive: policy.isActive,
-    });
-    setShowEditModal(true);
-  };
-
-  const getSeverityColor = (severity?: string) => {
-    switch (severity) {
-      case 'Critical': return 'danger';
-      case 'High': return 'warning';
-      case 'Medium': return 'info';
-      case 'Low': return 'neutral';
-      default: return 'neutral';
+  const handleToggleRoleActive = async (role: Role) => {
+    try {
+      const updateData: UpdateRoleRequest = {
+        name: role.name,
+        description: role.description,
+        isActive: !role.isActive,
+      };
+      await rolesApi.update(role.id, updateData);
+      await loadRoles();
+    } catch (error: any) {
+      console.error('Failed to toggle role status:', error);
+      alert(error.response?.data?.error?.message || 'Failed to update role status');
     }
   };
 
-  const columns = [
+  // Permissions functions
+  const loadPermissionsData = async () => {
+    try {
+      setPermissionsLoading(true);
+      const [rolesData, permissionsData] = await Promise.all([
+        rolesApi.getAll(1, 100, '', true),
+        permissionsApi.getGroupedByModule(true)
+      ]);
+      setPermissionsRoles(rolesData.roles);
+      setGroupedPermissions(permissionsData);
+      if (rolesData.roles.length > 0 && !selectedRole) {
+        setSelectedRole(rolesData.roles[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load permissions data:', error);
+      toast.error('Failed to load roles and permissions');
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
+  const loadRolePermissions = async () => {
+    if (!selectedRole) return;
+    try {
+      const roleDetails = await rolesApi.getById(selectedRole.id);
+      const permissionIds = new Set(roleDetails.permissions?.map(p => p.id) || []);
+      setRolePermissions(permissionIds);
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Failed to load role permissions:', error);
+      toast.error('Failed to load role permissions');
+    }
+  };
+
+  const organizedPermissions: ModulePermissions[] = (() => {
+    const modules = new Map<string, ModulePermissions>();
+    
+    groupedPermissions.forEach(group => {
+      if (!modules.has(group.module)) {
+        modules.set(group.module, {
+          module: group.module,
+          view: [],
+          create: [],
+          update: [],
+          delete: []
+        });
+      }
+      
+      const modulePerms = modules.get(group.module)!;
+      group.permissions.forEach(perm => {
+        const code = perm.code.toLowerCase();
+        if (code.includes('.view') || code.includes('.read')) {
+          modulePerms.view.push(perm);
+        } else if (code.includes('.create') || code.includes('.add')) {
+          modulePerms.create.push(perm);
+        } else if (code.includes('.update') || code.includes('.edit')) {
+          modulePerms.update.push(perm);
+        } else if (code.includes('.delete') || code.includes('.remove')) {
+          modulePerms.delete.push(perm);
+        } else {
+          modulePerms.view.push(perm);
+        }
+      });
+    });
+    
+    return Array.from(modules.values()).sort((a, b) => a.module.localeCompare(b.module));
+  })();
+
+  const toggleAllInModule = (permissions: Permission[], checked: boolean) => {
+    setRolePermissions(prev => {
+      const next = new Set(prev);
+      permissions.forEach(p => {
+        if (checked) {
+          next.add(p.id);
+        } else {
+          next.delete(p.id);
+        }
+      });
+      return next;
+    });
+    setHasChanges(true);
+  };
+
+  const isAllChecked = (permissions: Permission[]) => {
+    return permissions.length > 0 && permissions.every(p => rolePermissions.has(p.id));
+  };
+
+  const savePermissions = async () => {
+    if (!selectedRole) return;
+    try {
+      setSaving(true);
+      await rolesApi.assignPermissions(selectedRole.id, Array.from(rolePermissions));
+      toast.success('Permissions updated successfully');
+      setHasChanges(false);
+    } catch (error: any) {
+      console.error('Failed to save permissions:', error);
+      toast.error(error.response?.data?.error?.message || 'Failed to save permissions');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Columns for users table
+  const usersColumns = [
     {
-      key: 'policyKey',
-      label: 'Policy Key',
-      render: (item: SecurityPolicy) => (
-        <span className="font-mono font-semibold" style={{ color: '#C8102E' }}>
-          {item.policyKey}
-        </span>
-      ),
-    },
-    {
-      key: 'policyName',
-      label: 'Policy Name',
-      render: (item: SecurityPolicy) => (
+      key: 'fullName',
+      label: 'User Name',
+      render: (item: User) => (
         <div>
-          <span className="font-medium">{item.policyName}</span>
-          {item.description && (
-            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-              {item.description}
-            </div>
-          )}
+          <div className="font-medium" style={{ color: 'var(--foreground)' }}>
+            <Users className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
+            {item.fullName}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.email}</div>
         </div>
       ),
     },
     {
-      key: 'category',
-      label: 'Category',
-      render: (item: SecurityPolicy) => (
-        <Badge variant="neutral" size="sm">{item.category}</Badge>
-      ),
-    },
-    {
-      key: 'severityLevel',
-      label: 'Severity',
-      render: (item: SecurityPolicy) => (
-        <Badge variant={getSeverityColor(item.severityLevel)} size="sm">{item.severityLevel || 'N/A'}</Badge>
-      ),
-    },
-    {
-      key: 'isEnforced',
-      label: 'Enforced',
-      render: (item: SecurityPolicy) => (
-        item.isEnforced ? <Badge variant="success" size="sm">Enforced</Badge> : <Badge variant="neutral" size="sm">Not Enforced</Badge>
-      ),
-    },
-    {
-      key: 'isSystemPolicy',
-      label: 'Type',
-      render: (item: SecurityPolicy) => (
-        item.isSystemPolicy ? <Badge variant="info" size="sm">System</Badge> : <Badge variant="neutral" size="sm">Custom</Badge>
-      ),
-    },
-    {
-      key: 'isActive',
-      label: 'Status',
-      render: (item: SecurityPolicy) => (
-        item.isActive ? (
-          <Badge variant="success" size="sm">Active</Badge>
-        ) : (
-          <Badge variant="danger" size="sm">Inactive</Badge>
-        )
+      key: 'roles',
+      label: 'User Role',
+      render: (item: User) => (
+        <div className="flex flex-wrap gap-1">
+          {item.roles.map(role => (
+            <Badge key={role.id} variant="info" size="sm">{role.name}</Badge>
+          ))}
+        </div>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
-      render: (item: SecurityPolicy) => (
-        <div className="flex items-center space-x-2">
+      label: '',
+      render: (item: User) => (
+        <div className="flex items-center justify-end space-x-2">
           <button
-            onClick={() => openEditModal(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: 'var(--muted-foreground)' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onClick={() => router.push(`/administrator/users/edit/${item.id}`)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleToggleActive(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onClick={() => openResetPasswordModal(item)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            title="Reset Password"
+          >
+            <Key className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleUserActive(item)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
             title={item.isActive ? 'Deactivate' : 'Activate'}
           >
-            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            <X className="w-4 h-4" />
           </button>
         </div>
       ),
     },
   ];
 
-  const renderForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Policy Key"
-          value={formData.policyKey}
-          onChange={(e) => setFormData({ ...formData, policyKey: e.target.value })}
-          placeholder="e.g., password_min_length"
-          fullWidth
-          required
-        />
-        <Input
-          label="Policy Name"
-          value={formData.policyName}
-          onChange={(e) => setFormData({ ...formData, policyName: e.target.value })}
-          placeholder="Minimum Password Length"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  // Columns for roles table
+  const rolesColumns = [
+    {
+      key: 'name',
+      label: 'Role Name',
+      render: (item: Role) => (
         <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Category <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
-          >
-            <option value="Authentication">Authentication</option>
-            <option value="Authorization">Authorization</option>
-            <option value="Password">Password</option>
-            <option value="Session">Session</option>
-            <option value="DataProtection">Data Protection</option>
-          </select>
+          <div className="font-medium" style={{ color: 'var(--foreground)' }}>
+            <Shield className="w-4 h-4 inline-block mr-2" style={{ color: 'var(--muted-foreground)' }} />
+            {item.name}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{item.description}</div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Value Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={formData.valueType}
-            onChange={(e) => setFormData({ ...formData, valueType: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
+      ),
+    },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      render: (item: Role) => (
+        <Badge variant="info" size="sm">{item.permissionCount || 0} permissions</Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (item: Role) => (
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={() => router.push(`/administrator/roles/edit/${item.id}`)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            title="Edit"
           >
-            <option value="String">String</option>
-            <option value="Number">Number</option>
-            <option value="Boolean">Boolean</option>
-            <option value="JSON">JSON</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Policy Value"
-          value={formData.policyValue}
-          onChange={(e) => setFormData({ ...formData, policyValue: e.target.value })}
-          placeholder="e.g., 8 for min length"
-          fullWidth
-        />
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Severity Level
-          </label>
-          <select
-            value={formData.severityLevel}
-            onChange={(e) => setFormData({ ...formData, severityLevel: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleToggleRoleActive(item)}
+            className="p-1.5 rounded-full transition-colors"
+            style={{ color: 'var(--muted-foreground)', backgroundColor: 'var(--muted)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E5E7EB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            title={item.isActive ? 'Deactivate' : 'Activate'}
           >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Last Reviewed At"
-          type="date"
-          value={formData.lastReviewedAt || ''}
-          onChange={(e) => setFormData({ ...formData, lastReviewedAt: e.target.value || undefined })}
-          fullWidth
-        />
-        <Input
-          label="Sort Order"
-          type="number"
-          value={formData.sortOrder.toString()}
-          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-          fullWidth
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-        <Toggle
-          checked={formData.isEnforced}
-          onChange={(checked) => setFormData({ ...formData, isEnforced: checked })}
-          label="Enforced"
-        />
-        <Toggle
-          checked={formData.isSystemPolicy}
-          onChange={(checked) => setFormData({ ...formData, isSystemPolicy: checked })}
-          label="System Policy"
-        />
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
+      ),
+    },
+  ];
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const usersTotalPages = Math.ceil(usersTotalCount / usersPageSize);
+  const rolesTotalPages = Math.ceil(rolesTotalCount / rolesPageSize);
 
   return (
     <div className="p-6 space-y-6">
@@ -419,103 +416,384 @@ export default function SecurityPage() {
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
             <Shield className="w-8 h-8 inline-block mr-3" style={{ color: '#C8102E' }} />
-            Security Policies
+            Users & User Roles
           </h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Manage security policies and configuration settings ({totalCount} policies)
+            {activeTab === 'users'
+              ? 'Manage system users, assign roles and capabilities. Only Admin can create users.'
+              : 'Configure which menus and actions each role can access. Read = menu visibility.'}
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Policy
-        </Button>
+        {activeTab === 'users' && (
+          <Button variant="primary" size="md" onClick={() => router.push('/administrator/users/add')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add New
+          </Button>
+        )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Security Policies</CardTitle>
-            <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-              <input
-                type="text"
-                placeholder="Search policies..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
+      {/* Tabs */}
+      <div className="flex gap-2" style={{ borderBottom: '2px solid var(--border)' }}>
+        <button
+          onClick={() => handleTabChange('users')}
+          className="px-4 py-2 font-medium transition-colors"
+          style={{
+            color: activeTab === 'users' ? '#C8102E' : 'var(--muted-foreground)',
+            borderBottom: activeTab === 'users' ? '2px solid #C8102E' : 'none',
+            marginBottom: '-2px',
+          }}
+        >
+          <Users className="w-4 h-4 inline-block mr-2" />
+          User accounts
+        </button>
+        <button
+          onClick={() => handleTabChange('permissions')}
+          className="px-4 py-2 font-medium transition-colors"
+          style={{
+            color: activeTab === 'permissions' ? '#C8102E' : 'var(--muted-foreground)',
+            borderBottom: activeTab === 'permissions' ? '2px solid #C8102E' : 'none',
+            marginBottom: '-2px',
+          }}
+        >
+          <Shield className="w-4 h-4 inline-block mr-2" />
+          Roles & permissions
+        </button>
+      </div>
+
+      {/* Users Tab Content */}
+      {activeTab === 'users' && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                  {usersLoading ? 'Loading...' : `Showing ${((usersCurrentPage - 1) * usersPageSize) + 1} to ${Math.min(usersCurrentPage * usersPageSize, usersTotalCount)} of ${usersTotalCount} entries`}
+                </span>
+              </div>
+              <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={usersSearchTerm}
+                  onChange={(e) => {
+                    setUsersSearchTerm(e.target.value);
+                    setUsersCurrentPage(1);
+                  }}
+                  className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                  style={{ border: '1px solid var(--input)' }}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {usersLoading ? (
+              <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+                Loading users...
+              </div>
+            ) : (
+              <DataTable
+                data={users}
+                columns={usersColumns}
+                currentPage={usersCurrentPage}
+                totalPages={usersTotalPages}
+                pageSize={usersPageSize}
+                onPageChange={setUsersCurrentPage}
+                onPageSizeChange={(size) => {
+                  setUsersPageSize(size);
+                  setUsersCurrentPage(1);
                 }}
-                className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                style={{ border: '1px solid var(--input)' }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Permissions Tab Content */}
+      {activeTab === 'permissions' && (
+        <Card>
+          <CardContent className="p-0">
+            {permissionsLoading ? (
+              <div className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+                Loading roles and permissions...
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col lg:flex-row min-h-[600px]">
+                  {/* Sidebar - Role Selector */}
+                  <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--muted/5)' }}>
+                    <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                      <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>
+                        Select Role
+                      </h3>
+                    </div>
+                    <div className="p-2">
+                      {permissionsRoles.map(role => (
+                        <button
+                          key={role.id}
+                          onClick={() => setSelectedRole(role)}
+                          className="w-full text-left px-4 py-3 rounded-lg mb-1 transition-colors"
+                          style={{
+                            backgroundColor: selectedRole?.id === role.id ? '#3B82F6' : 'transparent',
+                            color: selectedRole?.id === role.id ? 'white' : 'var(--foreground)',
+                          }}
+                        >
+                          <div className="font-medium text-sm">{role.name}</div>
+                          {role.description && (
+                            <div className="text-xs mt-0.5 opacity-70">{role.description}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Main Content - Permissions Table */}
+                  <div className="flex-1 overflow-x-auto">
+                    {!selectedRole ? (
+                      <div className="flex flex-col items-center justify-center h-full p-12 text-center">
+                        <Shield className="w-16 h-16 mb-4" style={{ color: 'var(--muted-foreground)', opacity: 0.3 }} />
+                        <p className="text-lg" style={{ color: 'var(--muted-foreground)' }}>
+                          Select a role to configure its permissions.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--muted/5)' }}>
+                          <div>
+                            <h3 className="text-sm font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                              Configure which menus and actions each role can access. <strong>Read</strong> = menu visibility.
+                            </h3>
+                          </div>
+                          {hasChanges && (
+                            <Button 
+                              variant="primary" 
+                              size="sm" 
+                              onClick={savePermissions}
+                              disabled={saving}
+                            >
+                              <Save className="w-4 h-4 mr-2" />
+                              {saving ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <table className="w-full">
+                          <thead>
+                            <tr style={{ backgroundColor: 'var(--muted/5)', borderBottom: '2px solid var(--border)' }}>
+                              <th className="text-left py-3 px-4 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                                Module / Menu
+                              </th>
+                              <th className="text-center py-3 px-4 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                                View / Menu Access
+                              </th>
+                              <th className="text-center py-3 px-4 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                                Create
+                              </th>
+                              <th className="text-center py-3 px-4 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                                Update
+                              </th>
+                              <th className="text-center py-3 px-4 font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                                Delete
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {organizedPermissions.map((modulePerms, index) => (
+                              <tr 
+                                key={modulePerms.module}
+                                style={{ 
+                                  borderBottom: '1px solid var(--border)',
+                                  backgroundColor: index % 2 === 0 ? 'transparent' : 'var(--muted/3)'
+                                }}
+                              >
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-sm" style={{ color: 'var(--foreground)' }}>
+                                    {modulePerms.module}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllChecked(modulePerms.view)}
+                                      onChange={(e) => toggleAllInModule(modulePerms.view, e.target.checked)}
+                                      className="w-4 h-4 cursor-pointer"
+                                      style={{ accentColor: '#3B82F6' }}
+                                    />
+                                    {modulePerms.view.length > 1 && (
+                                      <div className="relative inline-block">
+                                        <select
+                                          className="text-xs px-2 py-1 rounded appearance-none cursor-pointer pr-6"
+                                          style={{ 
+                                            color: 'var(--muted-foreground)',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid var(--border)'
+                                          }}
+                                          onChange={(e) => {
+                                            // Handle scope selection
+                                          }}
+                                        >
+                                          <option value="all">All</option>
+                                          <option value="team">Team</option>
+                                          <option value="own">Own</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ color: 'var(--muted-foreground)' }} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllChecked(modulePerms.create)}
+                                      onChange={(e) => toggleAllInModule(modulePerms.create, e.target.checked)}
+                                      className="w-4 h-4 cursor-pointer"
+                                      style={{ accentColor: '#3B82F6' }}
+                                    />
+                                    {modulePerms.create.length > 1 && (
+                                      <div className="relative inline-block">
+                                        <select
+                                          className="text-xs px-2 py-1 rounded appearance-none cursor-pointer pr-6"
+                                          style={{ 
+                                            color: 'var(--muted-foreground)',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid var(--border)'
+                                          }}
+                                        >
+                                          <option value="all">All</option>
+                                          <option value="team">Team</option>
+                                          <option value="own">Own</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ color: 'var(--muted-foreground)' }} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllChecked(modulePerms.update)}
+                                      onChange={(e) => toggleAllInModule(modulePerms.update, e.target.checked)}
+                                      className="w-4 h-4 cursor-pointer"
+                                      style={{ accentColor: '#3B82F6' }}
+                                    />
+                                    {modulePerms.update.length > 1 && (
+                                      <div className="relative inline-block">
+                                        <select
+                                          className="text-xs px-2 py-1 rounded appearance-none cursor-pointer pr-6"
+                                          style={{ 
+                                            color: 'var(--muted-foreground)',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid var(--border)'
+                                          }}
+                                        >
+                                          <option value="all">All</option>
+                                          <option value="team">Team</option>
+                                          <option value="own">Own</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ color: 'var(--muted-foreground)' }} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllChecked(modulePerms.delete)}
+                                      onChange={(e) => toggleAllInModule(modulePerms.delete, e.target.checked)}
+                                      className="w-4 h-4 cursor-pointer"
+                                      style={{ accentColor: '#3B82F6' }}
+                                    />
+                                    {modulePerms.delete.length > 1 && (
+                                      <div className="relative inline-block">
+                                        <select
+                                          className="text-xs px-2 py-1 rounded appearance-none cursor-pointer pr-6"
+                                          style={{ 
+                                            color: 'var(--muted-foreground)',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid var(--border)'
+                                          }}
+                                        >
+                                          <option value="all">All</option>
+                                          <option value="team">Team</option>
+                                          <option value="own">Own</option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ color: 'var(--muted-foreground)' }} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {/* Footer Note */}
+                        <div className="p-4 border-t text-center text-xs" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--muted/5)', color: 'var(--muted-foreground)' }}>
+                          User and role changes apply immediately for new sessions. Protect production admin accounts from accidental deletion.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reset Password Modal */}
+      <Modal
+        isOpen={showResetPasswordModal}
+        onClose={() => {
+          setShowResetPasswordModal(false);
+          setSelectedUser(null);
+          setResetPasswordData({ password: '', confirmPassword: '' });
+        }}
+        title="Reset Password"
+        size="md"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              Reset password for <strong>{selectedUser.fullName}</strong> ({selectedUser.email})
+            </p>
+            <div className="grid grid-cols-1 gap-4">
+              <Input
+                label="New Password"
+                type="password"
+                value={resetPasswordData.password}
+                onChange={(e) => setResetPasswordData({ ...resetPasswordData, password: e.target.value })}
+                placeholder="••••••••"
+                fullWidth
+                required
+              />
+              <Input
+                label="Confirm New Password"
+                type="password"
+                value={resetPasswordData.confirmPassword}
+                onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+                fullWidth
+                required
               />
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#C8102E' }} />
-            </div>
-          ) : (
-            <DataTable
-              data={policies}
-              columns={columns}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Security Policy"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddPolicy} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Policy'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedPolicy(null);
-          resetForm();
-        }}
-        title="Edit Security Policy"
-        size="lg"
-      >
-        {renderForm()}
+        )}
         <ModalFooter>
           <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedPolicy(null);
-            resetForm();
-          }} disabled={submitting}>
+            setShowResetPasswordModal(false);
+            setSelectedUser(null);
+            setResetPasswordData({ password: '', confirmPassword: '' });
+          }} disabled={userSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleEditPolicy} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
+          <Button variant="primary" onClick={handleResetPassword} disabled={userSubmitting}>
+            <Key className="w-4 h-4 mr-2" />
+            {userSubmitting ? 'Resetting...' : 'Reset Password'}
           </Button>
         </ModalFooter>
       </Modal>

@@ -192,7 +192,7 @@ public class StockBFController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:stock-bf:approve")]
+    [HasPermission("operation:stock-bf:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<StockBFDetailDto>>> Reject(

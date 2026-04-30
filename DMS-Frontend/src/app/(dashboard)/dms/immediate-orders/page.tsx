@@ -1,27 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Zap, Plus, Search, Eye, Check, X, Loader2 } from 'lucide-react';
+import { Zap, Plus, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { immediateOrdersApi, type ImmediateOrder, type CreateImmediateOrderDto } from '@/lib/api/immediate-orders';
-import { productsApi, type Product } from '@/lib/api/products';
-import { outletsApi, type Outlet } from '@/lib/api/outlets';
-import { deliveryTurnsApi, type DeliveryTurn } from '@/lib/api/delivery-turns';
+import { immediateOrdersApi, type ImmediateOrder } from '@/lib/api/immediate-orders';
 import { toast } from 'sonner';
 
 export default function ImmediateOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<ImmediateOrder[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [deliveryTurns, setDeliveryTurns] = useState<DeliveryTurn[]>([]);
   
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -30,58 +26,18 @@ export default function ImmediateOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewOrder, setViewOrder] = useState<ImmediateOrder | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<ImmediateOrder | null>(null);
+  const [rejectOrder, setRejectOrder] = useState<ImmediateOrder | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  
-  const [formData, setFormData] = useState<CreateImmediateOrderDto>({
-    outletId: '',
-    productId: '',
-    deliveryTurnId: '',
-    orderDate: new Date().toISOString().split('T')[0],
-    quantity: 0,
-    notes: '',
-  });
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
 
   useEffect(() => {
     loadOrders();
   }, [currentPage, pageSize, statusFilter]);
 
-  const loadInitialData = async () => {
-    try {
-      setIsLoading(true);
-      const [productsRes, outletsRes, turnsRes] = await Promise.all([
-        productsApi.getAll(1, 100, undefined, undefined, true),
-        outletsApi.getAll(1, 100, undefined, undefined, true),
-        deliveryTurnsApi.getAll(1, 100, undefined, true),
-      ]);
-
-      setProducts(productsRes.products);
-      setOutlets(outletsRes.outlets);
-      setDeliveryTurns(turnsRes.deliveryTurns);
-
-      if (outletsRes.outlets.length > 0) {
-        setFormData(prev => ({ ...prev, outletId: outletsRes.outlets[0].id }));
-      }
-      if (turnsRes.deliveryTurns.length > 0) {
-        setFormData(prev => ({ ...prev, deliveryTurnId: turnsRes.deliveryTurns[0].id }));
-      }
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      toast.error('Failed to load data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const loadOrders = async () => {
     try {
+      setIsLoading(true);
       const response = await immediateOrdersApi.getAll(
         currentPage,
         pageSize,
@@ -94,23 +50,8 @@ export default function ImmediateOrdersPage() {
     } catch (error) {
       console.error('Error loading orders:', error);
       toast.error('Failed to load immediate orders');
-    }
-  };
-
-  const handleAdd = async () => {
-    try {
-      setIsSubmitting(true);
-      await immediateOrdersApi.create(formData);
-      
-      toast.success('Immediate order created successfully!');
-      setShowAddModal(false);
-      resetForm();
-      await loadOrders();
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast.error('Failed to create immediate order');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -126,7 +67,7 @@ export default function ImmediateOrdersPage() {
   };
 
   const handleReject = async () => {
-    if (!selectedOrder) return;
+    if (!rejectOrder) return;
     
     if (!rejectReason.trim()) {
       toast.error('Please provide a rejection reason');
@@ -135,11 +76,11 @@ export default function ImmediateOrdersPage() {
 
     try {
       setIsSubmitting(true);
-      await immediateOrdersApi.reject(selectedOrder.id, rejectReason);
+      await immediateOrdersApi.reject(rejectOrder.id, rejectReason);
       
       toast.success('Order rejected successfully!');
       setShowRejectModal(false);
-      setSelectedOrder(null);
+      setRejectOrder(null);
       setRejectReason('');
       await loadOrders();
     } catch (error) {
@@ -148,17 +89,6 @@ export default function ImmediateOrdersPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      outletId: outlets[0]?.id || '',
-      productId: '',
-      deliveryTurnId: deliveryTurns[0]?.id || '',
-      orderDate: new Date().toISOString().split('T')[0],
-      quantity: 0,
-      notes: '',
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -212,12 +142,19 @@ export default function ImmediateOrdersPage() {
       render: (item: any) => (
         <div className="flex items-center space-x-2">
           <button 
-            onClick={() => { setSelectedOrder(item); setShowViewModal(true); }} 
+            onClick={() => {
+              if (viewOrder?.id === item.id) setViewOrder(null);
+              else setViewOrder(item);
+            }} 
             className="p-1.5 rounded transition-colors" 
             style={{ color: 'var(--muted-foreground)' }} 
-            title="View"
+            title={viewOrder?.id === item.id ? 'Hide details' : 'View details'}
           >
-            <Eye className="w-4 h-4" />
+            {viewOrder?.id === item.id ? (
+              <Eye className="w-4 h-4" aria-hidden />
+            ) : (
+              <EyeOff className="w-4 h-4" aria-hidden />
+            )}
           </button>
           {item.status === 'Pending' && (
             <>
@@ -230,7 +167,7 @@ export default function ImmediateOrdersPage() {
                 <Check className="w-4 h-4" />
               </button>
               <button 
-                onClick={() => { setSelectedOrder(item); setShowRejectModal(true); }} 
+                onClick={() => { setRejectOrder(item); setShowRejectModal(true); }} 
                 className="p-1.5 rounded transition-colors" 
                 style={{ color: 'var(--destructive)' }} 
                 title="Reject"
@@ -264,7 +201,7 @@ export default function ImmediateOrdersPage() {
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Immediate Orders</h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>Quick order management for urgent requests ({totalCount} orders)</p>
         </div>
-        <Button variant="primary" size="md" onClick={() => { resetForm(); setShowAddModal(true); }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/dms/immediate-orders/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Order
         </Button>
@@ -302,155 +239,69 @@ export default function ImmediateOrdersPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Immediate Order" size="md">
-        <div className="space-y-4">
-          <Input 
-            label="Order Date" 
-            type="date" 
-            value={formData.orderDate} 
-            onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })} 
-            fullWidth 
-            required 
-          />
-          
-          <Select 
-            label="Outlet" 
-            value={formData.outletId} 
-            onChange={(e) => setFormData({ ...formData, outletId: e.target.value })} 
-            options={outlets.map(o => ({ value: o.id, label: o.name }))} 
-            fullWidth 
-            required 
-          />
-          
-          <Select 
-            label="Product" 
-            value={formData.productId} 
-            onChange={(e) => setFormData({ ...formData, productId: e.target.value })} 
-            options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))} 
-            placeholder="Select product" 
-            fullWidth 
-            required 
-          />
-
-          <Select 
-            label="Delivery Turn" 
-            value={formData.deliveryTurnId} 
-            onChange={(e) => setFormData({ ...formData, deliveryTurnId: e.target.value })} 
-            options={deliveryTurns.map(t => ({ value: t.id, label: t.name }))} 
-            fullWidth 
-            required 
-          />
-          
-          <Input 
-            label="Quantity" 
-            type="number" 
-            min="0" 
-            value={formData.quantity.toString()} 
-            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} 
-            placeholder="0" 
-            fullWidth 
-            required 
-          />
-          
-          <Input 
-            label="Notes" 
-            value={formData.notes} 
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-            placeholder="Special instructions or notes..." 
-            fullWidth 
-          />
-          
-          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--dms-warn-box)', border: '1px solid var(--dms-warn-box-border)' }}>
-            <div className="flex items-start space-x-2">
-              <Zap className="w-5 h-5 mt-0.5" style={{ color: 'var(--brand-primary)' }} />
-              <div>
-                <p className="text-sm font-medium mb-1" style={{ color: 'var(--dms-notes-title)' }}>Immediate Order</p>
-                <p className="text-sm" style={{ color: 'var(--dms-notes-fg)' }}>
-                  This order requires approval before production. It will be produced immediately once approved.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={isSubmitting}>
-            Cancel
+      <InlineDetailPanel
+        title="Order Details"
+        open={!!viewOrder}
+        onClose={() => setViewOrder(null)}
+        footer={
+          <Button variant="ghost" onClick={() => setViewOrder(null)}>
+            Close
           </Button>
-          <Button variant="primary" onClick={handleAdd} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Order
-              </>
-            )}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal isOpen={showViewModal} onClose={() => { setShowViewModal(false); setSelectedOrder(null); }} title="Order Details" size="md">
-        {selectedOrder && (
+        }
+      >
+        {viewOrder && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Status</p>
-                {getStatusBadge(selectedOrder.status)}
+                {getStatusBadge(viewOrder.status)}
               </div>
               <div>
                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Order Date</p>
-                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selectedOrder.orderDate).toLocaleDateString()}</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(viewOrder.orderDate).toLocaleDateString()}</p>
               </div>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Outlet</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.outletName}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.outletName}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Product</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.productName}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.productName}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Delivery Turn</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.deliveryTurnName}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.deliveryTurnName}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Quantity</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{selectedOrder.quantity}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{viewOrder.quantity}</p>
             </div>
-            {selectedOrder.notes && (
+            {viewOrder.notes && (
               <div>
                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Notes</p>
-                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.notes}</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.notes}</p>
               </div>
             )}
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested By</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.requestedBy}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.requestedBy}</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>Requested At</p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(selectedOrder.requestedAt).toLocaleString()}</p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>{new Date(viewOrder.requestedAt).toLocaleString()}</p>
             </div>
-            {selectedOrder.status === 'Rejected' && selectedOrder.rejectionReason && (
+            {viewOrder.status === 'Rejected' && viewOrder.rejectionReason && (
               <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--destructive-bg)', border: '1px solid var(--destructive)' }}>
                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--destructive)' }}>Rejection Reason</p>
-                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{selectedOrder.rejectionReason}</p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>{viewOrder.rejectionReason}</p>
               </div>
             )}
           </div>
         )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowViewModal(false); setSelectedOrder(null); }}>
-            Close
-          </Button>
-        </ModalFooter>
-      </Modal>
+      </InlineDetailPanel>
 
-      <Modal isOpen={showRejectModal} onClose={() => { setShowRejectModal(false); setSelectedOrder(null); setRejectReason(''); }} title="Reject Order" size="md">
+      <Modal isOpen={showRejectModal} onClose={() => { setShowRejectModal(false); setRejectOrder(null); setRejectReason(''); }} title="Reject Order" size="md">
         <div className="space-y-4">
           <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Please provide a reason for rejecting this order:
@@ -465,7 +316,7 @@ export default function ImmediateOrdersPage() {
           />
         </div>
         <ModalFooter>
-          <Button variant="ghost" onClick={() => { setShowRejectModal(false); setSelectedOrder(null); setRejectReason(''); }} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={() => { setShowRejectModal(false); setRejectOrder(null); setRejectReason(''); }} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button variant="danger" onClick={handleReject} disabled={isSubmitting}>

@@ -189,7 +189,7 @@ public sealed class DevDataSeeder
             return;
         }
 
-        var defaultStockDate = new DateTime(2026, 1, 10);
+        var defaultStockDate = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc);
         var showroomOpenStocks = new List<ShowroomOpenStock>();
 
         foreach (var outlet in outlets)

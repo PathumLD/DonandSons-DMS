@@ -1,43 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { FileText, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { labelTemplatesApi, type LabelTemplate, type CreateLabelTemplateDto, type UpdateLabelTemplateDto } from '@/lib/api/label-templates';
+import { labelTemplatesApi, type LabelTemplate, type UpdateLabelTemplateDto } from '@/lib/api/label-templates';
 import toast from 'react-hot-toast';
 
 export default function LabelTemplatesPage() {
+  const router = useRouter();
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    name: '',
-    description: '',
-    templateType: '',
-    widthMm: 100,
-    heightMm: 50,
-    layoutDesign: '',
-    fields: '',
-    fontSettings: '',
-    sortOrder: 0,
-    isDefault: false,
-    isActive: true,
-  });
 
   useEffect(() => {
     loadTemplates();
@@ -68,83 +48,6 @@ export default function LabelTemplatesPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update template');
     }
-  };
-
-  const handleAddTemplate = async () => {
-    if (!formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await labelTemplatesApi.create(formData);
-      toast.success('Template created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadTemplates();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create template');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditTemplate = async () => {
-    if (!selectedTemplate || !formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await labelTemplatesApi.update(selectedTemplate.id, formData);
-      toast.success('Template updated successfully');
-      setShowEditModal(false);
-      setSelectedTemplate(null);
-      resetForm();
-      loadTemplates();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update template');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      description: '',
-      templateType: '',
-      widthMm: 100,
-      heightMm: 50,
-      layoutDesign: '',
-      fields: '',
-      fontSettings: '',
-      sortOrder: 0,
-      isDefault: false,
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (template: LabelTemplate) => {
-    setSelectedTemplate(template);
-    setFormData({
-      code: template.code,
-      name: template.name,
-      description: template.description || '',
-      templateType: template.templateType || '',
-      widthMm: template.widthMm,
-      heightMm: template.heightMm,
-      layoutDesign: template.layoutDesign || '',
-      fields: template.fields || '',
-      fontSettings: template.fontSettings || '',
-      sortOrder: template.sortOrder,
-      isDefault: template.isDefault,
-      isActive: template.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -202,7 +105,7 @@ export default function LabelTemplatesPage() {
       render: (item: LabelTemplate) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/label-templates/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -226,80 +129,6 @@ export default function LabelTemplatesPage() {
     },
   ];
 
-  const renderForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Template Code"
-          value={formData.code}
-          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-          placeholder="e.g., TEMP001"
-          fullWidth
-          required
-        />
-        <Input
-          label="Template Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Standard Label"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <Input
-        label="Template Type"
-        value={formData.templateType}
-        onChange={(e) => setFormData({ ...formData, templateType: e.target.value })}
-        placeholder="e.g., Product, Price"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Width (mm)"
-          type="number"
-          value={formData.widthMm.toString()}
-          onChange={(e) => setFormData({ ...formData, widthMm: parseFloat(e.target.value) || 100 })}
-          fullWidth
-          required
-        />
-        <Input
-          label="Height (mm)"
-          type="number"
-          value={formData.heightMm.toString()}
-          onChange={(e) => setFormData({ ...formData, heightMm: parseFloat(e.target.value) || 50 })}
-          fullWidth
-          required
-        />
-        <Input
-          label="Sort Order"
-          type="number"
-          value={formData.sortOrder.toString()}
-          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-          fullWidth
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        <Toggle
-          checked={formData.isDefault}
-          onChange={(checked) => setFormData({ ...formData, isDefault: checked })}
-          label="Set as Default"
-        />
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -314,10 +143,7 @@ export default function LabelTemplatesPage() {
             Manage label templates and configurations ({totalCount} templates)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/label-templates/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Template
         </Button>
@@ -364,50 +190,6 @@ export default function LabelTemplatesPage() {
           )}
         </CardContent>
       </Card>
-
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Label Template"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddTemplate} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Template'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedTemplate(null);
-          resetForm();
-        }}
-        title="Edit Label Template"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedTemplate(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditTemplate} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

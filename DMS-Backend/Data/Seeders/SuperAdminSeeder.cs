@@ -25,14 +25,23 @@ public sealed class SuperAdminSeeder
         if (existingSuperAdmin != null)
             return;
 
+        var email = (_options.Email ?? string.Empty).Trim();
+        var password = _options.Password ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException(
+                "SuperAdmin:Email and SuperAdmin:Password must be set in configuration (e.g. appsettings.json or environment variables) " +
+                "before the first run so the initial super admin can be created.");
+        }
+
         // Create super admin
         var superAdmin = new User
         {
             Id = Guid.NewGuid(),
-            Email = _options.Email.Trim().ToLowerInvariant(),
+            Email = email.ToLowerInvariant(),
             FirstName = _options.FirstName,
             LastName = _options.LastName,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(_options.Password, 12),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password, 12),
             IsSuperAdmin = true,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

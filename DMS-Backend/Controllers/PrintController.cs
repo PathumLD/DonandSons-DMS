@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/print")]
+[Authorize]
 public class PrintController : ControllerBase
 {
     private readonly IPrintService _printService;
@@ -19,6 +22,7 @@ public class PrintController : ControllerBase
     }
 
     [HttpGet("receipt-cards")]
+    [HasPermission("print:receipt-cards")]
     public async Task<IActionResult> GetReceiptCard(
         [FromQuery] Guid deliveryPlanId,
         [FromQuery] Guid outletId,
@@ -43,6 +47,7 @@ public class PrintController : ControllerBase
     }
 
     [HttpGet("section-bundle")]
+    [HasPermission("print:section-bundle")]
     public async Task<IActionResult> GetSectionBundle(
         [FromQuery] Guid productionPlanId,
         [FromQuery] Guid sectionId,

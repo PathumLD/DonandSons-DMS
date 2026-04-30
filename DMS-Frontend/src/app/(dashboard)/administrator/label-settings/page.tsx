@@ -1,40 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { Settings, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { labelSettingsApi, type LabelSetting, type CreateLabelSettingDto, type UpdateLabelSettingDto } from '@/lib/api/label-settings';
+import { labelSettingsApi, type LabelSetting, type UpdateLabelSettingDto } from '@/lib/api/label-settings';
 import toast from 'react-hot-toast';
 
 export default function LabelSettingsPage() {
+  const router = useRouter();
   const [settings, setSettings] = useState<LabelSetting[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedSetting, setSelectedSetting] = useState<LabelSetting | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    settingKey: '',
-    settingName: '',
-    settingValue: '',
-    description: '',
-    category: '',
-    valueType: 'string',
-    sortOrder: 0,
-    isSystemSetting: false,
-    isActive: true,
-  });
 
   useEffect(() => {
     loadSettings();
@@ -65,77 +48,6 @@ export default function LabelSettingsPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update setting');
     }
-  };
-
-  const handleAddSetting = async () => {
-    if (!formData.settingKey || !formData.settingName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await labelSettingsApi.create(formData);
-      toast.success('Setting created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadSettings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create setting');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditSetting = async () => {
-    if (!selectedSetting || !formData.settingKey || !formData.settingName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await labelSettingsApi.update(selectedSetting.id, formData);
-      toast.success('Setting updated successfully');
-      setShowEditModal(false);
-      setSelectedSetting(null);
-      resetForm();
-      loadSettings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update setting');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      settingKey: '',
-      settingName: '',
-      settingValue: '',
-      description: '',
-      category: '',
-      valueType: 'string',
-      sortOrder: 0,
-      isSystemSetting: false,
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (setting: LabelSetting) => {
-    setSelectedSetting(setting);
-    setFormData({
-      settingKey: setting.settingKey,
-      settingName: setting.settingName,
-      settingValue: setting.settingValue || '',
-      description: setting.description || '',
-      category: setting.category || '',
-      valueType: setting.valueType,
-      sortOrder: setting.sortOrder,
-      isSystemSetting: setting.isSystemSetting,
-      isActive: setting.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -193,7 +105,7 @@ export default function LabelSettingsPage() {
       render: (item: LabelSetting) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/label-settings/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -219,75 +131,6 @@ export default function LabelSettingsPage() {
     },
   ];
 
-  const renderForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Setting Key"
-          value={formData.settingKey}
-          onChange={(e) => setFormData({ ...formData, settingKey: e.target.value })}
-          placeholder="e.g., LABEL_FONT_SIZE"
-          fullWidth
-          required
-          disabled={selectedSetting?.isSystemSetting}
-        />
-        <Input
-          label="Setting Name"
-          value={formData.settingName}
-          onChange={(e) => setFormData({ ...formData, settingName: e.target.value })}
-          placeholder="Label Font Size"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Setting Value"
-        value={formData.settingValue}
-        onChange={(e) => setFormData({ ...formData, settingValue: e.target.value })}
-        placeholder="Value"
-        fullWidth
-      />
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Category"
-          value={formData.category}
-          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-          placeholder="e.g., Display"
-          fullWidth
-        />
-        <Input
-          label="Value Type"
-          value={formData.valueType}
-          onChange={(e) => setFormData({ ...formData, valueType: e.target.value })}
-          placeholder="string, number, boolean"
-          fullWidth
-        />
-        <Input
-          label="Sort Order"
-          type="number"
-          value={formData.sortOrder.toString()}
-          onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-          fullWidth
-        />
-      </div>
-      <div className="pt-2">
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-          disabled={selectedSetting?.isSystemSetting}
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -302,10 +145,7 @@ export default function LabelSettingsPage() {
             Configure label printing settings and preferences ({totalCount} settings)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/label-settings/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Setting
         </Button>
@@ -352,50 +192,6 @@ export default function LabelSettingsPage() {
           )}
         </CardContent>
       </Card>
-
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Label Setting"
-        size="md"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddSetting} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Setting'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedSetting(null);
-          resetForm();
-        }}
-        title="Edit Label Setting"
-        size="md"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedSetting(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditSetting} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

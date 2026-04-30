@@ -196,7 +196,7 @@ public class DeliveryReturnsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:delivery-return:approve")]
+    [HasPermission("operation:delivery-return:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<DeliveryReturnDetailDto>>> Reject(

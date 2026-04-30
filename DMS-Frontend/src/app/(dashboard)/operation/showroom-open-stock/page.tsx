@@ -1,29 +1,44 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Edit, Save, AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
+import { AlertCircle, SquarePen, Info, Loader2 } from 'lucide-react';
 import { showroomOpenStockApi, type ShowroomOpenStock } from '@/lib/api/showroom-open-stock';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { isAdminUser } from '@/lib/date-restrictions';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ProtectedPage } from '@/components/auth';
 import toast from 'react-hot-toast';
 
+function formatDdMmYyyy(iso?: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export default function ShowroomOpenStockPage() {
+  return (
+    <ProtectedPage permission="operation:showroom-open-stock:view">
+      <ShowroomOpenStockPageContent />
+    </ProtectedPage>
+  );
+}
+
+function ShowroomOpenStockPageContent() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isAdmin = isAdminUser(user);
+  const { canAction } = usePermissions();
+  const canEditOpenStock = canAction('/operation/showroom-open-stock', 'edit');
 
   const [showrooms, setShowrooms] = useState<ShowroomOpenStock[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [showEditDateModal, setShowEditDateModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selected, setSelected] = useState<ShowroomOpenStock | null>(null);
-  const [newStockAsAt, setNewStockAsAt] = useState('');
 
   useEffect(() => {
     fetchShowrooms();
@@ -34,8 +49,15 @@ export default function ShowroomOpenStockPage() {
       setIsLoading(true);
       const response = await showroomOpenStockApi.getAll();
       setShowrooms(response);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load showroom open stock');
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+          ? (error as { response: { data: { message: string } } }).response.data.message
+          : 'Failed to load showroom open stock';
+      toast.error(message);
       setShowrooms([]);
     } finally {
       setIsLoading(false);
@@ -44,45 +66,22 @@ export default function ShowroomOpenStockPage() {
 
   const filtered = useMemo(() => {
     return showrooms.filter((s) => {
-      const matchesSearch = (s.outletCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (s.outletName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        (s.outletCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.outletName || '').toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
   }, [showrooms, searchTerm]);
 
-  const openEditDate = (showroom: ShowroomOpenStock) => {
-    setSelected(showroom);
-    setNewStockAsAt(showroom.stockAsAt);
-    setShowEditDateModal(true);
-  };
-
-  const openView = (showroom: ShowroomOpenStock) => {
-    setSelected(showroom);
-    setShowViewModal(true);
-  };
-
-  const saveEditDate = async () => {
-    if (!selected) return;
-    if (!newStockAsAt) {
-      toast.error('Please select a stock as at date');
+  const toggleInfo = (showroom: ShowroomOpenStock) => {
+    if (selected?.id === showroom.id) {
+      setSelected(null);
       return;
     }
-    
-    try {
-      setIsSubmitting(true);
-      await showroomOpenStockApi.update(selected.id, {
-        stockAsAt: newStockAsAt,
-      });
-      toast.success('Stock as at date updated successfully');
-      setShowEditDateModal(false);
-      setSelected(null);
-      fetchShowrooms();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update stock as at date');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setSelected(showroom);
   };
+
+  const canShowEditControls = isAdmin || canEditOpenStock;
 
   return (
     <div className="p-6 space-y-6">
@@ -90,24 +89,25 @@ export default function ShowroomOpenStockPage() {
         <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
           Showroom Open Stock
         </h1>
-        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-          {isAdmin
-            ? 'Admin: You can edit the Last Stock BF Date for each showroom.'
-            : 'View-only access. Admin can edit the Stock BF dates.'}
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
+          Each row shows the latest approved Stock B/F date for that showroom (opening stock snapshot). Administrators
+          may change this date when the showroom was closed for several days — the same quantities are carried forward
+          as the opening balance for the new effective date without recording B/F on the skipped calendar days (for
+          example, B/F dated 01/01/2026 can be set as opening for 04/01/2026 after closures on 02/01 and 03/01).
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Showroom Stock As At Dates</CardTitle>
-            <div className="relative w-full sm:w-auto max-w-xs">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Open stock dates by showroom</CardTitle>
+            <div className="relative w-full sm:w-auto sm:max-w-xs">
               <input
                 type="text"
-                placeholder="Search showrooms..."
+                placeholder="Search showroom code or name…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-4 py-2 rounded-lg text-sm"
+                className="w-full rounded-lg py-2 pl-4 pr-4 text-sm"
                 style={{ border: '1px solid var(--input)' }}
               />
             </div>
@@ -116,23 +116,20 @@ export default function ShowroomOpenStockPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--muted-foreground)' }} />
+              <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--muted-foreground)' }} />
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
-                      Showroom Code
+                    <th className="p-3 text-left font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Showroom
                     </th>
-                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
-                      Showroom Name
+                    <th className="p-3 text-left font-semibold" style={{ color: 'var(--foreground)' }}>
+                      Stock as at
                     </th>
-                    <th className="text-left p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
-                      Last Stock BF Date
-                    </th>
-                    <th className="text-center p-3 font-semibold" style={{ color: 'var(--foreground)' }}>
+                    <th className="p-3 text-center font-semibold" style={{ color: 'var(--foreground)' }}>
                       Actions
                     </th>
                   </tr>
@@ -140,55 +137,56 @@ export default function ShowroomOpenStockPage() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center p-8" style={{ color: 'var(--muted-foreground)' }}>
-                        <AlertCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--muted-foreground)' }} />
+                      <td colSpan={3} className="p-8 text-center" style={{ color: 'var(--muted-foreground)' }}>
+                        <AlertCircle className="mx-auto mb-2 h-8 w-8" style={{ color: 'var(--muted-foreground)' }} />
                         <p>No showrooms found</p>
                       </td>
                     </tr>
                   ) : (
                     filtered.map((s) => (
                       <tr
-                        key={s.id}
+                        key={s.outletId}
                         style={{ borderBottom: '1px solid var(--border)' }}
-                        className="hover:bg-gray-50 transition-colors"
+                        className="transition-colors hover:bg-gray-50"
                       >
                         <td className="p-3">
-                          <span className="font-mono font-semibold">{s.outletCode || '-'}</span>
+                          <span className="font-mono font-semibold">{s.outletCode || '—'}</span>
+                          {s.outletName ? (
+                            <span className="ml-2 hidden text-[var(--muted-foreground)] sm:inline">{s.outletName}</span>
+                          ) : null}
                         </td>
+                        <td className="p-3 font-medium">{formatDdMmYyyy(s.stockAsAt ?? null)}</td>
                         <td className="p-3">
-                          <span className="font-medium">{s.outletName || '-'}</span>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" style={{ color: 'var(--muted-foreground)' }} />
-                            <span className="font-medium">
-                              {new Date(s.stockAsAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="flex justify-center space-x-2">
+                          <div className="flex justify-center gap-2">
                             <button
-                              onClick={() => openView(s)}
-                              className="px-3 py-1.5 rounded text-sm transition-colors"
+                              type="button"
+                              onClick={() => toggleInfo(s)}
+                              className="inline-flex rounded-md p-2 transition-opacity hover:opacity-90"
                               style={{
-                                backgroundColor: 'var(--secondary)',
-                                color: 'var(--secondary-foreground)',
+                                backgroundColor: 'var(--primary)',
+                                color: 'var(--primary-foreground)',
                               }}
+                              title="Showroom details"
+                              aria-label="Show showroom details"
                             >
-                              View
+                              <Info className="h-4 w-4" aria-hidden />
                             </button>
-                            {isAdmin && (
+                            {canShowEditControls && (
                               <button
-                                onClick={() => openEditDate(s)}
-                                className="px-3 py-1.5 rounded text-sm transition-colors flex items-center"
+                                type="button"
+                                onClick={() => router.push(`/operation/showroom-open-stock/edit/${s.outletId}`)}
+                                className="inline-flex rounded-md p-2 transition-opacity hover:opacity-90 disabled:opacity-40"
                                 style={{
                                   backgroundColor: 'var(--primary)',
                                   color: 'var(--primary-foreground)',
                                 }}
+                                disabled={!s.stockAsAt}
+                                title={
+                                  s.stockAsAt ? 'Edit stock as at date' : 'No approved Stock B/F exists for this showroom'
+                                }
+                                aria-label={s.stockAsAt ? 'Edit stock as at date' : 'Edit unavailable — no Stock B/F'}
                               >
-                                <Edit className="w-4 h-4 mr-1" />
-                                Edit Date
+                                <SquarePen className="h-4 w-4" aria-hidden />
                               </button>
                             )}
                           </div>
@@ -203,114 +201,55 @@ export default function ShowroomOpenStockPage() {
         </CardContent>
       </Card>
 
-      <Modal
-        isOpen={showEditDateModal}
-        onClose={() => {
-          setShowEditDateModal(false);
-          setSelected(null);
-        }}
-        title="Edit Last Stock BF Date"
-        size="md"
-      >
-        {selected && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium mb-2" style={{ color: 'var(--muted-foreground)' }}>
-                Showroom
-              </p>
-              <p className="text-lg font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outletCode} - {selected.outletName}
-              </p>
-            </div>
-            <Input
-              label="Last Stock BF Date"
-              type="date"
-              value={newStockAsAt}
-              onChange={(e) => setNewStockAsAt(e.target.value)}
-              fullWidth
-              required
-              helperText="This date will be used as the opening balance for future stock calculations"
-            />
-          </div>
-        )}
-        <ModalFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setShowEditDateModal(false);
-              setSelected(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={saveEditDate} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            {isSubmitting ? 'Saving...' : 'Save Date'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelected(null);
-        }}
-        title="Showroom Details"
-        size="md"
-      >
-        {selected && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Showroom Code
-              </p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outletCode}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Showroom Name
-              </p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                {selected.outletName}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Last Stock BF Date
-              </p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                {new Date(selected.stockAsAt).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>
-                Last Updated
-              </p>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>
-                {new Date(selected.updatedAt).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        )}
-        <ModalFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setShowViewModal(false);
-              setSelected(null);
-            }}
-          >
+      <InlineDetailPanel
+        title="Showroom details"
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        footer={
+          <Button variant="ghost" onClick={() => setSelected(null)}>
             Close
           </Button>
-        </ModalFooter>
-      </Modal>
+        }
+      >
+        {selected && (
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                Showroom
+              </p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                {selected.outletCode} — {selected.outletName || '—'}
+              </p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                Stock as at
+              </p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                {formatDdMmYyyy(selected.stockAsAt ?? null)}
+              </p>
+            </div>
+            {typeof selected.bfLineCount === 'number' && selected.stockAsAt ? (
+              <div>
+                <p className="mb-1 text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                  B/F lines on this date
+                </p>
+                <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+                  {selected.bfLineCount}
+                </p>
+              </div>
+            ) : null}
+            <div>
+              <p className="mb-1 text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+                Last updated (B/F batch)
+              </p>
+              <p className="text-sm" style={{ color: 'var(--foreground)' }}>
+                {new Date(selected.updatedAt).toLocaleString('en-GB')}
+              </p>
+            </div>
+          </div>
+        )}
+      </InlineDetailPanel>
     </div>
   );
 }

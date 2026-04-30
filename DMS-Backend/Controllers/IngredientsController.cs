@@ -20,7 +20,7 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("inventory:view")]
+    [HasPermission("ingredients:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -43,7 +43,7 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("inventory:view")]
+    [HasPermission("ingredients:view")]
     public async Task<ActionResult<ApiResponse<IngredientDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -58,7 +58,7 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("inventory:create")]
+    [HasPermission("ingredients:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<IngredientDetailDto>>> Create(
         [FromBody] CreateIngredientDto dto,
@@ -81,7 +81,7 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("inventory:edit")]
+    [HasPermission("ingredients:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<IngredientDetailDto>>> Update(
         Guid id,
@@ -106,7 +106,7 @@ public class IngredientsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("inventory:delete")]
+    [HasPermission("ingredients:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

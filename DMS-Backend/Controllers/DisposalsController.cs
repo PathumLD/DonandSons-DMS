@@ -196,7 +196,7 @@ public class DisposalsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:disposal:approve")]
+    [HasPermission("operation:disposal:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<DisposalDetailDto>>> Reject(

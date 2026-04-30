@@ -20,7 +20,7 @@ public class SectionConsumablesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("consumable:view")]
+    [HasPermission("section-consumables:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -44,7 +44,7 @@ public class SectionConsumablesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("consumable:view")]
+    [HasPermission("section-consumables:view")]
     public async Task<ActionResult<ApiResponse<SectionConsumableDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ public class SectionConsumablesController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("consumable:create")]
+    [HasPermission("section-consumables:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<SectionConsumableDetailDto>>> Create(
         [FromBody] CreateSectionConsumableDto dto,
@@ -84,7 +84,7 @@ public class SectionConsumablesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("consumable:edit")]
+    [HasPermission("section-consumables:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<SectionConsumableDetailDto>>> Update(
         Guid id,
@@ -112,7 +112,7 @@ public class SectionConsumablesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("consumable:delete")]
+    [HasPermission("section-consumables:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

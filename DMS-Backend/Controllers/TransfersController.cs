@@ -197,7 +197,7 @@ public class TransfersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:transfer:approve")]
+    [HasPermission("operation:transfer:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<TransferDetailDto>>> Reject(

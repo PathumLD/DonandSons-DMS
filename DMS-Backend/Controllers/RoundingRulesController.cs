@@ -20,7 +20,7 @@ public class RoundingRulesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("system:view")]
+    [HasPermission("rounding-rules:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class RoundingRulesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("system:view")]
+    [HasPermission("rounding-rules:view")]
     public async Task<ActionResult<ApiResponse<RoundingRuleDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class RoundingRulesController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("system:create")]
+    [HasPermission("rounding-rules:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<RoundingRuleDetailDto>>> Create(
         [FromBody] RoundingRuleCreateDto dto,
@@ -79,7 +79,7 @@ public class RoundingRulesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("system:edit")]
+    [HasPermission("rounding-rules:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<RoundingRuleDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class RoundingRulesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("system:delete")]
+    [HasPermission("rounding-rules:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

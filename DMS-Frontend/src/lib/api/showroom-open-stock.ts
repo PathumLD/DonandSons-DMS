@@ -5,9 +5,11 @@ export interface ShowroomOpenStock {
   outletId: string;
   outletCode: string;
   outletName: string;
-  stockAsAt: string;
-  isActive: boolean;
-  createdAt: string;
+  /** Latest approved/adjusted Stock BF date — null when none yet */
+  stockAsAt?: string | null;
+  bfLineCount?: number | null;
+  isActive?: boolean;
+  createdAt?: string;
   updatedAt: string;
   createdById?: string;
   updatedById?: string;

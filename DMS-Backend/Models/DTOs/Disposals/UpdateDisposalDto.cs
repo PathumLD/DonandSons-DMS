@@ -4,7 +4,6 @@ public sealed class UpdateDisposalDto
 {
     public required DateTime DisposalDate { get; set; }
     public required Guid OutletId { get; set; }
-    public required DateTime DeliveredDate { get; set; }
     public string? Notes { get; set; }
     public List<UpdateDisposalItemDto> Items { get; set; } = new();
 }

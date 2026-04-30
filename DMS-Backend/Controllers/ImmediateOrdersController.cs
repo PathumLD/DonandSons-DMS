@@ -176,7 +176,7 @@ public class ImmediateOrdersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("immediate_order:approve")]
+    [HasPermission("immediate_order:reject")]
     [Audit]
     public async Task<ActionResult<ApiResponse<ImmediateOrderDetailDto>>> Reject(
         Guid id,

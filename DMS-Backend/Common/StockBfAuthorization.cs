@@ -16,7 +16,9 @@ public static class StockBfAuthorization
     }
 
     /// <summary>
-    /// Super-admin, wildcard permission, or explicit flex-date grant (matches frontend optional permissions).
+    /// Super-admin, wildcard permission, or any explicit date-flexibility grant
+    /// (back-date OR future-date) — matches the optional permissions used by the
+    /// Stock BF page on the frontend.
     /// </summary>
     public static bool HasRelaxedBfDateRules(ClaimsPrincipal user)
     {
@@ -24,6 +26,7 @@ public static class StockBfAuthorization
             return true;
         return user.FindAll("permission").Any(c =>
             string.Equals(c.Value, "operation:stock-bf:flex-date", StringComparison.Ordinal) ||
-            string.Equals(c.Value, "operation.stock-bf.allow-back-future", StringComparison.Ordinal));
+            string.Equals(c.Value, "operation:stock-bf:allow-back-date", StringComparison.Ordinal) ||
+            string.Equals(c.Value, "operation:stock-bf:allow-future-date", StringComparison.Ordinal));
     }
 }

@@ -1,12 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using DMS_Backend.Models.DTOs.Reconciliations;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
+using DMS_Backend.Filters;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/reconciliations")]
+[Authorize]
 public class ReconciliationsController : ControllerBase
 {
     private readonly IReconciliationService _reconciliationService;
@@ -30,6 +34,8 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpPost]
+    [HasPermission("reconciliation:perform")]
+    [Audit]
     public async Task<IActionResult> CreateReconciliation([FromBody] CreateReconciliationDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
@@ -55,6 +61,7 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission("reconciliation:view")]
     public async Task<IActionResult> GetReconciliationById(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -76,6 +83,7 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpGet("by-outlet")]
+    [HasPermission("reconciliation:view")]
     public async Task<IActionResult> GetByOutlet(
         [FromQuery] Guid planId,
         [FromQuery] Guid outletId,
@@ -100,6 +108,7 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("reconciliation:view")]
     public async Task<IActionResult> GetAllReconciliations(CancellationToken cancellationToken)
     {
         try
@@ -115,6 +124,8 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [HasPermission("reconciliation:perform")]
+    [Audit]
     public async Task<IActionResult> UpdateReconciliation(Guid id, [FromBody] UpdateReconciliationDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
@@ -142,6 +153,8 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [HasPermission("reconciliation:perform")]
+    [Audit]
     public async Task<IActionResult> DeleteReconciliation(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -163,6 +176,8 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpPut("{id}/actual-quantities")]
+    [HasPermission("reconciliation:perform")]
+    [Audit]
     public async Task<IActionResult> UpdateActualQuantities(Guid id, [FromBody] UpdateActualQuantitiesDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _updateActualsValidator.ValidateAsync(dto, cancellationToken);
@@ -190,6 +205,8 @@ public class ReconciliationsController : ControllerBase
     }
 
     [HttpPost("{id}/submit")]
+    [HasPermission("reconciliation:perform")]
+    [Audit]
     public async Task<IActionResult> SubmitReconciliation(Guid id, [FromBody] SubmitReconciliationDto dto, CancellationToken cancellationToken)
     {
         try

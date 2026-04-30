@@ -13,9 +13,6 @@ public class UpdateDisposalDtoValidator : AbstractValidator<UpdateDisposalDto>
         RuleFor(x => x.OutletId)
             .NotEmpty().WithMessage("Outlet is required");
 
-        RuleFor(x => x.DeliveredDate)
-            .NotEmpty().WithMessage("Delivered date is required");
-
         RuleFor(x => x.Items)
             .NotEmpty().WithMessage("At least one item is required");
 

@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/delivery-summary")]
+[Authorize]
 public class DeliverySummaryController : ControllerBase
 {
     private readonly IDeliverySummaryService _deliverySummaryService;
@@ -19,6 +22,7 @@ public class DeliverySummaryController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("delivery-summary:view")]
     public async Task<IActionResult> GetDeliverySummary(
         [FromQuery] DateTime date,
         [FromQuery] int turnId,

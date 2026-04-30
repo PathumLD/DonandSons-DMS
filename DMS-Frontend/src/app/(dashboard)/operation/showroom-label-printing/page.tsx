@@ -8,9 +8,18 @@ import Select from '@/components/ui/select';
 import { Printer, Loader2 } from 'lucide-react';
 import { showroomLabelsApi } from '@/lib/api/showroom-labels';
 import { outletsApi, type Outlet } from '@/lib/api/outlets';
+import { ProtectedPage } from '@/components/auth';
 import toast from 'react-hot-toast';
 
 export default function ShowroomLabelPrintingPage() {
+  return (
+    <ProtectedPage permission="operation:showroom-label-printing:view">
+      <ShowroomLabelPrintingPageContent />
+    </ProtectedPage>
+  );
+}
+
+function ShowroomLabelPrintingPageContent() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

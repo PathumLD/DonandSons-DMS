@@ -1,30 +1,47 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
 import Input from '@/components/ui/input';
 import Select from '@/components/ui/select';
-import { Plus, Search, Edit, Eye, Printer, CheckCircle, XCircle, Clock, Info, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Eye, EyeOff, Printer, CheckCircle, XCircle, Clock, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { deliveriesApi, type Delivery, type CreateDeliveryItemDto } from '@/lib/api/deliveries';
+import { deliveriesApi, type Delivery } from '@/lib/api/deliveries';
 import { outletsApi, type Outlet } from '@/lib/api/outlets';
 import { productsApi, type Product } from '@/lib/api/products';
 import ItemManagementTable, { type ItemManagementItem } from '@/components/operation/ItemManagementTable';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useThemeStore } from '@/lib/stores/theme-store';
 import { getDateBounds, isAdminUser, todayISO } from '@/lib/date-restrictions';
+import { usePermissions } from '@/hooks/usePermissions';
 import toast from 'react-hot-toast';
+import { ProtectedPage, PermissionButton } from '@/components/auth';
 
 export default function DeliveryPage() {
+  return (
+    <ProtectedPage permission="operation:delivery:view">
+      <DeliveryPageContent />
+    </ProtectedPage>
+  );
+}
+
+function DeliveryPageContent() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isAdmin = isAdminUser(user);
+  const { canAction } = usePermissions();
+  const canCreate = canAction('/operation/delivery', 'create');
+  const canEditDelivery = canAction('/operation/delivery', 'edit');
+  const canApproveDelivery = canAction('/operation/delivery', 'approve');
+  const canRejectDelivery = canAction('/operation/delivery', 'reject');
   const pageTheme = useThemeStore((s) => s.getPageTheme('delivery'));
   const dateBounds = getDateBounds('delivery', user as any, {
-    allowBackDatePermission: 'operation.delivery.allow-back-future',
-    allowFutureDatePermission: 'operation.delivery.allow-back-future',
+    allowBackDatePermission: 'operation:delivery:allow-back-date',
+    allowFutureDatePermission: 'operation:delivery:allow-future-date',
   });
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -37,9 +54,7 @@ export default function DeliveryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [showPreviousRecords, setShowPreviousRecords] = useState(false);
   
@@ -140,39 +155,11 @@ export default function DeliveryPage() {
         })),
       });
       toast.success('Delivery created successfully');
-      setShowAddModal(false);
+      setShowAddForm(false);
       resetForm();
       fetchDeliveries();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create delivery');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditDelivery = async () => {
-    if (!selectedDelivery) return;
-    
-    try {
-      setIsSubmitting(true);
-      await deliveriesApi.update(selectedDelivery.id, {
-        deliveryDate: formData.deliveryDate,
-        outletId: formData.showroomId,
-        notes: formData.notes,
-        items: selectedDelivery.items?.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })) || [],
-      });
-      toast.success('Delivery updated successfully');
-      setShowEditModal(false);
-      setSelectedDelivery(null);
-      resetForm();
-      fetchDeliveries();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update delivery');
     } finally {
       setIsSubmitting(false);
     }
@@ -229,18 +216,6 @@ export default function DeliveryPage() {
       status: 'Draft',
     });
     setDeliveryItems([]);
-  };
-
-  const openEditModal = (delivery: Delivery) => {
-    setSelectedDelivery(delivery);
-    setFormData({
-      deliveryNo: delivery.deliveryNo,
-      deliveryDate: delivery.deliveryDate,
-      showroomId: delivery.outletId,
-      notes: delivery.notes || '',
-      status: delivery.status,
-    });
-    setShowEditModal(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -330,10 +305,12 @@ export default function DeliveryPage() {
           <button
             onClick={async () => {
               try {
+                if (selectedDelivery?.id === item.id) {
+                  setSelectedDelivery(null);
+                  return;
+                }
                 const fullDelivery = await deliveriesApi.getById(item.id);
-                console.log('Full delivery:', fullDelivery);
                 setSelectedDelivery(fullDelivery);
-                setShowViewModal(true);
               } catch (error: any) {
                 console.error('Error loading delivery:', error);
                 toast.error('Failed to load delivery details');
@@ -343,14 +320,18 @@ export default function DeliveryPage() {
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="View"
+            title={selectedDelivery?.id === item.id ? 'Hide details' : 'View details'}
           >
-            <Eye className="w-4 h-4" />
+            {selectedDelivery?.id === item.id ? (
+              <Eye className="w-4 h-4" aria-hidden />
+            ) : (
+              <EyeOff className="w-4 h-4" aria-hidden />
+            )}
           </button>
-          {item.status === 'Draft' && (
+          {item.status === 'Draft' && canEditDelivery && (
             <>
               <button
-                onClick={() => openEditModal(item)}
+                onClick={() => router.push(`/operation/delivery/edit/${item.id}`)}
                 className="p-1.5 rounded transition-colors"
                 style={{ color: 'var(--muted-foreground)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -373,26 +354,30 @@ export default function DeliveryPage() {
           )}
           {item.status === 'Pending' && (
             <>
-              <button
-                onClick={() => handleApprove(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#10B981' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Approve"
-              >
-                <CheckCircle className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleReject(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#DC2626' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Reject"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
+              {canApproveDelivery && (
+                <button
+                  onClick={() => handleApprove(item.id)}
+                  className="p-1.5 rounded transition-colors"
+                  style={{ color: '#10B981' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  title="Approve"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                </button>
+              )}
+              {canRejectDelivery && (
+                <button
+                  onClick={() => handleReject(item.id)}
+                  className="p-1.5 rounded transition-colors"
+                  style={{ color: '#DC2626' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  title="Reject"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              )}
             </>
           )}
           <button
@@ -472,7 +457,7 @@ export default function DeliveryPage() {
         <div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Delivery Management</h1>
           <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Manage product deliveries to showrooms ({filteredDeliveries.length} deliveries)
+            {showAddForm ? 'Create a new delivery' : `Manage product deliveries to showrooms (${filteredDeliveries.length} deliveries)`}
           </p>
           <div className="mt-2">
             <Badge variant={isAdmin ? 'primary' : 'neutral'} size="sm">
@@ -484,7 +469,7 @@ export default function DeliveryPage() {
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          {!isAdmin && (
+          {!showAddForm && !isAdmin && (
             <Button
               variant={showPreviousRecords ? 'primary' : 'secondary'}
               size="md"
@@ -493,142 +478,136 @@ export default function DeliveryPage() {
               {showPreviousRecords ? 'Hide Previous Records' : 'Show Previous Records'}
             </Button>
           )}
-          <Button variant="primary" size="md" onClick={() => {
-            resetForm();
-            setShowAddModal(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New
-          </Button>
-          <Button variant="ghost" size="md" onClick={() => console.log('Print CH')}>
-            <Printer className="w-4 h-4 mr-2" />
-            Print CH
-          </Button>
+          {!showAddForm && (
+            <>
+              {canCreate && (
+                <Button variant="primary" size="md" onClick={() => {
+                  resetForm();
+                  setShowAddForm(true);
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New
+                </Button>
+              )}
+              <Button variant="ghost" size="md" onClick={() => console.log('Print CH')}>
+                <Printer className="w-4 h-4 mr-2" />
+                Print CH
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Delivery List</CardTitle>
-            <div className="flex items-center space-x-3">
-              <Select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                options={[
-                  { value: '', label: 'All Status' },
-                  { value: 'Draft', label: 'Draft' },
-                  { value: 'Pending', label: 'Pending' },
-                  { value: 'Approved', label: 'Approved' },
-                  { value: 'Rejected', label: 'Rejected' },
-                ]}
-              />
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                <input
-                  type="text"
-                  placeholder="Search deliveries..."
-                  value={searchTerm}
+      {showAddForm ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Add New Delivery</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setShowAddForm(false);
+                resetForm();
+              }}>
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderDeliveryForm()}
+            <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+              <Button variant="ghost" onClick={() => {
+                setShowAddForm(false);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleAddDelivery} disabled={isSubmitting || !isFormValid()}>
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                {isSubmitting ? 'Creating...' : 'Create Delivery'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle>Delivery List</CardTitle>
+              <div className="flex items-center space-x-3">
+                <Select
+                  value={statusFilter}
                   onChange={(e) => {
-                    setSearchTerm(e.target.value);
+                    setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
-                  style={{ border: '1px solid var(--input)' }}
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'Draft', label: 'Draft' },
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Rejected', label: 'Rejected' },
+                  ]}
                 />
+                <div className="relative w-full sm:w-auto">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search deliveries..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg text-sm"
+                    style={{ border: '1px solid var(--input)' }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--muted-foreground)' }} />
-            </div>
-          ) : (
-            <DataTable
-              data={paginatedDeliveries}
-              columns={columns}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add Delivery Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          resetForm();
-        }}
-        title="Add New Delivery"
-        size="full"
-      >
-        {renderDeliveryForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddDelivery} disabled={isSubmitting || !isFormValid()}>
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--muted-foreground)' }} />
+              </div>
             ) : (
-              <Plus className="w-4 h-4 mr-2" />
+              <DataTable
+                data={paginatedDeliveries}
+                columns={columns}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+              />
             )}
-            {isSubmitting ? 'Creating...' : 'Create Delivery'}
-          </Button>
-        </ModalFooter>
-      </Modal>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Edit Delivery Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedDelivery(null);
-          resetForm();
-        }}
-        title="Edit Delivery"
-        size="lg"
-      >
-        {renderDeliveryForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedDelivery(null);
-            resetForm();
-          }}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditDelivery} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : null}
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* View Delivery Modal */}
-      <Modal
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedDelivery(null);
-        }}
+      <InlineDetailPanel
         title="Delivery Details"
-        size="full"
+        open={!!selectedDelivery}
+        onClose={() => setSelectedDelivery(null)}
+        contentClassName="max-w-[min(100%,80rem)] w-full"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSelectedDelivery(null)}>
+              Close
+            </Button>
+            <Button variant="secondary" onClick={() => console.log('Print:', selectedDelivery)}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print DN
+            </Button>
+          </>
+        }
       >
         {selectedDelivery && (
           <div className="space-y-4">
@@ -732,19 +711,7 @@ export default function DeliveryPage() {
             )}
           </div>
         )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowViewModal(false);
-            setSelectedDelivery(null);
-          }}>
-            Close
-          </Button>
-          <Button variant="secondary" onClick={() => console.log('Print:', selectedDelivery)}>
-            <Printer className="w-4 h-4 mr-2" />
-            Print DN
-          </Button>
-        </ModalFooter>
-      </Modal>
+      </InlineDetailPanel>
     </div>
   );
 }

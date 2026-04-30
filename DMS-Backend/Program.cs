@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +16,9 @@ using DMS_Backend.Mapping;
 using DMS_Backend.Middleware;
 using DMS_Backend.Services.Implementations;
 using DMS_Backend.Services.Interfaces;
+
+// Configure Npgsql to use UTC timestamps
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +43,11 @@ builder.Services.Configure<DevSeedOptions>(builder.Configuration.GetSection(DevS
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.ConfigureWarnings(warnings => 
+        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
 
 // Add Memory Cache for application-wide caching
 builder.Services.AddMemoryCache();
@@ -153,12 +161,21 @@ builder.Services.AddScoped<IStockBFService, StockBFService>();
 builder.Services.AddScoped<IShowroomOpenStockService, ShowroomOpenStockService>();
 builder.Services.AddScoped<ILabelPrintRequestService, LabelPrintRequestService>();
 builder.Services.AddScoped<IShowroomLabelRequestService, ShowroomLabelRequestService>();
+builder.Services.AddScoped<IOperationApprovalService, OperationApprovalService>();
+
+// Phase 7: Production & Stock services
+builder.Services.AddScoped<IShiftService, ShiftService>();
+builder.Services.AddScoped<IDailyProductionService, DailyProductionService>();
+builder.Services.AddScoped<IProductionCancelService, ProductionCancelService>();
+builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
+builder.Services.AddScoped<IDailyProductionPlanService, DailyProductionPlanService>();
+builder.Services.AddScoped<ICurrentStockService, CurrentStockService>();
 
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 
 // Register seeders
-builder.Services.AddScoped<PermissionSeeder>();
+builder.Services.AddScoped<ComprehensivePermissionSeeder>();
 builder.Services.AddScoped<SuperAdminSeeder>();
 builder.Services.AddScoped<DevDataSeeder>();
 
@@ -196,7 +213,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var permissionSeeder = scope.ServiceProvider.GetRequiredService<PermissionSeeder>();
+    var permissionSeeder = scope.ServiceProvider.GetRequiredService<ComprehensivePermissionSeeder>();
     var superAdminSeeder = scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>();
     var devDataSeeder = scope.ServiceProvider.GetRequiredService<DevDataSeeder>();
     var devSeedOptions = builder.Configuration.GetSection(DevSeedOptions.SectionName).Get<DevSeedOptions>();
@@ -223,7 +240,11 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while seeding the database");
+        // Fail fast: a first-time run must apply migrations and seed permissions +
+        // super admin. Starting the API with a half-initialised database hides
+        // connection/config issues and breaks login / RBAC until someone notices.
+        Log.Fatal(ex, "Database migration or seeding failed — fix PostgreSQL, connection string, and SuperAdmin config, then retry.");
+        throw;
     }
 }
 

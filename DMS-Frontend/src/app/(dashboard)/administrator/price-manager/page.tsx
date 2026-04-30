@@ -1,41 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { DollarSign, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { priceListsApi, type PriceList, type CreatePriceListDto, type UpdatePriceListDto } from '@/lib/api/price-lists';
+import { priceListsApi, type PriceList, type UpdatePriceListDto } from '@/lib/api/price-lists';
 import toast from 'react-hot-toast';
 
 export default function PriceManagerPage() {
+  const router = useRouter();
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedPriceList, setSelectedPriceList] = useState<PriceList | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    name: '',
-    description: '',
-    priceListType: 'Standard',
-    currency: 'LKR',
-    effectiveFrom: new Date().toISOString().split('T')[0],
-    effectiveTo: undefined as string | undefined,
-    isDefault: false,
-    priority: 0,
-    isActive: true,
-  });
 
   useEffect(() => {
     loadPriceLists();
@@ -74,103 +56,6 @@ export default function PriceManagerPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update price list');
     }
-  };
-
-  const handleAddPriceList = async () => {
-    if (!formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const createData: CreatePriceListDto = {
-        code: formData.code,
-        name: formData.name,
-        description: formData.description,
-        priceListType: formData.priceListType,
-        currency: formData.currency,
-        effectiveFrom: formData.effectiveFrom,
-        effectiveTo: formData.effectiveTo,
-        isDefault: formData.isDefault,
-        priority: formData.priority,
-        isActive: formData.isActive,
-      };
-      await priceListsApi.create(createData);
-      toast.success('Price list created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadPriceLists();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create price list');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditPriceList = async () => {
-    if (!selectedPriceList || !formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const updateData: UpdatePriceListDto = {
-        code: formData.code,
-        name: formData.name,
-        description: formData.description,
-        priceListType: formData.priceListType,
-        currency: formData.currency,
-        effectiveFrom: formData.effectiveFrom,
-        effectiveTo: formData.effectiveTo,
-        isDefault: formData.isDefault,
-        priority: formData.priority,
-        isActive: formData.isActive,
-      };
-      await priceListsApi.update(selectedPriceList.id, updateData);
-      toast.success('Price list updated successfully');
-      setShowEditModal(false);
-      setSelectedPriceList(null);
-      resetForm();
-      loadPriceLists();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update price list');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      description: '',
-      priceListType: 'Standard',
-      currency: 'LKR',
-      effectiveFrom: new Date().toISOString().split('T')[0],
-      effectiveTo: undefined,
-      isDefault: false,
-      priority: 0,
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (priceList: PriceList) => {
-    setSelectedPriceList(priceList);
-    setFormData({
-      code: priceList.code,
-      name: priceList.name,
-      description: priceList.description || '',
-      priceListType: priceList.priceListType || 'Standard',
-      currency: priceList.currency,
-      effectiveFrom: priceList.effectiveFrom.split('T')[0],
-      effectiveTo: priceList.effectiveTo ? priceList.effectiveTo.split('T')[0] : undefined,
-      isDefault: priceList.isDefault,
-      priority: priceList.priority,
-      isActive: priceList.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const formatDate = (dateStr: string) => {
@@ -246,7 +131,7 @@ export default function PriceManagerPage() {
       render: (item: PriceList) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/price-manager/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -270,106 +155,6 @@ export default function PriceManagerPage() {
     },
   ];
 
-  const renderForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Price List Code"
-          value={formData.code}
-          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-          placeholder="e.g., PL001"
-          fullWidth
-          required
-        />
-        <Input
-          label="Price List Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Standard Price List"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Price List Type
-          </label>
-          <select
-            value={formData.priceListType}
-            onChange={(e) => setFormData({ ...formData, priceListType: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
-          >
-            <option value="Standard">Standard</option>
-            <option value="Wholesale">Wholesale</option>
-            <option value="Retail">Retail</option>
-            <option value="Special">Special</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Currency <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={formData.currency}
-            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
-          >
-            <option value="LKR">LKR - Sri Lankan Rupee</option>
-            <option value="USD">USD - US Dollar</option>
-            <option value="EUR">EUR - Euro</option>
-            <option value="GBP">GBP - British Pound</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          label="Effective From"
-          type="date"
-          value={formData.effectiveFrom}
-          onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })}
-          fullWidth
-          required
-        />
-        <Input
-          label="Effective To (Optional)"
-          type="date"
-          value={formData.effectiveTo || ''}
-          onChange={(e) => setFormData({ ...formData, effectiveTo: e.target.value || undefined })}
-          fullWidth
-        />
-        <Input
-          label="Priority"
-          type="number"
-          value={formData.priority.toString()}
-          onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
-          fullWidth
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        <Toggle
-          checked={formData.isDefault}
-          onChange={(checked) => setFormData({ ...formData, isDefault: checked })}
-          label="Set as Default"
-        />
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -384,10 +169,7 @@ export default function PriceManagerPage() {
             Manage price lists and pricing strategies ({totalCount} price lists)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/price-manager/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Price List
         </Button>
@@ -434,50 +216,6 @@ export default function PriceManagerPage() {
           )}
         </CardContent>
       </Card>
-
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Price List"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddPriceList} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Price List'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedPriceList(null);
-          resetForm();
-        }}
-        title="Edit Price List"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedPriceList(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditPriceList} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

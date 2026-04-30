@@ -168,7 +168,7 @@ public class LabelPrintRequestsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:label-printing:approve")]
+    [HasPermission("operation:label-printing:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<LabelPrintRequestDetailDto>>> Reject(

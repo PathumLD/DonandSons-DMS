@@ -27,6 +27,7 @@ public sealed class UserService : IUserService
     public async Task<User?> GetByIdWithRolesAndPermissionsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Users
+            .AsSplitQuery()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePermissions)

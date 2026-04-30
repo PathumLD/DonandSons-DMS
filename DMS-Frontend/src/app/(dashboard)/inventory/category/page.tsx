@@ -1,36 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { FolderTree, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { categoriesApi, Category } from '@/lib/api/categories';
+import { ProtectedPage } from '@/components/auth';
+import { usePermissions } from '@/hooks/usePermissions';
 import toast from 'react-hot-toast';
 
 export default function CategoryPage() {
+  return (
+    <ProtectedPage permission="categories:view">
+      <CategoryPageContent />
+    </ProtectedPage>
+  );
+}
+
+function CategoryPageContent() {
+  const router = useRouter();
+  const { canAction } = usePermissions();
+  const canCreate = canAction('/inventory/category', 'create');
+  const canEditCategory = canAction('/inventory/category', 'edit');
   const [categories, setCategories] = useState<Category[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    name: '',
-    description: '',
-    sortOrder: 0,
-    isActive: true,
-  });
 
   useEffect(() => {
     loadCategories();
@@ -60,63 +60,6 @@ export default function CategoryPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update category');
     }
-  };
-
-  const handleAddCategory = async () => {
-    if (!formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await categoriesApi.create(formData);
-      toast.success('Category created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadCategories();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create category');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditCategory = async () => {
-    if (!selectedCategory || !formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await categoriesApi.update(selectedCategory.id, formData);
-      toast.success('Category updated successfully');
-      setShowEditModal(false);
-      setSelectedCategory(null);
-      resetForm();
-      loadCategories();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update category');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({ code: '', name: '', description: '', sortOrder: 0, isActive: true });
-  };
-
-  const openEditModal = (category: Category) => {
-    setSelectedCategory(category);
-    setFormData({
-      code: category.code,
-      name: category.name,
-      description: category.description || '',
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -159,72 +102,34 @@ export default function CategoryPage() {
       label: 'Actions',
       render: (item: Category) => (
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => openEditModal(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: 'var(--muted-foreground)' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Edit"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => handleToggleActive(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.isActive ? 'Deactivate' : 'Activate'}
-          >
-            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-          </button>
+          {canEditCategory && (
+            <button
+              onClick={() => router.push(`/inventory/category/edit/${item.id}`)}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: 'var(--muted-foreground)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Edit"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
+          {canEditCategory && (
+            <button
+              onClick={() => handleToggleActive(item)}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title={item.isActive ? 'Deactivate' : 'Activate'}
+            >
+              {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       ),
     },
   ];
-
-  const renderCategoryForm = () => (
-    <div className="space-y-4">
-      <Input
-        label="Category Code"
-        value={formData.code}
-        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-        placeholder="e.g., BR, BU, PZ"
-        fullWidth
-        required
-      />
-      <Input
-        label="Category Name"
-        value={formData.name}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        placeholder="Full category name"
-        fullWidth
-        required
-      />
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <Input
-        label="Sort Order"
-        type="number"
-        value={(formData.sortOrder ?? 0).toString()}
-        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-        fullWidth
-      />
-      <div className="pt-2">
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -237,13 +142,12 @@ export default function CategoryPage() {
             Manage product categories ({totalCount} categories)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Category
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="md" onClick={() => router.push('/inventory/category/add')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Category
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -287,52 +191,6 @@ export default function CategoryPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Add Category Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add New Category"
-        size="md"
-      >
-        {renderCategoryForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddCategory} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            Add Category
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Category Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedCategory(null);
-          resetForm();
-        }}
-        title="Edit Category"
-        size="md"
-      >
-        {renderCategoryForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedCategory(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditCategory} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Save Changes
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

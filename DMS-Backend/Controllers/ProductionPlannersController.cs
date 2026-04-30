@@ -1,12 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using DMS_Backend.Models.DTOs.ProductionPlans;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
+using DMS_Backend.Filters;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/production-planners")]
+[Authorize]
 public class ProductionPlannersController : ControllerBase
 {
     private readonly IProductionPlannerService _productionPlannerService;
@@ -30,6 +34,8 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpPost("compute")]
+    [HasPermission("production-planner:create")]
+    [Audit]
     public async Task<IActionResult> ComputeProductionPlan(
         [FromQuery] Guid deliveryPlanId,
         [FromQuery] bool useFreezerStock,
@@ -52,6 +58,8 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpPost]
+    [HasPermission("production-planner:create")]
+    [Audit]
     public async Task<IActionResult> CreateProductionPlan([FromBody] CreateProductionPlanDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
@@ -77,6 +85,7 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission("production-planner:view")]
     public async Task<IActionResult> GetProductionPlanById(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -98,6 +107,7 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpGet("by-delivery-plan/{deliveryPlanId}")]
+    [HasPermission("production-planner:view")]
     public async Task<IActionResult> GetProductionPlanByDeliveryPlanId(Guid deliveryPlanId, CancellationToken cancellationToken)
     {
         try
@@ -119,6 +129,7 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("production-planner:view")]
     public async Task<IActionResult> GetAllProductionPlans(CancellationToken cancellationToken)
     {
         try
@@ -134,6 +145,8 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [HasPermission("production-planner:update")]
+    [Audit]
     public async Task<IActionResult> UpdateProductionPlan(Guid id, [FromBody] UpdateProductionPlanDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
@@ -161,6 +174,8 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [HasPermission("production-planner:delete")]
+    [Audit]
     public async Task<IActionResult> DeleteProductionPlan(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -182,6 +197,8 @@ public class ProductionPlannersController : ControllerBase
     }
 
     [HttpPost("adjustments")]
+    [HasPermission("production-planner:update")]
+    [Audit]
     public async Task<IActionResult> ApplyAdjustment([FromBody] CreateProductionAdjustmentDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _adjustmentValidator.ValidateAsync(dto, cancellationToken);

@@ -7,7 +7,6 @@ public sealed class DisposalDetailDto
     public DateTime DisposalDate { get; set; }
     public Guid OutletId { get; set; }
     public string OutletName { get; set; } = string.Empty;
-    public DateTime DeliveredDate { get; set; }
     public string Status { get; set; } = string.Empty;
     public int TotalItems { get; set; }
     public string? Notes { get; set; }

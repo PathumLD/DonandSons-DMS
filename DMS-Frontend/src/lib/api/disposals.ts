@@ -18,7 +18,6 @@ export interface Disposal {
   id: string;
   disposalNo: string;
   disposalDate: string;
-  deliveredDate?: string;
   outletId: string;
   outletName?: string;
   outlet?: {
@@ -53,7 +52,6 @@ export interface CreateDisposalItemDto {
 
 export interface CreateDisposalDto {
   disposalDate: string;
-  deliveredDate?: string;
   outletId: string;
   notes?: string;
   items: CreateDisposalItemDto[];
@@ -68,7 +66,6 @@ export interface UpdateDisposalItemDto {
 
 export interface UpdateDisposalDto {
   disposalDate: string;
-  deliveredDate?: string;
   outletId: string;
   notes?: string;
   items: UpdateDisposalItemDto[];

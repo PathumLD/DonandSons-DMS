@@ -86,12 +86,13 @@ public class DisposalService : IDisposalService
 
     public async Task<DisposalDetailDto> CreateAsync(CreateDisposalDto dto, Guid userId, CancellationToken cancellationToken = default)
     {
+        var disposalDateUtc = DateTime.SpecifyKind(dto.DisposalDate, DateTimeKind.Utc);
         var disposal = new Disposal
         {
             Id = Guid.NewGuid(),
-            DisposalDate = DateTime.SpecifyKind(dto.DisposalDate, DateTimeKind.Utc),
+            DisposalDate = disposalDateUtc,
             OutletId = dto.OutletId,
-            DeliveredDate = DateTime.SpecifyKind(dto.DeliveredDate, DateTimeKind.Utc),
+            DeliveredDate = disposalDateUtc,
             Status = DisposalStatus.Draft,
             Notes = dto.Notes,
             CreatedById = userId,
@@ -135,9 +136,10 @@ public class DisposalService : IDisposalService
         if (disposal.Status != DisposalStatus.Draft)
             throw new InvalidOperationException("Only draft disposals can be updated");
 
-        disposal.DisposalDate = DateTime.SpecifyKind(dto.DisposalDate, DateTimeKind.Utc);
+        var disposalDateUtc = DateTime.SpecifyKind(dto.DisposalDate, DateTimeKind.Utc);
+        disposal.DisposalDate = disposalDateUtc;
         disposal.OutletId = dto.OutletId;
-        disposal.DeliveredDate = DateTime.SpecifyKind(dto.DeliveredDate, DateTimeKind.Utc);
+        disposal.DeliveredDate = disposalDateUtc;
         disposal.Notes = dto.Notes;
         disposal.UpdatedById = userId;
         disposal.UpdatedAt = DateTime.UtcNow;

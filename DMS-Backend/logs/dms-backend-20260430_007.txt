@@ -1,0 +1,78 @@
+2026-04-30 09:52:27.413 +05:30 [INF] Starting DMS Backend API
+2026-04-30 09:52:31.030 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.035 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.724 +05:30 [ERR] An error occurred using the connection to database 'dms_erp_db' on server 'tcp://localhost:5432'.
+2026-04-30 09:52:33.420 +05:30 [ERR] Failed executing DbCommand (14ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE section_consumables (
+    "Id" uuid NOT NULL,
+    production_section_id uuid NOT NULL,
+    ingredient_id uuid NOT NULL,
+    default_quantity numeric(18,3) NOT NULL,
+    is_calculated boolean NOT NULL,
+    calculation_formula character varying(500),
+    sort_order integer NOT NULL,
+    notes text,
+    "IsActive" boolean NOT NULL,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    "CreatedById" uuid,
+    "UpdatedById" uuid,
+    CONSTRAINT "PK_section_consumables" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_section_consumables_ingredients_ingredient_id" FOREIGN KEY (ingredient_id) REFERENCES ingredients ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_section_consumables_production_sections_production_section_~" FOREIGN KEY (production_section_id) REFERENCES production_sections ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_section_consumables_users_CreatedById" FOREIGN KEY ("CreatedById") REFERENCES users ("Id"),
+    CONSTRAINT "FK_section_consumables_users_UpdatedById" FOREIGN KEY ("UpdatedById") REFERENCES users ("Id")
+);
+2026-04-30 09:52:33.432 +05:30 [ERR] An error occurred while seeding the database
+Npgsql.PostgresException (0x80004005): 42P01: relation "ingredients" does not exist
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteNonQueryAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.<>c.<<MigrateAsync>b__22_1>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Program.<Main>$(String[] args) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Program.cs:line 224
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "ingredients" does not exist
+    File: namespace.c
+    Line: 639
+    Routine: RangeVarGetRelidExtended
+2026-04-30 09:52:33.730 +05:30 [INF] DMS Backend API started successfully
+2026-04-30 10:03:51.399 +05:30 [INF] Starting DMS Backend API
+2026-04-30 10:03:53.757 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:53.765 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:53.770 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:53.775 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:53.780 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:53.785 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 10:03:56.355 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-30 10:03:56.361 +05:30 [INF] Starting dev data seed
+2026-04-30 10:03:56.422 +05:30 [INF] Demo users seeded: manager@donandson.com (Manager@123), operator@donandson.com (Operator@123)
+2026-04-30 10:03:56.451 +05:30 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2026-04-30 10:03:56.591 +05:30 [INF] Demo roles seeded: Manager, Operator
+2026-04-30 10:03:56.623 +05:30 [WRN] No outlets found, skipping showroom open stock seeding
+2026-04-30 10:03:56.625 +05:30 [INF] Dev data seed completed successfully
+2026-04-30 10:03:56.628 +05:30 [INF] Database seeded successfully
+2026-04-30 10:03:56.856 +05:30 [INF] DMS Backend API started successfully

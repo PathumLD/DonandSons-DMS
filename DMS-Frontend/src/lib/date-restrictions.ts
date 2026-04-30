@@ -49,6 +49,22 @@ export function isAdminUser(user: UserContext | null | undefined): boolean {
 }
 
 /**
+ * Describe the helper-text outcome of an independent (back-date, future-date)
+ * permission pair. `defaultText` is shown when neither grant applies — i.e.
+ * the profile's default date window is in effect.
+ */
+function describeGrant(
+  allowBack: boolean | string | undefined,
+  allowFuture: boolean | string | undefined,
+  defaultText: string
+): string {
+  if (allowBack && allowFuture) return 'Back and future dates allowed (granted)';
+  if (allowBack) return 'Back dates allowed (granted). Future dates restricted.';
+  if (allowFuture) return 'Future dates allowed (granted). Back dates restricted.';
+  return defaultText;
+}
+
+/**
  * Compute min/max date constraints for a date input based on user role and
  * operation profile. Admin (or permission-allowed) gets full freedom.
  */
@@ -76,9 +92,7 @@ export function getDateBounds(
         max: allowFuture ? undefined : addDaysISO(30),
         helperText: isAdmin
           ? 'Admin: any date allowed'
-          : allowBack
-            ? 'Back/future date allowed (granted)'
-            : 'Today or future dates only',
+          : describeGrant(allowBack, allowFuture, 'Today or future dates only'),
       };
     case 'today-only':
       return {
@@ -86,7 +100,7 @@ export function getDateBounds(
         max: allowFuture ? undefined : today,
         helperText: isAdmin
           ? 'Admin: any date allowed'
-          : 'Only today is allowed',
+          : describeGrant(allowBack, allowFuture, 'Only today is allowed'),
       };
     case 'back-3-no-future':
       // No future date. Back date allowed up to 3 days for normal users.
@@ -95,7 +109,11 @@ export function getDateBounds(
         max: allowFuture ? undefined : today,
         helperText: isAdmin
           ? 'Admin: any date allowed'
-          : 'Back date allowed up to 3 days. Future dates are not allowed.',
+          : describeGrant(
+              allowBack,
+              allowFuture,
+              'Back date allowed up to 3 days. Future dates are not allowed.'
+            ),
       };
     case 'label-print':
       // Default: today only for normal users
@@ -104,9 +122,7 @@ export function getDateBounds(
         max: allowFuture ? undefined : today,
         helperText: isAdmin
           ? 'Admin: any date allowed'
-          : allowFuture
-            ? 'Today or future dates allowed (granted)'
-            : 'Only today is allowed',
+          : describeGrant(allowBack, allowFuture, 'Only today is allowed'),
       };
     case 'future-only-3':
       // Delivery Plan (6.vi): only future date, max 3 days ahead

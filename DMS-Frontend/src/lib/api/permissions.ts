@@ -3,8 +3,10 @@ import apiClient from './api-client';
 export interface Permission {
   id: string;
   code: string;
+  name: string;
   module: string;
   description: string;
+  displayOrder: number;
   isActive: boolean;
 }
 

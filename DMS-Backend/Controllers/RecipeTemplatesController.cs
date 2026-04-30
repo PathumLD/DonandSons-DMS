@@ -20,7 +20,7 @@ public class RecipeTemplatesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("recipes:view")]
+    [HasPermission("recipe-templates:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class RecipeTemplatesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("recipes:view")]
+    [HasPermission("recipe-templates:view")]
     public async Task<ActionResult<ApiResponse<RecipeTemplateDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class RecipeTemplatesController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("recipes:create")]
+    [HasPermission("recipe-templates:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<RecipeTemplateDetailDto>>> Create(
         [FromBody] RecipeTemplateCreateDto dto,
@@ -79,7 +79,7 @@ public class RecipeTemplatesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("recipes:edit")]
+    [HasPermission("recipe-templates:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<RecipeTemplateDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class RecipeTemplatesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("recipes:delete")]
+    [HasPermission("recipe-templates:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

@@ -1,31 +1,38 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import Checkbox from '@/components/ui/checkbox';
-import { Toggle } from '@/components/ui/toggle';
-import { Package, Plus, Search, Edit, Info, Trash2, Check, X } from 'lucide-react';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
+import { Package, Plus, Search, Edit, Eye, EyeOff, Trash2, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { productsApi, type Product, type CreateProductDto, type UpdateProductDto } from '@/lib/api/products';
-import { categoriesApi, type Category } from '@/lib/api/categories';
-import { uomsApi, type UnitOfMeasure } from '@/lib/api/uoms';
+import { productsApi, type Product } from '@/lib/api/products';
 import toast from 'react-hot-toast';
+import { ProtectedPage, PermissionButton } from '@/components/auth';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function ProductsPage() {
+  return (
+    <ProtectedPage permission="products:view">
+      <ProductsPageContent />
+    </ProtectedPage>
+  );
+}
+
+function ProductsPageContent() {
+  const router = useRouter();
+  const { canAction } = usePermissions();
+  const canEditProduct = canAction('/inventory/products', 'edit');
+  const canDeleteProduct = canAction('/inventory/products', 'delete');
+  
   // Data states
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [uoms, setUOMs] = useState<UnitOfMeasure[]>([]);
   
   // Loading and error states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   
   // Pagination and search
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,59 +41,25 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   
-  // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState<Partial<CreateProductDto>>({
-    code: '',
-    name: '',
-    description: '',
-    categoryId: '',
-    unitOfMeasureId: '',
-    unitPrice: 0,
-    productType: '',
-    productionSection: '',
-    hasFullSize: true,
-    hasMiniSize: false,
-    allowDecimal: false,
-    decimalPlaces: 0,
-    roundingValue: 1,
-    isPlainRollItem: false,
-    requireOpenStock: true,
-    enableLabelPrint: true,
-    allowFutureLabelPrint: false,
-    sortOrder: 0,
-    defaultDeliveryTurns: [],
-    availableInTurns: [],
-    isActive: true,
-  });
 
   // Fetch products on mount and when filters change
   useEffect(() => {
     fetchProducts();
   }, [currentPage, pageSize, searchTerm]);
 
-  // Fetch categories and UOMs on mount
-  useEffect(() => {
-    fetchCategories();
-    fetchUOMs();
-  }, []);
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Don't pass activeOnly parameter - this will return ALL products (active and inactive)
       const response = await productsApi.getAll(
         currentPage,
         pageSize,
         searchTerm || undefined,
-        undefined,
         undefined
+        // activeOnly parameter omitted - returns all products
       );
       
       setProducts(response.products);
@@ -98,24 +71,6 @@ export default function ProductsPage() {
       toast.error(errorMsg);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await categoriesApi.getAll(1, 100, undefined, true);
-      setCategories(response.categories);
-    } catch (err: any) {
-      console.error('Failed to load categories:', err);
-    }
-  };
-
-  const fetchUOMs = async () => {
-    try {
-      const response = await uomsApi.getAll(1, 100, undefined, true);
-      setUOMs(response.unitOfMeasures);
-    } catch (err: any) {
-      console.error('Failed to load UOMs:', err);
     }
   };
 
@@ -153,154 +108,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAddProduct = async () => {
-    try {
-      setSubmitting(true);
-      
-      const dto: CreateProductDto = {
-        code: formData.code!,
-        name: formData.name!,
-        description: formData.description,
-        categoryId: formData.categoryId!,
-        unitOfMeasureId: formData.unitOfMeasureId!,
-        unitPrice: Number(formData.unitPrice),
-        productType: formData.productType,
-        productionSection: formData.productionSection,
-        hasFullSize: formData.hasFullSize!,
-        hasMiniSize: formData.hasMiniSize!,
-        allowDecimal: formData.allowDecimal!,
-        decimalPlaces: Number(formData.decimalPlaces),
-        roundingValue: Math.floor(Number(formData.roundingValue) || 1),
-        isPlainRollItem: formData.isPlainRollItem!,
-        requireOpenStock: formData.requireOpenStock!,
-        enableLabelPrint: formData.enableLabelPrint!,
-        allowFutureLabelPrint: formData.allowFutureLabelPrint!,
-        sortOrder: Number(formData.sortOrder),
-        defaultDeliveryTurns: formData.defaultDeliveryTurns || [],
-        availableInTurns: formData.availableInTurns || [],
-        isActive: formData.isActive!,
-      };
-      
-      await productsApi.create(dto);
-      toast.success('Product created successfully');
-      setShowAddModal(false);
-      resetForm();
-      fetchProducts();
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to create product';
-      toast.error(errorMsg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditProduct = async () => {
-    if (!selectedProduct) return;
-    
-    try {
-      setSubmitting(true);
-      
-      const dto: UpdateProductDto = {
-        code: formData.code!,
-        name: formData.name!,
-        description: formData.description,
-        categoryId: formData.categoryId!,
-        unitOfMeasureId: formData.unitOfMeasureId!,
-        unitPrice: Number(formData.unitPrice) || 0,
-        productType: formData.productType,
-        productionSection: formData.productionSection,
-        hasFullSize: formData.hasFullSize ?? true,
-        hasMiniSize: formData.hasMiniSize ?? false,
-        allowDecimal: formData.allowDecimal ?? false,
-        decimalPlaces: Number(formData.decimalPlaces) || 0,
-        roundingValue: Math.floor(Number(formData.roundingValue) || 1),
-        isPlainRollItem: formData.isPlainRollItem ?? false,
-        requireOpenStock: formData.requireOpenStock ?? true,
-        enableLabelPrint: formData.enableLabelPrint ?? true,
-        allowFutureLabelPrint: formData.allowFutureLabelPrint ?? false,
-        sortOrder: Number(formData.sortOrder) || 0,
-        defaultDeliveryTurns: formData.defaultDeliveryTurns || [],
-        availableInTurns: formData.availableInTurns || [],
-        isActive: formData.isActive ?? true,
-      };
-      
-      await productsApi.update(selectedProduct.id, dto);
-      toast.success('Product updated successfully');
-      setShowEditModal(false);
-      setSelectedProduct(null);
-      resetForm();
-      fetchProducts();
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to update product';
-      toast.error(errorMsg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      description: '',
-      categoryId: '',
-      unitOfMeasureId: '',
-      unitPrice: 0,
-      productType: '',
-      productionSection: '',
-      hasFullSize: true,
-      hasMiniSize: false,
-      allowDecimal: false,
-      decimalPlaces: 0,
-      roundingValue: 1,
-      isPlainRollItem: false,
-      requireOpenStock: true,
-      enableLabelPrint: true,
-      allowFutureLabelPrint: false,
-      sortOrder: 0,
-      defaultDeliveryTurns: [],
-      availableInTurns: [],
-      isActive: true,
-    });
-  };
-
-  const openEditModal = async (product: Product) => {
-    try {
-      setSubmitting(true);
-      const fullProduct = await productsApi.getById(product.id);
-      
-      setSelectedProduct(fullProduct);
-      setFormData({
-        code: fullProduct.code,
-        name: fullProduct.name,
-        description: fullProduct.description,
-        categoryId: fullProduct.categoryId,
-        unitOfMeasureId: fullProduct.unitOfMeasureId,
-        unitPrice: fullProduct.unitPrice,
-        productType: fullProduct.productType,
-        productionSection: fullProduct.productionSection,
-        hasFullSize: fullProduct.hasFullSize ?? true,
-        hasMiniSize: fullProduct.hasMiniSize ?? false,
-        allowDecimal: fullProduct.allowDecimal ?? false,
-        decimalPlaces: fullProduct.decimalPlaces ?? 0,
-        roundingValue: fullProduct.roundingValue ?? 1,
-        isPlainRollItem: fullProduct.isPlainRollItem ?? false,
-        requireOpenStock: fullProduct.requireOpenStock,
-        enableLabelPrint: fullProduct.enableLabelPrint,
-        allowFutureLabelPrint: fullProduct.allowFutureLabelPrint,
-        sortOrder: fullProduct.sortOrder ?? 0,
-        defaultDeliveryTurns: fullProduct.defaultDeliveryTurns || [],
-        availableInTurns: fullProduct.availableInTurns || [],
-        isActive: fullProduct.isActive,
-      });
-      setShowEditModal(true);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to load product details';
-      toast.error(errorMsg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const columns = [
     {
@@ -363,127 +170,51 @@ export default function ProductsPage() {
       label: 'Actions',
       render: (item: Product) => (
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => openEditModal(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: 'var(--muted-foreground)' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Edit"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
+          {canEditProduct && (
+            <button
+              onClick={() => router.push(`/inventory/products/edit/${item.id}`)}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: 'var(--muted-foreground)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Edit"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => {
-              setSelectedProduct(item);
-              setShowInfoModal(true);
+              if (selectedProduct?.id === item.id) setSelectedProduct(null);
+              else setSelectedProduct(item);
             }}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Info"
+            title={selectedProduct?.id === item.id ? 'Hide details' : 'View details'}
           >
-            <Info className="w-4 h-4" />
+            {selectedProduct?.id === item.id ? (
+              <Eye className="w-4 h-4" aria-hidden />
+            ) : (
+              <EyeOff className="w-4 h-4" aria-hidden />
+            )}
           </button>
-          <button
-            onClick={() => handleToggleActive(item)}
-            className="p-1.5 rounded transition-colors"
-            style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title={item.isActive ? 'Deactivate' : 'Activate'}
-          >
-            {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-          </button>
+          {(canEditProduct || canDeleteProduct) && (
+            <button
+              onClick={() => handleToggleActive(item)}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: item.isActive ? '#DC2626' : '#10B981' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = item.isActive ? '#FEF2F2' : '#F0FDF4'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title={item.isActive ? 'Deactivate' : 'Activate'}
+            >
+              {item.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       ),
     },
   ];
-
-  const renderProductForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Product Code"
-          value={formData.code || ''}
-          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-          placeholder="e.g., ACT33, BR2, BU12"
-          fullWidth
-          required
-        />
-        <Input
-          label="Product Name"
-          value={formData.name || ''}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Full product name"
-          fullWidth
-          required
-        />
-      </div>
-
-      <Input
-        label="Description"
-        value={formData.description || ''}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Product description (optional)"
-        fullWidth
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Select
-          label="Product Category"
-          value={formData.categoryId || ''}
-          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          options={categories.map(c => ({ value: c.id, label: c.name }))}
-          placeholder="Select category"
-          fullWidth
-          required
-        />
-        <Select
-          label="Unit of Measure"
-          value={formData.unitOfMeasureId || ''}
-          onChange={(e) => setFormData({ ...formData, unitOfMeasureId: e.target.value })}
-          options={uoms.map(u => ({ value: u.id, label: `${u.code} - ${u.description}` }))}
-          placeholder="Select UOM"
-          fullWidth
-          required
-        />
-      </div>
-
-      <Input
-        label="Unit Price (Rs.)"
-        type="number"
-        step="0.01"
-        value={formData.unitPrice?.toString() || '0'}
-        onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
-        placeholder="0.00"
-        fullWidth
-        required
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        <Checkbox
-          label="Require Open Stock"
-          checked={formData.requireOpenStock || false}
-          onChange={(e) => setFormData({ ...formData, requireOpenStock: e.target.checked })}
-        />
-        <Checkbox
-          label="Enable Label Print"
-          checked={formData.enableLabelPrint || false}
-          onChange={(e) => setFormData({ ...formData, enableLabelPrint: e.target.checked })}
-        />
-      </div>
-
-      <div className="pt-2">
-        <Toggle
-          checked={formData.isActive || false}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
 
   // Loading state
   if (loading && products.length === 0) {
@@ -506,13 +237,15 @@ export default function ProductsPage() {
             Manage your product catalog ({totalCount} items)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <PermissionButton 
+          permission="products:create"
+          variant="primary" 
+          size="md" 
+          onClick={() => router.push('/inventory/products/add')}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Product
-        </Button>
+        </PermissionButton>
       </div>
 
       {/* Error Banner */}
@@ -567,64 +300,15 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
 
-      {/* Add Product Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add New Product"
-        size="lg"
-      >
-        {renderProductForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddProduct} disabled={submitting}>
-            {submitting ? 'Creating...' : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </>
-            )}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Product Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedProduct(null);
-          resetForm();
-        }}
-        title="Edit Product"
-        size="lg"
-      >
-        {renderProductForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedProduct(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditProduct} disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Info Modal */}
-      <Modal
-        isOpen={showInfoModal}
-        onClose={() => {
-          setShowInfoModal(false);
-          setSelectedProduct(null);
-        }}
+      <InlineDetailPanel
         title="Product Information"
-        size="md"
+        open={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        footer={
+          <Button variant="ghost" onClick={() => setSelectedProduct(null)}>
+            Close
+          </Button>
+        }
       >
         {selectedProduct && (
           <div className="space-y-4">
@@ -686,15 +370,7 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowInfoModal(false);
-            setSelectedProduct(null);
-          }}>
-            Close
-          </Button>
-        </ModalFooter>
-      </Modal>
+      </InlineDetailPanel>
     </div>
   );
 }

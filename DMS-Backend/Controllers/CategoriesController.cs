@@ -20,7 +20,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("inventory:view")]
+    [HasPermission("categories:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("inventory:view")]
+    [HasPermission("categories:view")]
     public async Task<ActionResult<ApiResponse<CategoryDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("inventory:create")]
+    [HasPermission("categories:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<CategoryDetailDto>>> Create(
         [FromBody] CreateCategoryDto dto,
@@ -79,7 +79,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("inventory:edit")]
+    [HasPermission("categories:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<CategoryDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("inventory:delete")]
+    [HasPermission("categories:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

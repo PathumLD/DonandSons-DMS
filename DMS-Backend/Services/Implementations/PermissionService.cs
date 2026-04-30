@@ -23,18 +23,28 @@ public sealed class PermissionService : IPermissionService
         // Note: Permissions don't have IsActive field, they're always available
         // The isActive parameter is kept for API compatibility
 
-        return await query
+        // Get permissions from database - only query fields that exist
+        var permissions = await query
             .OrderBy(p => p.Module)
             .ThenBy(p => p.Code)
+            .ToListAsync(cancellationToken);
+
+        // Map to DTO - handle DisplayOrder gracefully (may be null if column doesn't exist)
+        return permissions
             .Select(p => new PermissionDto
             {
                 Id = p.Id,
                 Code = p.Code,
+                Name = p.Name,
                 Module = p.Module,
                 Description = p.Description ?? string.Empty,
+                DisplayOrder = p.DisplayOrder ?? 0, // Default to 0 if null
                 IsActive = true  // Permissions are always active
             })
-            .ToListAsync(cancellationToken);
+            .OrderBy(p => p.DisplayOrder)
+            .ThenBy(p => p.Module)
+            .ThenBy(p => p.Code)
+            .ToList();
     }
 
     public async Task<List<PermissionsByModuleDto>> GetGroupedByModuleAsync(

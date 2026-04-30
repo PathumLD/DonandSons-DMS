@@ -36,7 +36,7 @@ export default function DeliveryPlanPage() {
     !!user?.isSuperAdmin ||
     user?.permissions?.includes('*') ||
     user?.permissions?.includes('administrator.delivery-plan.allow') ||
-    user?.permissions?.includes('administrator.delivery-plan.create');
+    user?.permissions?.includes('admin-delivery-plan:create');
 
   const [schedules, setSchedules] = useState<DeliverySchedule[]>(defaultSchedules);
   const [visibleCount, setVisibleCount] = useState(4);

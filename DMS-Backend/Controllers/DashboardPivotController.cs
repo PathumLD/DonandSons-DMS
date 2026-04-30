@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/dashboard-pivot")]
+[Authorize]
 public class DashboardPivotController : ControllerBase
 {
     private readonly IDashboardPivotService _dashboardPivotService;
@@ -19,6 +22,7 @@ public class DashboardPivotController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("dashboard-pivot:view")]
     public async Task<IActionResult> GetDashboardPivot(
         [FromQuery] DateTime fromDate,
         [FromQuery] DateTime toDate,

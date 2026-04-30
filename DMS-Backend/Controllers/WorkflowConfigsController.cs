@@ -20,7 +20,7 @@ public class WorkflowConfigsController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("system:view")]
+    [HasPermission("workflow-config:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class WorkflowConfigsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("system:view")]
+    [HasPermission("workflow-config:view")]
     public async Task<ActionResult<ApiResponse<WorkflowConfigDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class WorkflowConfigsController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("system:create")]
+    [HasPermission("workflow-config:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<WorkflowConfigDetailDto>>> Create(
         [FromBody] WorkflowConfigCreateDto dto,
@@ -79,7 +79,7 @@ public class WorkflowConfigsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("system:edit")]
+    [HasPermission("workflow-config:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<WorkflowConfigDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class WorkflowConfigsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("system:delete")]
+    [HasPermission("workflow-config:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

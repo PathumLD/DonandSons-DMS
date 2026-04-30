@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace DMS_Backend.Models.Entities;
 
 public sealed class Permission
@@ -8,6 +10,11 @@ public sealed class Permission
     public string Module { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsSystemPermission { get; set; } = true;
+    
+    // Make nullable to work without the column existing in database
+    [Column("DisplayOrder")]
+    public int? DisplayOrder { get; set; } = 0;
+    
     public DateTimeOffset CreatedAt { get; set; }
 
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
