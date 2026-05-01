@@ -10,11 +10,33 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+
+function formatLoginError(err: unknown): string {
+  if (typeof err === 'object' && err !== null && 'response' in err) {
+    const response = (err as { response?: { data?: unknown; status?: number } }).response;
+    if (!response) {
+      return 'Cannot reach the server. Confirm the API is running and NEXT_PUBLIC_API_URL matches your browser (same host/port you use to open the app).';
+    }
+    const data = response.data;
+    if (data && typeof data === 'object') {
+      const o = data as Record<string, unknown>;
+      if (typeof o.message === 'string') return o.message;
+      if (typeof o.detail === 'string') return o.detail;
+      if (typeof o.title === 'string' && typeof o.detail === 'string') return `${o.title}: ${o.detail}`;
+      const errs = o.errors;
+      if (errs && typeof errs === 'object') {
+        const first = Object.values(errs as Record<string, unknown>)[0];
+        if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+      }
+    }
+  }
+  return 'Invalid email or password';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,8 +66,8 @@ export default function LoginPage() {
       const response = await authApi.login(data);
       login(response.accessToken, response.refreshToken, response.user);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+    } catch (err: unknown) {
+      setError(formatLoginError(err));
     } finally {
       setIsLoading(false);
     }

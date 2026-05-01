@@ -79,12 +79,25 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-// Add CORS
+// Add CORS — must include every origin users type in the browser bar
+// (localhost vs 127.0.0.1 are different origins). Override via Cors:AllowedOrigins.
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+if (corsOrigins is not { Length: > 0 })
+{
+    corsOrigins =
+    [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ];
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -207,6 +220,9 @@ builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 // Add OpenAPI/Swagger with Scalar UI
 builder.Services.AddOpenApi();
 
+// Liveness/readiness endpoint for Docker, Kubernetes, and load balancers
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // Run migrations and seeders
@@ -252,6 +268,9 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
 
+// Liveness — no auth; keep before OpenAPI for predictable probe behaviour
+app.MapHealthChecks("/health");
+
 // Map OpenAPI endpoint and enable Scalar UI
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
@@ -262,8 +281,13 @@ app.MapScalarApiReference(options =>
         .WithDefaultHttpClient(Scalar.AspNetCore.ScalarTarget.CSharp, Scalar.AspNetCore.ScalarClient.HttpClient);
 });
 
-// Disable HTTPS redirection in development to avoid CORS preflight issues
-if (!app.Environment.IsDevelopment())
+// Only redirect to HTTPS when this process actually listens for HTTPS.
+// Docker / reverse-proxy setups often expose HTTP only; redirecting breaks API clients.
+var urlsConfigured = builder.Configuration["ASPNETCORE_URLS"] ?? string.Empty;
+var httpsPorts = builder.Configuration["HTTPS_PORTS"] ?? builder.Configuration["ASPNETCORE_HTTPS_PORTS"];
+var listensHttps = urlsConfigured.Contains("https:", StringComparison.OrdinalIgnoreCase)
+    || (!string.IsNullOrWhiteSpace(httpsPorts) && httpsPorts != "0");
+if (!app.Environment.IsDevelopment() && listensHttps)
 {
     app.UseHttpsRedirection();
 }
