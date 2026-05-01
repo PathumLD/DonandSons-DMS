@@ -168,7 +168,7 @@ public class CancellationsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:cancellation:approve")]
+    [HasPermission("operation:cancellation:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<CancellationDetailDto>>> Reject(

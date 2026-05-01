@@ -4,7 +4,6 @@ public sealed class CreateDisposalDto
 {
     public required DateTime DisposalDate { get; set; }
     public required Guid OutletId { get; set; }
-    public required DateTime DeliveredDate { get; set; }
     public string? Notes { get; set; }
     public List<CreateDisposalItemDto> Items { get; set; } = new();
 }

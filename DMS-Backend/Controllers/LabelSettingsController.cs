@@ -20,7 +20,7 @@ public class LabelSettingsController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("system:view")]
+    [HasPermission("label-settings:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class LabelSettingsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("system:view")]
+    [HasPermission("label-settings:view")]
     public async Task<ActionResult<ApiResponse<LabelSettingDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class LabelSettingsController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("system:create")]
+    [HasPermission("label-settings:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<LabelSettingDetailDto>>> Create(
         [FromBody] LabelSettingCreateDto dto,
@@ -79,7 +79,7 @@ public class LabelSettingsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("system:edit")]
+    [HasPermission("label-settings:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<LabelSettingDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class LabelSettingsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("system:delete")]
+    [HasPermission("label-settings:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

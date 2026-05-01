@@ -1,13 +1,25 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Search } from 'lucide-react';
-import { mockCurrentStock, type CurrentStock } from '@/lib/mock-data/production';
+import { Search, RefreshCw } from 'lucide-react';
+import { currentStockApi, type CurrentStock } from '@/lib/api/current-stock';
+import { ProtectedPage } from '@/components/auth';
+import toast from 'react-hot-toast';
 
 export default function CurrentStockPage() {
-  const [stocks, setStocks] = useState<CurrentStock[]>(mockCurrentStock);
+  return (
+    <ProtectedPage permission="production:current-stock:view">
+      <CurrentStockPageContent />
+    </ProtectedPage>
+  );
+}
+
+function CurrentStockPageContent() {
+  const [stocks, setStocks] = useState<CurrentStock[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -20,12 +32,35 @@ export default function CurrentStockPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const filteredStocks = useMemo(() => {
-    return stocks.filter(s => {
-      const matchesSearch = s.product.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
-    });
-  }, [stocks, searchTerm]);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await currentStockApi.getAll();
+      setStocks(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load current stock:', error);
+      toast.error('Failed to load current stock');
+      setStocks([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchData();
+    toast.success('Stock data refreshed');
+  };
+
+  const filteredStocks = Array.isArray(stocks) ? stocks.filter(s => {
+    const matchesSearch = searchTerm === '' || 
+      s.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.productName?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  }) : [];
 
   const totalPages = Math.ceil(filteredStocks.length / pageSize);
   const paginatedStocks = filteredStocks.slice(
@@ -51,77 +86,113 @@ export default function CurrentStockPage() {
       key: 'product',
       label: 'Product',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--foreground)' }}>{item.product}</span>
+        <span style={{ color: 'var(--foreground)' }}>
+          {item.productCode} - {item.productName}
+        </span>
       ),
     },
     {
       key: 'openBalance',
       label: 'Open Balance',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.openBalance.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.openBalance ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'todayProduction',
       label: 'Today Production',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.todayProduction.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.todayProduction ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'todayProductionCancelled',
-      label: 'Today Production Cancelled',
+      label: 'Production Cancelled',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.todayProductionCancelled.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.todayProductionCancelled ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'todayDelivery',
       label: 'Today Delivery',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.todayDelivery.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.todayDelivery ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'deliveryCancelled',
       label: 'Delivery Cancelled',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.deliveryCancelled.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.deliveryCancelled ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'deliveryReturned',
       label: 'Delivery Returned',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--muted-foreground)' }}>{item.deliveryReturned.toFixed(2)}</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.deliveryReturned ?? 0).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      key: 'stockAdjustment',
+      label: 'Stock Adjustment',
+      render: (item: CurrentStock) => (
+        <span style={{ color: 'var(--muted-foreground)' }}>
+          {(item.stockAdjustment ?? 0).toFixed(2)}
+        </span>
       ),
     },
     {
       key: 'todayBalance',
       label: 'Today Balance',
       render: (item: CurrentStock) => (
-        <span style={{ color: 'var(--foreground)' }}>{item.todayBalance}</span>
+        <span className="font-semibold" style={{ color: 'var(--foreground)' }}>
+          {(item.todayBalance ?? 0).toFixed(2)}
+        </span>
       ),
     },
   ];
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Production Stock</h1>
-        <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
-          Current Production Stock on {formatDateTime(currentTime)}
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Current Stock</h1>
+          <p className="mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Production Stock as of {formatDateTime(currentTime)}
+          </p>
+        </div>
+        <Button variant="primary" size="md" onClick={handleRefresh} disabled={isLoading}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                {isLoading ? 'Loading...' : `Showing ${filteredStocks.length} products`}
+              </span>
+            </div>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
-                placeholder="Search:"
+                placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -138,18 +209,24 @@ export default function CurrentStockPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <DataTable
-            data={paginatedStocks}
-            columns={columns}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          ) : (
+            <DataTable
+              data={paginatedStocks}
+              columns={columns}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

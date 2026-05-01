@@ -20,7 +20,7 @@ public class GridConfigurationsController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("system:view")]
+    [HasPermission("grid-config:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class GridConfigurationsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("system:view")]
+    [HasPermission("grid-config:view")]
     public async Task<ActionResult<ApiResponse<GridConfigurationDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class GridConfigurationsController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("system:create")]
+    [HasPermission("grid-config:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<GridConfigurationDetailDto>>> Create(
         [FromBody] GridConfigurationCreateDto dto,
@@ -79,7 +79,7 @@ public class GridConfigurationsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("system:edit")]
+    [HasPermission("grid-config:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<GridConfigurationDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class GridConfigurationsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("system:delete")]
+    [HasPermission("grid-config:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

@@ -1,0 +1,443 @@
+2026-04-30 09:45:22.352 +05:30 [INF] Starting DMS Backend API
+2026-04-30 09:45:26.917 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:26.927 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:26.932 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:26.938 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:26.944 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:26.948 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:45:28.070 +05:30 [ERR] Failed executing DbCommand (16ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+                DO $$
+                DECLARE
+                    max_display_order INT;
+                    current_display_order INT;
+                BEGIN
+                    -- Get current max display order
+                    SELECT COALESCE(MAX("DisplayOrder"), 0) INTO max_display_order
+                    FROM "Permissions";
+                    
+                    current_display_order := max_display_order + 1;
+
+                    -- ============================================================
+                    -- ADMINISTRATOR MODULE - Parent Module Access
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'administrator:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'administrator:view',
+                            'View Module',
+                            'Administrator - Module',
+                            'Access administrator module',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- ADMINISTRATOR MODULE - Day-End Process
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'day-end:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'day-end:view',
+                            'View DayEndProcess',
+                            'Administrator - DayEndProcess',
+                            'View day-end process',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'day-end:execute') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'day-end:execute',
+                            'Execute DayEndProcess',
+                            'Administrator - DayEndProcess',
+                            'Execute day-end process',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- ADMINISTRATOR MODULE - Cashier Balance
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'cashier-balance:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'cashier-balance:view',
+                            'View CashierBalance',
+                            'Administrator - CashierBalance',
+                            'View cashier balance',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'cashier-balance:create') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'cashier-balance:create',
+                            'Create CashierBalance',
+                            'Administrator - CashierBalance',
+                            'Create cashier balance entries',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'cashier-balance:edit') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'cashier-balance:edit',
+                            'Update CashierBalance',
+                            'Administrator - CashierBalance',
+                            'Update cashier balance',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'cashier-balance:delete') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'cashier-balance:delete',
+                            'Delete CashierBalance',
+                            'Administrator - CashierBalance',
+                            'Delete cashier balance entries',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- ADMINISTRATOR MODULE - Admin Delivery Plan
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'admin-delivery-plan:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'admin-delivery-plan:view',
+                            'View AdminDeliveryPlan',
+                            'Administrator - AdminDeliveryPlan',
+                            'View admin delivery plan',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'admin-delivery-plan:create') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'admin-delivery-plan:create',
+                            'Create AdminDeliveryPlan',
+                            'Administrator - AdminDeliveryPlan',
+                            'Create admin delivery plan',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'admin-delivery-plan:edit') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'admin-delivery-plan:edit',
+                            'Update AdminDeliveryPlan',
+                            'Administrator - AdminDeliveryPlan',
+                            'Update admin delivery plan',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'admin-delivery-plan:delete') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'admin-delivery-plan:delete',
+                            'Delete AdminDeliveryPlan',
+                            'Administrator - AdminDeliveryPlan',
+                            'Delete admin delivery plan',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- DMS MODULE - Parent Module Access
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'dms:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'dms:view',
+                            'View Module',
+                            'DMS - Module',
+                            'Access DMS module',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- DMS MODULE - Anytime Recipe Generator
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'anytime-recipe:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'anytime-recipe:view',
+                            'View AnytimeRecipe',
+                            'DMS - AnytimeRecipe',
+                            'View anytime recipe generator',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'anytime-recipe:generate') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'anytime-recipe:generate',
+                            'Generate AnytimeRecipe',
+                            'DMS - AnytimeRecipe',
+                            'Generate anytime recipes',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- DMS MODULE - Dough Generator
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'dough-generator:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'dough-generator:view',
+                            'View DoughGenerator',
+                            'DMS - DoughGenerator',
+                            'View dough generator',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'dough-generator:generate') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'dough-generator:generate',
+                            'Generate DoughGenerator',
+                            'DMS - DoughGenerator',
+                            'Generate dough recipes',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- DMS MODULE - Recipe Export
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'dms-recipe:export') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'dms-recipe:export',
+                            'Export RecipeExport',
+                            'DMS - RecipeExport',
+                            'Export/upload DMS recipes',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    -- ============================================================
+                    -- DMS MODULE - XLSM Importer
+                    -- ============================================================
+                    
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'xlsm-importer:view') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'xlsm-importer:view',
+                            'View XlsmImporter',
+                            'DMS - XlsmImporter',
+                            'View XLSM importer',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM "Permissions" WHERE "Code" = 'xlsm-importer:import') THEN
+                        INSERT INTO "Permissions" ("Id", "Code", "Name", "Module", "Description", "IsSystemPermission", "DisplayOrder", "CreatedAt")
+                        VALUES (
+                            gen_random_uuid(),
+                            'xlsm-importer:import',
+                            'Import XlsmImporter',
+                            'DMS - XlsmImporter',
+                            'Import XLSM files',
+                            true,
+                            current_display_order,
+                            NOW()
+                        );
+                        current_display_order := current_display_order + 1;
+                    END IF;
+
+                    RAISE NOTICE 'Successfully added missing permissions for sidebar RBAC alignment';
+                    RAISE NOTICE 'New DisplayOrder range: % - %', max_display_order + 1, current_display_order - 1;
+
+                END $$;
+2026-04-30 09:45:28.262 +05:30 [ERR] An error occurred while seeding the database
+Npgsql.PostgresException (0x80004005): 42P01: relation "Permissions" does not exist
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteNonQueryAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.<>c.<<MigrateAsync>b__22_1>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Program.<Main>$(String[] args) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Program.cs:line 224
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "Permissions" does not exist
+    InternalPosition: 90
+    InternalQuery: SELECT COALESCE(MAX("DisplayOrder"), 0)                                             FROM "Permissions"
+    Where: PL/pgSQL function inline_code_block line 7 at SQL statement
+    File: parse_relation.c
+    Line: 1469
+    Routine: parserOpenTable
+2026-04-30 09:45:28.774 +05:30 [INF] DMS Backend API started successfully
+2026-04-30 09:52:27.413 +05:30 [INF] Starting DMS Backend API
+2026-04-30 09:52:31.030 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.035 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.036 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 09:52:31.724 +05:30 [ERR] An error occurred using the connection to database 'dms_erp_db' on server 'tcp://localhost:5432'.
+2026-04-30 09:52:33.420 +05:30 [ERR] Failed executing DbCommand (14ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE section_consumables (
+    "Id" uuid NOT NULL,
+    production_section_id uuid NOT NULL,
+    ingredient_id uuid NOT NULL,
+    default_quantity numeric(18,3) NOT NULL,
+    is_calculated boolean NOT NULL,
+    calculation_formula character varying(500),
+    sort_order integer NOT NULL,
+    notes text,
+    "IsActive" boolean NOT NULL,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    "CreatedById" uuid,
+    "UpdatedById" uuid,
+    CONSTRAINT "PK_section_consumables" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_section_consumables_ingredients_ingredient_id" FOREIGN KEY (ingredient_id) REFERENCES ingredients ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_section_consumables_production_sections_production_section_~" FOREIGN KEY (production_section_id) REFERENCES production_sections ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_section_consumables_users_CreatedById" FOREIGN KEY ("CreatedById") REFERENCES users ("Id"),
+    CONSTRAINT "FK_section_consumables_users_UpdatedById" FOREIGN KEY ("UpdatedById") REFERENCES users ("Id")
+);
+2026-04-30 09:52:33.432 +05:30 [ERR] An error occurred while seeding the database
+Npgsql.PostgresException (0x80004005): 42P01: relation "ingredients" does not exist
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteNonQueryAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean beginTransaction, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.MigrationCommandExecutor.ExecuteNonQueryAsync(IReadOnlyList`1 migrationCommands, IRelationalConnection connection, MigrationExecutionState executionState, Boolean commitTransaction, Nullable`1 isolationLevel, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateImplementationAsync(DbContext context, String targetMigration, MigrationExecutionState state, Boolean useTransaction, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.<>c.<<MigrateAsync>b__22_1>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+   at Program.<Main>$(String[] args) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Program.cs:line 224
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "ingredients" does not exist
+    File: namespace.c
+    Line: 639
+    Routine: RangeVarGetRelidExtended
+2026-04-30 09:52:33.730 +05:30 [INF] DMS Backend API started successfully

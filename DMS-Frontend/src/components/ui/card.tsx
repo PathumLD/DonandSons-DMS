@@ -38,11 +38,18 @@ export function Card({ children, className = '', padding = 'md', hover = false }
 interface CardHeaderProps {
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
-export function CardHeader({ children, className = '' }: CardHeaderProps) {
+export function CardHeader({ children, className = '', onClick }: CardHeaderProps) {
   return (
-    <div className={`pb-4 mb-4 ${className}`} style={{ borderBottom: '1px solid var(--border)' }}>
+    <div
+      className={`pb-4 mb-4 transition-colors ${className}`}
+      style={{ borderBottom: '1px solid var(--border)', ...(onClick ? { cursor: 'pointer' } : {}) }}
+      onClick={onClick}
+      onMouseEnter={onClick ? (e) => { e.currentTarget.style.backgroundColor = 'var(--muted)'; } : undefined}
+      onMouseLeave={onClick ? (e) => { e.currentTarget.style.backgroundColor = ''; } : undefined}
+    >
       {children}
     </div>
   );

@@ -36,9 +36,10 @@ public class ProductService : IProductService
             .Include(p => p.UnitOfMeasure)
             .AsQueryable();
 
-        if (activeOnly == true)
+        // If activeOnly is not true, ignore the global query filter to include inactive products
+        if (activeOnly != true)
         {
-            query = query.Where(p => p.IsActive);
+            query = query.IgnoreQueryFilters();
         }
 
         if (categoryId.HasValue)
@@ -71,6 +72,7 @@ public class ProductService : IProductService
     public async Task<ProductDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _context.Products
+            .IgnoreQueryFilters() // Include inactive products
             .Include(p => p.Category)
             .Include(p => p.UnitOfMeasure)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
@@ -127,7 +129,11 @@ public class ProductService : IProductService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var product = await _context.Products.FindAsync(new object[] { id }, cancellationToken);
+        // Use IgnoreQueryFilters to allow updating inactive products
+        var product = await _context.Products
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        
         if (product == null)
         {
             throw new InvalidOperationException("Product not found");
@@ -210,7 +216,9 @@ public class ProductService : IProductService
         Guid? excludeId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Products.Where(p => p.Code == code);
+        var query = _context.Products
+            .IgnoreQueryFilters() // Check all products including inactive ones
+            .Where(p => p.Code == code);
 
         if (excludeId.HasValue)
         {

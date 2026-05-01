@@ -34,6 +34,12 @@ public sealed class OutletService : IOutletService
     {
         var query = _context.Outlets.AsQueryable();
 
+        // If activeOnly is not true, ignore the global query filter to include inactive outlets
+        if (activeOnly != true)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(o =>
@@ -46,11 +52,6 @@ public sealed class OutletService : IOutletService
         if (!string.IsNullOrWhiteSpace(locationType))
         {
             query = query.Where(o => o.LocationType == locationType);
-        }
-
-        if (activeOnly.HasValue && activeOnly.Value)
-        {
-            query = query.Where(o => o.IsActive);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -70,6 +71,7 @@ public sealed class OutletService : IOutletService
     public async Task<OutletDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var outlet = await _context.Outlets
+            .IgnoreQueryFilters() // Allow fetching inactive outlets
             .Include(o => o.DefaultDeliveryTurn)
             .Include(o => o.OutletEmployees.Where(e => e.IsActive))
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -102,7 +104,11 @@ public sealed class OutletService : IOutletService
 
     public async Task<OutletDetailDto> UpdateAsync(Guid id, UpdateOutletDto dto, Guid userId, CancellationToken cancellationToken = default)
     {
-        var outlet = await _context.Outlets.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        // Use IgnoreQueryFilters to find inactive outlets as well (needed for reactivation)
+        var outlet = await _context.Outlets
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        
         if (outlet == null)
         {
             throw new InvalidOperationException($"Outlet with ID '{id}' not found.");
@@ -127,7 +133,11 @@ public sealed class OutletService : IOutletService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var outlet = await _context.Outlets.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        // Use IgnoreQueryFilters to find the outlet even if already inactive
+        var outlet = await _context.Outlets
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        
         if (outlet == null)
         {
             throw new InvalidOperationException($"Outlet with ID '{id}' not found.");

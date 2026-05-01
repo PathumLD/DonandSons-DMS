@@ -212,7 +212,7 @@ public class DeliveriesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reject")]
-    [HasPermission("operation:delivery:approve")]
+    [HasPermission("operation:delivery:reject")]
     [Audit]
     [DayLockGuard]
     public async Task<ActionResult<ApiResponse<DeliveryDetailDto>>> Reject(

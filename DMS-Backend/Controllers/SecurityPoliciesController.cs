@@ -20,7 +20,7 @@ public class SecurityPoliciesController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("system:view")]
+    [HasPermission("security-policies:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -41,7 +41,7 @@ public class SecurityPoliciesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("system:view")]
+    [HasPermission("security-policies:view")]
     public async Task<ActionResult<ApiResponse<SecurityPolicyDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public class SecurityPoliciesController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("system:create")]
+    [HasPermission("security-policies:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<SecurityPolicyDetailDto>>> Create(
         [FromBody] SecurityPolicyCreateDto dto,
@@ -79,7 +79,7 @@ public class SecurityPoliciesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("system:edit")]
+    [HasPermission("security-policies:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<SecurityPolicyDetailDto>>> Update(
         Guid id,
@@ -104,7 +104,7 @@ public class SecurityPoliciesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("system:delete")]
+    [HasPermission("security-policies:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

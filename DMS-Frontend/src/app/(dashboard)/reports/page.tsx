@@ -24,16 +24,16 @@ import { addDaysISO, isAdminUser } from '@/lib/date-restrictions';
  */
 
 const ALL_REPORTS = [
-  { value: 'sales',     label: 'Sales Report',           permission: 'reports.sales.view' },
-  { value: 'delivery',  label: 'Delivery Report',        permission: 'reports.delivery.view' },
-  { value: 'disposal',  label: 'Disposal Report',        permission: 'reports.disposal.view' },
-  { value: 'inventory', label: 'Inventory Report',       permission: 'reports.inventory.view' },
-  { value: 'product',   label: 'Product Wise Report',    permission: 'reports.product.view' },
-  { value: 'showroom',  label: 'Showroom Wise Report',   permission: 'reports.showroom.view' },
-  { value: 'category',  label: 'Category Wise Report',   permission: 'reports.category.view' },
-  { value: 'daily',     label: 'Daily Summary Report',   permission: 'reports.daily.view' },
-  { value: 'monthly',   label: 'Monthly Summary Report', permission: 'reports.monthly.view' },
-  { value: 'profit',    label: 'Profit & Loss Report',   permission: 'reports.profit.view' },
+  { value: 'sales',     label: 'Sales Report',           permission: 'reports:sales:view' },
+  { value: 'delivery',  label: 'Delivery Report',        permission: 'reports:delivery:view' },
+  { value: 'disposal',  label: 'Disposal Report',        permission: 'reports:disposal:view' },
+  { value: 'inventory', label: 'Inventory Report',       permission: 'reports:inventory:view' },
+  { value: 'product',   label: 'Product Wise Report',    permission: 'reports:product:view' },
+  { value: 'showroom',  label: 'Showroom Wise Report',   permission: 'reports:showroom:view' },
+  { value: 'category',  label: 'Category Wise Report',   permission: 'reports:category:view' },
+  { value: 'daily',     label: 'Daily Summary Report',   permission: 'reports:daily:view' },
+  { value: 'monthly',   label: 'Monthly Summary Report', permission: 'reports:monthly:view' },
+  { value: 'profit',    label: 'Profit & Loss Report',   permission: 'reports:profit:view' },
 ];
 
 export default function ReportsPage() {

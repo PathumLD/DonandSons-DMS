@@ -1,97 +1,55 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import { Plus, Search, Edit, Eye, Info, Loader2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
+import { Plus, Search, Edit, Eye, EyeOff, Info, Loader2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { stockBfApi, type StockBF } from '@/lib/api/stock-bf';
-import { outletsApi, type Outlet } from '@/lib/api/outlets';
-import { productsApi, type Product } from '@/lib/api/products';
-import ItemManagementTable, { type ItemManagementItem } from '@/components/operation/ItemManagementTable';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useThemeStore } from '@/lib/stores/theme-store';
-import { getDateBounds, isAdminUser, todayISO } from '@/lib/date-restrictions';
+import { isAdminUser } from '@/lib/date-restrictions';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ProtectedPage } from '@/components/auth';
 import toast from 'react-hot-toast';
 
 export default function StockBFPage() {
+  return (
+    <ProtectedPage permission="operation:stock-bf:view">
+      <StockBFPageContent />
+    </ProtectedPage>
+  );
+}
+
+function StockBFPageContent() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const hasPermission = useAuthStore((s) => s.hasPermission);
-  const canApproveBf = hasPermission('operation:stock-bf:approve');
+  const { canAction } = usePermissions();
+  const canCreate = canAction('/operation/stock-bf', 'create');
+  const canEditBf = canAction('/operation/stock-bf', 'edit');
+  const canDeleteBf = canAction('/operation/stock-bf', 'delete');
+  // approve/reject buttons live on the centralized /operation/approvals page
   const isAdmin = isAdminUser(user);
   const pageTheme = useThemeStore((s) => s.getPageTheme('stock-bf'));
-  const dateBounds = getDateBounds('back-3-no-future', user as any, {
-    allowBackDatePermission: 'operation.stock-bf.allow-back-future',
-    allowFutureDatePermission: 'operation.stock-bf.allow-back-future',
-  });
 
   const [stockBFs, setStockBFs] = useState<StockBF[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StockBF | null>(null);
-  /** Same BF date + showroom as selected row — one Stock BF record per product */
   const [viewBfLines, setViewBfLines] = useState<StockBF[]>([]);
   const [viewBfLinesLoading, setViewBfLinesLoading] = useState(false);
   const [showPreviousRecords, setShowPreviousRecords] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    bfDate: todayISO(),
-    showroomId: '',
-    productId: '', // Used only for edit mode
-    quantity: '', // Used only for edit mode
-  });
-
-  const [stockBfItems, setStockBfItems] = useState<ItemManagementItem[]>([]);
-
-  const isFormValid = () => {
-    // For add mode: require items
-    // For edit mode: require single product and quantity
-    if (showAddModal) {
-      return formData.bfDate && formData.showroomId && stockBfItems.length > 0;
-    }
-    return formData.bfDate && formData.showroomId && formData.productId && formData.quantity;
-  };
-
-  useEffect(() => {
-    fetchOutlets();
-    fetchProducts();
-  }, []);
 
   useEffect(() => {
     fetchStockBFs();
   }, [currentPage, pageSize, showPreviousRecords, isAdmin]);
-
-  const fetchOutlets = async () => {
-    try {
-      const response = await outletsApi.getAll();
-      setOutlets(response.outlets.filter(o => o.isActive));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load outlets');
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await productsApi.getAll(1, 1000);
-      setProducts((response.products || []).filter((p) => p.isActive));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load products');
-    }
-  };
 
   const fetchStockBFs = async () => {
     try {
@@ -128,61 +86,6 @@ export default function StockBFPage() {
 
   const paginatedStockBFs = filteredStockBFs;
 
-  const handleAdd = async () => {
-    if (!formData.showroomId) {
-      toast.error('Please select a showroom');
-      return;
-    }
-
-    if (stockBfItems.length === 0) {
-      toast.error('Please add at least one product');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      await stockBfApi.createBulk({
-        bfDate: formData.bfDate,
-        outletId: formData.showroomId,
-        items: stockBfItems.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
-      toast.success(`${stockBfItems.length} Stock BF record(s) created — pending approval`);
-      setShowAddModal(false);
-      resetForm();
-      fetchStockBFs();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create stock BF');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEdit = async () => {
-    if (!selectedStock) return;
-    
-    try {
-      setIsSubmitting(true);
-      await stockBfApi.update(selectedStock.id, {
-        bfDate: formData.bfDate,
-        outletId: formData.showroomId,
-        productId: formData.productId,
-        quantity: Number(formData.quantity),
-      });
-      toast.success('Stock BF updated successfully');
-      setShowEditModal(false);
-      setSelectedStock(null);
-      resetForm();
-      fetchStockBFs();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update stock BF');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this stock BF record?')) return;
     
@@ -193,27 +96,6 @@ export default function StockBFPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete stock BF');
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      bfDate: todayISO(),
-      showroomId: '',
-      productId: '',
-      quantity: '',
-    });
-    setStockBfItems([]);
-  };
-
-  const openEditModal = (stock: StockBF) => {
-    setSelectedStock(stock);
-    setFormData({
-      bfDate: stock.bfDate,
-      showroomId: stock.outletId,
-      productId: stock.productId,
-      quantity: String(stock.quantity),
-    });
-    setShowEditModal(true);
   };
 
   const handleApproveBf = async (id: string) => {
@@ -327,10 +209,13 @@ export default function StockBFPage() {
   };
 
   const openViewStockBF = async (item: StockBF) => {
+    if (selectedStock?.id === item.id) {
+      closeViewPanel();
+      return;
+    }
     try {
       const full = await stockBfApi.getById(item.id);
       setSelectedStock(full);
-      setShowViewModal(true);
       setViewBfLines([]);
       setViewBfLinesLoading(true);
       try {
@@ -357,8 +242,7 @@ export default function StockBFPage() {
     }
   };
 
-  const closeViewModal = () => {
-    setShowViewModal(false);
+  const closeViewPanel = () => {
     setSelectedStock(null);
     setViewBfLines([]);
     setViewBfLinesLoading(false);
@@ -422,14 +306,18 @@ export default function StockBFPage() {
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-            title="View"
+            title={selectedStock?.id === item.id ? 'Hide details' : 'View details'}
           >
-            <Eye className="w-4 h-4" />
+            {selectedStock?.id === item.id ? (
+              <Eye className="w-4 h-4" aria-hidden />
+            ) : (
+              <EyeOff className="w-4 h-4" aria-hidden />
+            )}
           </button>
-          {item.status === 'Pending' && (
+          {item.status === 'Pending' && canEditBf && (
             <button
               type="button"
-              onClick={() => openEditModal(item)}
+              onClick={() => router.push(`/operation/stock-bf/edit/${item.id}`)}
               className="p-1.5 rounded transition-colors"
               style={{ color: 'var(--muted-foreground)' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
@@ -439,29 +327,7 @@ export default function StockBFPage() {
               <Edit className="w-4 h-4" />
             </button>
           )}
-          {canApproveBf && item.status === 'Pending' && (
-            <>
-              <button
-                type="button"
-                onClick={() => handleApproveBf(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#10B981' }}
-                title="Approve"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRejectBf(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#DC2626' }}
-                title="Reject"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </>
-          )}
-          {item.status === 'Pending' && (
+          {item.status === 'Pending' && canDeleteBf && (
             <button
               type="button"
               onClick={() => handleDelete(item.id)}
@@ -511,13 +377,12 @@ export default function StockBFPage() {
               {showPreviousRecords ? 'Hide Previous Records' : 'Show Previous Records'}
             </Button>
           )}
-          <Button variant="primary" size="md" onClick={() => {
-            resetForm();
-            setShowAddModal(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New
-          </Button>
+          {canCreate && (
+            <Button variant="primary" size="md" onClick={() => router.push('/operation/stock-bf/add')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New
+            </Button>
+          )}
         </div>
       </div>
 
@@ -568,132 +433,31 @@ export default function StockBFPage() {
         </CardContent>
       </Card>
 
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          resetForm();
-        }}
-        title="Add New Stock BF"
-        size="xl"
-      >
-        <div className="space-y-4">
-          <Input
-            label="BF Date"
-            type="date"
-            value={formData.bfDate}
-            onChange={(e) => setFormData({ ...formData, bfDate: e.target.value })}
-            min={dateBounds.min}
-            max={dateBounds.max}
-            helperText={dateBounds.helperText}
-            fullWidth
-            required
-          />
-          <Select
-            label="Showroom"
-            value={formData.showroomId}
-            onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })}
-            options={outlets.map(o => ({ value: o.id, label: `${o.code} - ${o.name}` }))}
-            placeholder="Select showroom"
-            fullWidth
-            required
-          />
-
-          <div className="border-t pt-4">
-            <h3 className="text-sm font-medium mb-3">Products</h3>
-            <ItemManagementTable
-              products={products.map(p => ({ id: p.id, code: p.code, name: p.name }))}
-              items={stockBfItems}
-              onItemsChange={setStockBfItems}
-              showUnitPrice={false}
-              showReason={false}
-              showTotal={true}
-              primaryColor={pageTheme?.primaryColor}
-            />
-          </div>
-        </div>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowAddModal(false);
-            resetForm();
-          }}>Cancel</Button>
-          <Button variant="primary" onClick={handleAdd} disabled={isSubmitting || !isFormValid()}>
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4 mr-2" />
-            )}
-            {isSubmitting ? 'Creating...' : `Create Stock BF (${stockBfItems.length} products)`}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedStock(null);
-          resetForm();
-        }}
-        title="Edit Stock BF"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <Input
-            label="BF Date"
-            type="date"
-            value={formData.bfDate}
-            onChange={(e) => setFormData({ ...formData, bfDate: e.target.value })}
-            min={dateBounds.min}
-            max={dateBounds.max}
-            fullWidth
-            required
-          />
-          <Select
-            label="Showroom"
-            value={formData.showroomId}
-            onChange={(e) => setFormData({ ...formData, showroomId: e.target.value })}
-            options={outlets.map(o => ({ value: o.id, label: `${o.code} - ${o.name}` }))}
-            fullWidth
-            required
-          />
-          <Select
-            label="Product"
-            value={formData.productId}
-            onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-            options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
-            fullWidth
-            required
-          />
-          <Input
-            label="Quantity"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.quantity}
-            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-            fullWidth
-            required
-          />
-        </div>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedStock(null);
-            resetForm();
-          }}>Cancel</Button>
-          <Button variant="primary" onClick={handleEdit} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showViewModal}
-        onClose={closeViewModal}
+      <InlineDetailPanel
         title="Stock BF Details"
-        size="xl"
+        open={!!selectedStock}
+        onClose={closeViewPanel}
+        contentClassName="max-w-[min(100%,56rem)]"
+        footer={
+          <>
+            <Button variant="ghost" onClick={closeViewPanel}>
+              Close
+            </Button>
+            {selectedStock?.status === 'Pending' && canEditBf && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const id = selectedStock.id;
+                  closeViewPanel();
+                  router.push(`/operation/stock-bf/edit/${id}`);
+                }}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
+          </>
+        }
       >
         {selectedStock && (
           <div className="space-y-4">
@@ -816,23 +580,7 @@ export default function StockBFPage() {
             </div>
           </div>
         )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={closeViewModal}>Close</Button>
-          {selectedStock?.status === 'Pending' && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                const s = selectedStock;
-                closeViewModal();
-                if (s) openEditModal(s);
-              }}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          )}
-        </ModalFooter>
-      </Modal>
+      </InlineDetailPanel>
     </div>
   );
 }

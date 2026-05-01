@@ -11,6 +11,8 @@ export interface Product {
   id: string;
   code: string;
   name: string;
+  /** When present (e.g. from products API), used to prefill unit price on selection */
+  unitPrice?: number;
 }
 
 export interface ItemManagementItem {
@@ -171,7 +173,21 @@ export default function ItemManagementTable({
           <Select
             label="Product"
             value={currentItem.productId}
-            onChange={(e) => setCurrentItem({ ...currentItem, productId: e.target.value })}
+            onChange={(e) => {
+              const productId = e.target.value;
+              const selected = products.find((p) => p.id === productId);
+              setCurrentItem((prev) => ({
+                ...prev,
+                productId,
+                unitPrice: !showUnitPrice
+                  ? prev.unitPrice
+                  : !productId
+                    ? ''
+                    : selected?.unitPrice != null && !Number.isNaN(selected.unitPrice)
+                      ? String(selected.unitPrice)
+                      : '',
+              }));
+            }}
             options={products.map(p => ({ value: p.id, label: `${p.code} - ${p.name}` }))}
             placeholder="Select product"
             fullWidth

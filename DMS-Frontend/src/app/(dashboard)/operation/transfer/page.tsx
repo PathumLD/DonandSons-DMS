@@ -1,89 +1,56 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import Select from '@/components/ui/select';
-import { Plus, Search, Edit, Eye, CheckCircle, XCircle, Clock, Info, Loader2 } from 'lucide-react';
+import { InlineDetailPanel } from '@/components/ui/inline-detail-panel';
+import { Plus, Search, Edit, Eye, EyeOff, CheckCircle, XCircle, Clock, Info, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Select from '@/components/ui/select';
 import { transfersApi, type Transfer } from '@/lib/api/transfers';
-import { outletsApi, type Outlet } from '@/lib/api/outlets';
-import { productsApi, type Product } from '@/lib/api/products';
-import ItemManagementTable, { type ItemManagementItem } from '@/components/operation/ItemManagementTable';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { useThemeStore } from '@/lib/stores/theme-store';
-import { getDateBounds, isAdminUser, todayISO, addDaysISO } from '@/lib/date-restrictions';
+import { isAdminUser, addDaysISO, getDateBounds } from '@/lib/date-restrictions';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ProtectedPage } from '@/components/auth';
 import toast from 'react-hot-toast';
 
 export default function TransferPage() {
+  return (
+    <ProtectedPage permission="operation:transfer:view">
+      <TransferPageContent />
+    </ProtectedPage>
+  );
+}
+
+function TransferPageContent() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isAdmin = isAdminUser(user);
+  const { canAction } = usePermissions();
+  const canCreate = canAction('/operation/transfer', 'create');
+  const canEditTransfer = canAction('/operation/transfer', 'edit');
   const pageTheme = useThemeStore((s) => s.getPageTheme('transfer'));
-  const dateBounds = getDateBounds('back-3-no-future', user as any, {
-    allowBackDatePermission: 'operation.transfer.allow-back-future',
-    allowFutureDatePermission: 'operation.transfer.allow-back-future',
+  const dateBounds = getDateBounds('transfer', user as any, {
+    allowBackDatePermission: 'operation:transfer:allow-back-date',
+    allowFutureDatePermission: 'operation:transfer:allow-future-date',
   });
 
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [outlets, setOutlets] = useState<Outlet[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
   const [showPreviousRecords, setShowPreviousRecords] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    transferDate: todayISO(),
-    fromShowroomId: '',
-    toShowroomId: '',
-    notes: '',
-    status: 'Draft' as Transfer['status'],
-  });
-
-  const [transferItems, setTransferItems] = useState<ItemManagementItem[]>([]);
-
-  const isFormValid = () => {
-    return formData.transferDate && formData.fromShowroomId && formData.toShowroomId && 
-           formData.fromShowroomId !== formData.toShowroomId && transferItems.length > 0;
-  };
-
-  useEffect(() => {
-    fetchOutlets();
-    fetchProducts();
-  }, []);
 
   useEffect(() => {
     fetchTransfers();
   }, [currentPage, pageSize, statusFilter]);
-
-  const fetchOutlets = async () => {
-    try {
-      const response = await outletsApi.getAll();
-      setOutlets(response.outlets.filter(o => o.isActive));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load outlets');
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await productsApi.getAll(1, 1000);
-      setProducts(response.products.filter(p => p.isActive));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to load products');
-    }
-  };
 
   const fetchTransfers = async () => {
     try {
@@ -118,78 +85,6 @@ export default function TransferPage() {
 
   const paginatedTransfers = filteredTransfers;
 
-  const handleAddTransfer = async () => {
-    if (!formData.fromShowroomId || !formData.toShowroomId) {
-      toast.error('Please select both showrooms');
-      return;
-    }
-
-    if (formData.fromShowroomId === formData.toShowroomId) {
-      toast.error('From and To outlets must be different');
-      return;
-    }
-
-    if (transferItems.length === 0) {
-      toast.error('Please add at least one item');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      await transfersApi.create({
-        transferDate: formData.transferDate,
-        fromOutletId: formData.fromShowroomId,
-        toOutletId: formData.toShowroomId,
-        notes: formData.notes,
-        items: transferItems.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
-      toast.success('Transfer created successfully');
-      setShowAddModal(false);
-      resetForm();
-      fetchTransfers();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create transfer');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditTransfer = async () => {
-    if (!selectedTransfer) return;
-    
-    if (formData.fromShowroomId === formData.toShowroomId) {
-      toast.error('From and To outlets must be different');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      await transfersApi.update(selectedTransfer.id, {
-        transferDate: formData.transferDate,
-        fromOutletId: formData.fromShowroomId,
-        toOutletId: formData.toShowroomId,
-        notes: formData.notes,
-        items: selectedTransfer.items?.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          quantity: item.quantity,
-        })) || [],
-      });
-      toast.success('Transfer updated successfully');
-      setShowEditModal(false);
-      setSelectedTransfer(null);
-      resetForm();
-      fetchTransfers();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update transfer');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleSubmit = async (id: string) => {
     try {
       await transfersApi.submit(id);
@@ -218,29 +113,6 @@ export default function TransferPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to reject transfer');
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      transferDate: todayISO(),
-      fromShowroomId: '',
-      toShowroomId: '',
-      notes: '',
-      status: 'Draft',
-    });
-    setTransferItems([]);
-  };
-
-  const openEditModal = (transfer: Transfer) => {
-    setSelectedTransfer(transfer);
-    setFormData({
-      transferDate: transfer.transferDate,
-      fromShowroomId: transfer.fromOutletId,
-      toShowroomId: transfer.toOutletId,
-      notes: transfer.notes || '',
-      status: transfer.status,
-    });
-    setShowEditModal(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -321,9 +193,12 @@ export default function TransferPage() {
           <button
             onClick={async () => {
               try {
+                if (selectedTransfer?.id === item.id) {
+                  setSelectedTransfer(null);
+                  return;
+                }
                 const fullTransfer = await transfersApi.getById(item.id);
                 setSelectedTransfer(fullTransfer);
-                setShowViewModal(true);
               } catch (error: any) {
                 toast.error(error.response?.data?.message || 'Failed to load transfer details');
               }
@@ -332,14 +207,18 @@ export default function TransferPage() {
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="View"
+            title={selectedTransfer?.id === item.id ? 'Hide details' : 'View details'}
           >
-            <Eye className="w-4 h-4" />
+            {selectedTransfer?.id === item.id ? (
+              <Eye className="w-4 h-4" aria-hidden />
+            ) : (
+              <EyeOff className="w-4 h-4" aria-hidden />
+            )}
           </button>
-          {item.status === 'Draft' && (
+          {item.status === 'Draft' && canEditTransfer && (
             <>
               <button
-                onClick={() => openEditModal(item)}
+                onClick={() => router.push(`/operation/transfer/edit/${item.id}`)}
                 className="p-1.5 rounded transition-colors"
                 style={{ color: 'var(--muted-foreground)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -360,92 +239,10 @@ export default function TransferPage() {
               </button>
             </>
           )}
-          {item.status === 'Pending' && (
-            <>
-              <button
-                onClick={() => handleApprove(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#10B981' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Approve"
-              >
-                <CheckCircle className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleReject(item.id)}
-                className="p-1.5 rounded transition-colors"
-                style={{ color: '#DC2626' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Reject"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </>
-          )}
         </div>
       ),
     },
   ];
-
-  const renderTransferForm = () => (
-    <div className="space-y-6">
-      <Input
-        label={<span>Transfer Date <span className="text-red-500">*</span></span>}
-        type="date"
-        value={formData.transferDate}
-        onChange={(e) => setFormData({ ...formData, transferDate: e.target.value })}
-        min={dateBounds.min}
-        max={dateBounds.max}
-        helperText={dateBounds.helperText}
-        fullWidth
-        required
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Select
-          label={<span>From Showroom <span className="text-red-500">*</span></span>}
-          value={formData.fromShowroomId}
-          onChange={(e) => setFormData({ ...formData, fromShowroomId: e.target.value })}
-          options={outlets.filter(o => o.id !== formData.toShowroomId).map(o => ({ value: o.id, label: `${o.code} - ${o.name}` }))}
-          placeholder="Select source showroom"
-          fullWidth
-          required
-        />
-        <Select
-          label={<span>To Showroom <span className="text-red-500">*</span></span>}
-          value={formData.toShowroomId}
-          onChange={(e) => setFormData({ ...formData, toShowroomId: e.target.value })}
-          options={outlets.filter(o => o.id !== formData.fromShowroomId).map(o => ({ value: o.id, label: `${o.code} - ${o.name}` }))}
-          placeholder="Select destination showroom"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Notes"
-        value={formData.notes}
-        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        placeholder="Additional notes..."
-        fullWidth
-      />
-      
-      <div className="border-t pt-4">
-        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--foreground)' }}>
-          Transfer Items <span className="text-red-500">*</span>
-        </h3>
-        <ItemManagementTable
-          products={products}
-          items={transferItems}
-          onItemsChange={setTransferItems}
-          showReason={false}
-          showUnitPrice={false}
-          showTotal={false}
-          primaryColor={pageTheme?.secondaryColor || '#C8102E'}
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-6 space-y-6">
@@ -474,13 +271,12 @@ export default function TransferPage() {
               {showPreviousRecords ? 'Hide Previous Records' : 'Show Previous Records'}
             </Button>
           )}
-          <Button variant="primary" size="md" onClick={() => {
-            resetForm();
-            setShowAddModal(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New
-          </Button>
+          {canCreate && (
+            <Button variant="primary" size="md" onClick={() => router.push('/operation/transfer/add')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New
+            </Button>
+          )}
         </div>
       </div>
 
@@ -542,58 +338,16 @@ export default function TransferPage() {
         </CardContent>
       </Card>
 
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add New Transfer"
-        size="2xl"
-      >
-        {renderTransferForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleAddTransfer} disabled={isSubmitting || !isFormValid()}>
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4 mr-2" />
-            )}
-            {isSubmitting ? 'Creating...' : 'Create Transfer'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedTransfer(null);
-          resetForm();
-        }}
-        title="Edit Transfer"
-        size="2xl"
-      >
-        {renderTransferForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedTransfer(null);
-            resetForm();
-          }}>Cancel</Button>
-          <Button variant="primary" onClick={handleEditTransfer} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedTransfer(null);
-        }}
+      <InlineDetailPanel
         title="Transfer Details"
-        size="2xl"
+        open={!!selectedTransfer}
+        onClose={() => setSelectedTransfer(null)}
+        contentClassName="max-w-[min(100%,56rem)]"
+        footer={
+          <Button variant="ghost" onClick={() => setSelectedTransfer(null)}>
+            Close
+          </Button>
+        }
       >
         {selectedTransfer && (
           <div className="space-y-6">
@@ -685,13 +439,7 @@ export default function TransferPage() {
             </div>
           </div>
         )}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowViewModal(false);
-            setSelectedTransfer(null);
-          }}>Close</Button>
-        </ModalFooter>
-      </Modal>
+      </InlineDetailPanel>
     </div>
   );
 }

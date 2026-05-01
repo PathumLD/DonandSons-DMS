@@ -1,37 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { Calendar, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { dayTypesApi, type DayType, type CreateDayTypeDto, type UpdateDayTypeDto } from '@/lib/api/day-types';
+import { dayTypesApi, type DayType, type UpdateDayTypeDto } from '@/lib/api/day-types';
 import toast from 'react-hot-toast';
 
 export default function DayTypesPage() {
+  const router = useRouter();
   const [dayTypes, setDayTypes] = useState<DayType[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedDayType, setSelectedDayType] = useState<DayType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    name: '',
-    description: '',
-    multiplier: 1.0,
-    color: '#C8102E',
-    isActive: true,
-  });
 
   useEffect(() => {
     loadDayTypes();
@@ -66,87 +52,6 @@ export default function DayTypesPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update day type');
     }
-  };
-
-  const handleAddDayType = async () => {
-    if (!formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const createData: CreateDayTypeDto = {
-        code: formData.code,
-        name: formData.name,
-        description: formData.description,
-        multiplier: formData.multiplier,
-        color: formData.color,
-        isActive: formData.isActive,
-      };
-      await dayTypesApi.create(createData);
-      toast.success('Day type created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadDayTypes();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create day type');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditDayType = async () => {
-    if (!selectedDayType || !formData.code || !formData.name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const updateData: UpdateDayTypeDto = {
-        code: formData.code,
-        name: formData.name,
-        description: formData.description,
-        multiplier: formData.multiplier,
-        color: formData.color,
-        isActive: formData.isActive,
-      };
-      await dayTypesApi.update(selectedDayType.id, updateData);
-      toast.success('Day type updated successfully');
-      setShowEditModal(false);
-      setSelectedDayType(null);
-      resetForm();
-      loadDayTypes();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update day type');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      description: '',
-      multiplier: 1.0,
-      color: '#C8102E',
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (dayType: DayType) => {
-    setSelectedDayType(dayType);
-    setFormData({
-      code: dayType.code,
-      name: dayType.name,
-      description: dayType.description || '',
-      multiplier: dayType.multiplier,
-      color: dayType.color || '#C8102E',
-      isActive: dayType.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -212,7 +117,7 @@ export default function DayTypesPage() {
       render: (item: DayType) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/day-types/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -236,73 +141,6 @@ export default function DayTypesPage() {
     },
   ];
 
-  const renderDayTypeForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Day Type Code"
-          value={formData.code}
-          onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-          placeholder="e.g., HOL, WKD"
-          fullWidth
-          required
-        />
-        <Input
-          label="Day Type Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="e.g., Holiday, Weekend"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Multiplier"
-          type="number"
-          step="0.1"
-          value={formData.multiplier.toString()}
-          onChange={(e) => setFormData({ ...formData, multiplier: parseFloat(e.target.value) || 1.0 })}
-          fullWidth
-          required
-        />
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Color
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              className="w-12 h-10 rounded cursor-pointer"
-            />
-            <Input
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              placeholder="#000000"
-              fullWidth
-            />
-          </div>
-        </div>
-      </div>
-      <div className="pt-2">
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -317,10 +155,7 @@ export default function DayTypesPage() {
             Manage production day types for morning and afternoon schedules ({totalCount} types)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/day-types/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Day Type
         </Button>
@@ -367,52 +202,6 @@ export default function DayTypesPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Add Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add New Day Type"
-        size="md"
-      >
-        {renderDayTypeForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddDayType} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Day Type'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedDayType(null);
-          resetForm();
-        }}
-        title="Edit Day Type"
-        size="md"
-      >
-        {renderDayTypeForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedDayType(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditDayType} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

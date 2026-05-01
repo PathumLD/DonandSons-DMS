@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +16,9 @@ using DMS_Backend.Mapping;
 using DMS_Backend.Middleware;
 using DMS_Backend.Services.Implementations;
 using DMS_Backend.Services.Interfaces;
+
+// Configure Npgsql to use UTC timestamps
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +43,11 @@ builder.Services.Configure<DevSeedOptions>(builder.Configuration.GetSection(DevS
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.ConfigureWarnings(warnings => 
+        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
 
 // Add Memory Cache for application-wide caching
 builder.Services.AddMemoryCache();
@@ -71,12 +79,25 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-// Add CORS
+// Add CORS — must include every origin users type in the browser bar
+// (localhost vs 127.0.0.1 are different origins). Override via Cors:AllowedOrigins.
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+if (corsOrigins is not { Length: > 0 })
+{
+    corsOrigins =
+    [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ];
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -153,12 +174,21 @@ builder.Services.AddScoped<IStockBFService, StockBFService>();
 builder.Services.AddScoped<IShowroomOpenStockService, ShowroomOpenStockService>();
 builder.Services.AddScoped<ILabelPrintRequestService, LabelPrintRequestService>();
 builder.Services.AddScoped<IShowroomLabelRequestService, ShowroomLabelRequestService>();
+builder.Services.AddScoped<IOperationApprovalService, OperationApprovalService>();
+
+// Phase 7: Production & Stock services
+builder.Services.AddScoped<IShiftService, ShiftService>();
+builder.Services.AddScoped<IDailyProductionService, DailyProductionService>();
+builder.Services.AddScoped<IProductionCancelService, ProductionCancelService>();
+builder.Services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
+builder.Services.AddScoped<IDailyProductionPlanService, DailyProductionPlanService>();
+builder.Services.AddScoped<ICurrentStockService, CurrentStockService>();
 
 // Register generic repository
 builder.Services.AddScoped(typeof(DMS_Backend.Repositories.IRepository<>), typeof(DMS_Backend.Repositories.Repository<>));
 
 // Register seeders
-builder.Services.AddScoped<PermissionSeeder>();
+builder.Services.AddScoped<ComprehensivePermissionSeeder>();
 builder.Services.AddScoped<SuperAdminSeeder>();
 builder.Services.AddScoped<DevDataSeeder>();
 
@@ -190,13 +220,16 @@ builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 // Add OpenAPI/Swagger with Scalar UI
 builder.Services.AddOpenApi();
 
+// Liveness/readiness endpoint for Docker, Kubernetes, and load balancers
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // Run migrations and seeders
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var permissionSeeder = scope.ServiceProvider.GetRequiredService<PermissionSeeder>();
+    var permissionSeeder = scope.ServiceProvider.GetRequiredService<ComprehensivePermissionSeeder>();
     var superAdminSeeder = scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>();
     var devDataSeeder = scope.ServiceProvider.GetRequiredService<DevDataSeeder>();
     var devSeedOptions = builder.Configuration.GetSection(DevSeedOptions.SectionName).Get<DevSeedOptions>();
@@ -223,13 +256,20 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while seeding the database");
+        // Fail fast: a first-time run must apply migrations and seed permissions +
+        // super admin. Starting the API with a half-initialised database hides
+        // connection/config issues and breaks login / RBAC until someone notices.
+        Log.Fatal(ex, "Database migration or seeding failed — fix PostgreSQL, connection string, and SuperAdmin config, then retry.");
+        throw;
     }
 }
 
 // Configure the HTTP request pipeline.
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
+
+// Liveness — no auth; keep before OpenAPI for predictable probe behaviour
+app.MapHealthChecks("/health");
 
 // Map OpenAPI endpoint and enable Scalar UI
 app.MapOpenApi();
@@ -241,8 +281,13 @@ app.MapScalarApiReference(options =>
         .WithDefaultHttpClient(Scalar.AspNetCore.ScalarTarget.CSharp, Scalar.AspNetCore.ScalarClient.HttpClient);
 });
 
-// Disable HTTPS redirection in development to avoid CORS preflight issues
-if (!app.Environment.IsDevelopment())
+// Only redirect to HTTPS when this process actually listens for HTTPS.
+// Docker / reverse-proxy setups often expose HTTP only; redirecting breaks API clients.
+var urlsConfigured = builder.Configuration["ASPNETCORE_URLS"] ?? string.Empty;
+var httpsPorts = builder.Configuration["HTTPS_PORTS"] ?? builder.Configuration["ASPNETCORE_HTTPS_PORTS"];
+var listensHttps = urlsConfigured.Contains("https:", StringComparison.OrdinalIgnoreCase)
+    || (!string.IsNullOrWhiteSpace(httpsPorts) && httpsPorts != "0");
+if (!app.Environment.IsDevelopment() && listensHttps)
 {
     app.UseHttpsRedirection();
 }

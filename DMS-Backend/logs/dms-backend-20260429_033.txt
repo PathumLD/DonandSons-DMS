@@ -1,0 +1,152 @@
+2026-04-29 17:44:55.364 +05:30 [INF] Starting DMS Backend API
+2026-04-29 17:44:58.346 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:44:58.350 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:44:58.351 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:44:58.351 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:44:58.351 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:44:58.351 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:45:01.830 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-29 17:45:01.835 +05:30 [INF] Starting dev data seed
+2026-04-29 17:45:01.918 +05:30 [INF] Demo users already exist, skipping
+2026-04-29 17:45:01.945 +05:30 [INF] Demo roles already exist, skipping
+2026-04-29 17:45:03.072 +05:30 [INF] Showroom open stock seeded for 1 outlets with date 2026-01-10
+2026-04-29 17:45:03.072 +05:30 [INF] Dev data seed completed successfully
+2026-04-29 17:45:03.072 +05:30 [INF] Database seeded successfully
+2026-04-29 17:45:03.774 +05:30 [INF] DMS Backend API started successfully
+2026-04-29 17:54:45.189 +05:30 [INF] Starting DMS Backend API
+2026-04-29 17:54:50.586 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:50.597 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:50.597 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:50.598 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:50.598 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:50.598 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-29 17:54:59.821 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-29 17:54:59.830 +05:30 [INF] Starting dev data seed
+2026-04-29 17:54:59.914 +05:30 [INF] Demo users already exist, skipping
+2026-04-29 17:54:59.938 +05:30 [INF] Demo roles already exist, skipping
+2026-04-29 17:54:59.961 +05:30 [INF] Showroom open stock data already exists, skipping
+2026-04-29 17:54:59.962 +05:30 [INF] Dev data seed completed successfully
+2026-04-29 17:54:59.962 +05:30 [INF] Database seeded successfully
+2026-04-29 17:55:00.672 +05:30 [INF] DMS Backend API started successfully
+2026-04-29 17:56:56.320 +05:30 [ERR] An unhandled exception occurred
+System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'System.IdentityModel.Tokens.Jwt, Version=8.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'. The system cannot find the file specified.
+File name: 'System.IdentityModel.Tokens.Jwt, Version=8.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'
+   at Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions..ctor()
+   at Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions..ctor()
+   at System.RuntimeType.CreateInstanceOfT()
+   --- End of inner exception stack trace ---
+   at System.RuntimeType.CreateInstanceOfT()
+   at System.Activator.CreateInstance[T]()
+   at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+   at Microsoft.Extensions.Options.OptionsMonitor`1.Get(String name)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationServiceImpl.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at DMS_Backend.Middleware.ApiRequestLoggingMiddleware.InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
+   at DMS_Backend.Middleware.ApiRequestLoggingMiddleware.InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+2026-04-29 17:56:56.505 +05:30 [ERR] An unhandled exception has occurred while executing the request.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at DMS_Backend.Middleware.ExceptionMiddleware.HandleExceptionAsync(HttpContext context, Exception exception, ISystemLogService systemLogService)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2026-04-29 17:56:56.518 +05:30 [ERR] An exception was thrown attempting to display the error page.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.DisplayExceptionContent(ErrorContext errorContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2026-04-29 17:56:56.522 +05:30 [ERR] Connection id "0HNL5TACQ1HIH", Request id "0HNL5TACQ1HIH:00000002": An unhandled exception was thrown by the application.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at DMS_Backend.Middleware.ExceptionMiddleware.HandleExceptionAsync(HttpContext context, Exception exception, ISystemLogService systemLogService)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+2026-04-29 17:56:56.540 +05:30 [ERR] An unhandled exception occurred
+System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.IO.FileNotFoundException: Could not load file or assembly 'System.IdentityModel.Tokens.Jwt, Version=8.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'. The system cannot find the file specified.
+File name: 'System.IdentityModel.Tokens.Jwt, Version=8.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'
+   at Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions..ctor()
+   at Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions..ctor()
+   at System.RuntimeType.CreateInstanceOfT()
+   --- End of inner exception stack trace ---
+   at System.RuntimeType.CreateInstanceOfT()
+   at System.Activator.CreateInstance[T]()
+   at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+--- End of stack trace from previous location ---
+   at System.Lazy`1.CreateValue()
+   at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+   at Microsoft.Extensions.Options.OptionsMonitor`1.Get(String name)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationServiceImpl.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at DMS_Backend.Middleware.ApiRequestLoggingMiddleware.InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
+   at DMS_Backend.Middleware.ApiRequestLoggingMiddleware.InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+2026-04-29 17:56:56.551 +05:30 [ERR] An unhandled exception has occurred while executing the request.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at DMS_Backend.Middleware.ExceptionMiddleware.HandleExceptionAsync(HttpContext context, Exception exception, ISystemLogService systemLogService)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2026-04-29 17:56:56.554 +05:30 [ERR] An exception was thrown attempting to display the error page.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.DisplayExceptionContent(ErrorContext errorContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2026-04-29 17:56:56.555 +05:30 [ERR] Connection id "0HNL5TACQ1HIG", Request id "0HNL5TACQ1HIG:00000002": An unhandled exception was thrown by the application.
+System.ObjectDisposedException: Cannot access a closed Stream.
+   at System.IO.MemoryStream.Write(Byte[] buffer, Int32 offset, Int32 count)
+   at System.IO.MemoryStream.WriteAsync(ReadOnlyMemory`1 buffer, CancellationToken cancellationToken)
+--- End of stack trace from previous location ---
+   at System.IO.Pipelines.StreamPipeWriter.FlushAsyncInternal(Boolean writeToStream, ReadOnlyMemory`1 data, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask`1.GetTaskForValueTaskSource(IValueTaskSource`1 t)
+--- End of stack trace from previous location ---
+   at DMS_Backend.Middleware.ExceptionMiddleware.HandleExceptionAsync(HttpContext context, Exception exception, ISystemLogService systemLogService)
+   at DMS_Backend.Middleware.ExceptionMiddleware.InvokeAsync(HttpContext context, ISystemLogService systemLogService)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)

@@ -1,4 +1,4 @@
-import apiClient, { type ApiEnvelope } from './api-client';
+import apiClient from './api-client';
 
 export interface Product {
   id: string;
@@ -100,23 +100,33 @@ export const productsApi = {
     if (categoryId) params.append('categoryId', categoryId);
     if (activeOnly !== undefined) params.append('activeOnly', activeOnly.toString());
 
-    const response = await apiClient.get<ApiEnvelope<ProductsResponse>>(`/api/Products?${params}`);
-    return response.data.data;
+    const response = await apiClient.get<any>(`/api/Products?${params}`);
+    const payload = response.data?.data ?? response.data;
+    const rawList = payload?.Products ?? payload?.products;
+    const products = Array.isArray(rawList) ? rawList : [];
+    return {
+      products,
+      page: payload?.Page ?? payload?.page ?? page,
+      pageSize: payload?.PageSize ?? payload?.pageSize ?? pageSize,
+      totalPages: payload?.TotalPages ?? payload?.totalPages ?? 1,
+      totalCount: payload?.TotalCount ?? payload?.totalCount ?? products.length,
+    };
   },
 
   async getById(id: string): Promise<Product> {
-    const response = await apiClient.get<ApiEnvelope<Product>>(`/api/Products/${id}`);
-    return response.data.data;
+    const response = await apiClient.get<any>(`/api/Products/${id}`);
+    const data = response.data?.data ?? response.data;
+    return data as Product;
   },
 
   async create(data: CreateProductDto): Promise<Product> {
-    const response = await apiClient.post<ApiEnvelope<Product>>('/api/Products', data);
-    return response.data.data;
+    const response = await apiClient.post<any>('/api/Products', data);
+    return (response.data?.data ?? response.data) as Product;
   },
 
   async update(id: string, data: UpdateProductDto): Promise<Product> {
-    const response = await apiClient.put<ApiEnvelope<Product>>(`/api/Products/${id}`, data);
-    return response.data.data;
+    const response = await apiClient.put<any>(`/api/Products/${id}`, data);
+    return (response.data?.data ?? response.data) as Product;
   },
 
   async delete(id: string): Promise<void> {

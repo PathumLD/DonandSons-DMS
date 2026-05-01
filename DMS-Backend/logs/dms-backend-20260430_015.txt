@@ -1,0 +1,106 @@
+2026-04-30 15:23:25.626 +05:30 [INF] Starting DMS Backend API
+2026-04-30 15:23:30.718 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:30.728 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:30.733 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:30.737 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:30.740 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:30.745 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:23:33.047 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-30 15:23:33.055 +05:30 [INF] Starting dev data seed
+2026-04-30 15:23:33.135 +05:30 [INF] Demo users already exist, skipping
+2026-04-30 15:23:33.153 +05:30 [INF] Demo roles already exist, skipping
+2026-04-30 15:23:33.630 +05:30 [INF] Showroom open stock seeded for 2 outlets with date 2026-01-10
+2026-04-30 15:23:33.633 +05:30 [INF] Dev data seed completed successfully
+2026-04-30 15:23:33.635 +05:30 [INF] Database seeded successfully
+2026-04-30 15:23:34.109 +05:30 [INF] DMS Backend API started successfully
+2026-04-30 15:26:47.388 +05:30 [ERR] Failed to create audit log
+System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported. Path: $.WaitHandle.Handle.
+ ---> System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported.
+   at System.Text.Json.Serialization.Converters.UnsupportedTypeConverter`1.Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWriteAsObject(Utf8JsonWriter writer, Object value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.DictionaryOfTKeyTValueConverter`3.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonDictionaryConverter`3.OnTryWrite(Utf8JsonWriter writer, TDictionary dictionary, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   --- End of inner exception stack trace ---
+   at System.Text.Json.ThrowHelper.ThrowNotSupportedException(WriteStack& state, Exception innerException)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.Serialize(Utf8JsonWriter writer, T& rootValue, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsObject(Utf8JsonWriter writer, Object rootValue)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.Serialize(Utf8JsonWriter writer, T& rootValue, Object rootValueBoxed)
+   at System.Text.Json.JsonSerializer.WriteString[TValue](TValue& value, JsonTypeInfo`1 jsonTypeInfo)
+   at System.Text.Json.JsonSerializer.Serialize[TValue](TValue value, JsonSerializerOptions options)
+   at DMS_Backend.Services.Implementations.AuditLogService.LogChangeAsync(Nullable`1 userId, String email, String eventType, String entityType, String entityId, String action, Object oldValues, Object newValues, String ipAddress, String userAgent, String requestPath, String requestMethod, Nullable`1 statusCode, String errorMessage, CancellationToken cancellationToken) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Services\Implementations\AuditLogService.cs:line 38
+2026-04-30 15:50:38.837 +05:30 [INF] Starting DMS Backend API
+2026-04-30 15:50:42.774 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlan'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:42.787 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ProductionPlanItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:42.792 +05:30 [WRN] Entity 'DeliveryPlan' has a global query filter defined and is the required end of a relationship with the entity 'Reconciliation'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:42.796 +05:30 [WRN] Entity 'Product' has a global query filter defined and is the required end of a relationship with the entity 'ReconciliationItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:42.803 +05:30 [WRN] Entity 'ProductionSection' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNote'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:42.810 +05:30 [WRN] Entity 'Ingredient' has a global query filter defined and is the required end of a relationship with the entity 'StoresIssueNoteItem'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-04-30 15:50:45.933 +05:30 [INF] Dev seed is enabled, seeding development data
+2026-04-30 15:50:45.944 +05:30 [INF] Starting dev data seed
+2026-04-30 15:50:46.015 +05:30 [INF] Demo users already exist, skipping
+2026-04-30 15:50:46.033 +05:30 [INF] Demo roles already exist, skipping
+2026-04-30 15:50:46.052 +05:30 [INF] Showroom open stock data already exists, skipping
+2026-04-30 15:50:46.057 +05:30 [INF] Dev data seed completed successfully
+2026-04-30 15:50:46.059 +05:30 [INF] Database seeded successfully
+2026-04-30 15:50:46.449 +05:30 [INF] DMS Backend API started successfully
+2026-04-30 16:01:29.450 +05:30 [ERR] Failed to create audit log
+System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported. Path: $.WaitHandle.Handle.
+ ---> System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported.
+   at System.Text.Json.Serialization.Converters.UnsupportedTypeConverter`1.Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWriteAsObject(Utf8JsonWriter writer, Object value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.DictionaryOfTKeyTValueConverter`3.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonDictionaryConverter`3.OnTryWrite(Utf8JsonWriter writer, TDictionary dictionary, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   --- End of inner exception stack trace ---
+   at System.Text.Json.ThrowHelper.ThrowNotSupportedException(WriteStack& state, Exception innerException)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsObject(Utf8JsonWriter writer, Object rootValue)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.Serialize(Utf8JsonWriter writer, T& rootValue, Object rootValueBoxed)
+   at System.Text.Json.JsonSerializer.WriteString[TValue](TValue& value, JsonTypeInfo`1 jsonTypeInfo)
+   at System.Text.Json.JsonSerializer.Serialize[TValue](TValue value, JsonSerializerOptions options)
+   at DMS_Backend.Services.Implementations.AuditLogService.LogChangeAsync(Nullable`1 userId, String email, String eventType, String entityType, String entityId, String action, Object oldValues, Object newValues, String ipAddress, String userAgent, String requestPath, String requestMethod, Nullable`1 statusCode, String errorMessage, CancellationToken cancellationToken) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Services\Implementations\AuditLogService.cs:line 38
+2026-04-30 16:01:36.057 +05:30 [ERR] Failed to create audit log
+System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported. Path: $.WaitHandle.Handle.
+ ---> System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances is not supported.
+   at System.Text.Json.Serialization.Converters.UnsupportedTypeConverter`1.Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWriteAsObject(Utf8JsonWriter writer, Object value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.DictionaryOfTKeyTValueConverter`3.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonDictionaryConverter`3.OnTryWrite(Utf8JsonWriter writer, TDictionary dictionary, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   --- End of inner exception stack trace ---
+   at System.Text.Json.ThrowHelper.ThrowNotSupportedException(WriteStack& state, Exception innerException)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsObject(Utf8JsonWriter writer, Object rootValue)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.Serialize(Utf8JsonWriter writer, T& rootValue, Object rootValueBoxed)
+   at System.Text.Json.JsonSerializer.WriteString[TValue](TValue& value, JsonTypeInfo`1 jsonTypeInfo)
+   at System.Text.Json.JsonSerializer.Serialize[TValue](TValue value, JsonSerializerOptions options)
+   at DMS_Backend.Services.Implementations.AuditLogService.LogChangeAsync(Nullable`1 userId, String email, String eventType, String entityType, String entityId, String action, Object oldValues, Object newValues, String ipAddress, String userAgent, String requestPath, String requestMethod, Nullable`1 statusCode, String errorMessage, CancellationToken cancellationToken) in C:\Cipher Labz\DonandSons-DMS\DMS-Backend\Services\Implementations\AuditLogService.cs:line 38

@@ -1,12 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using DMS_Backend.Models.DTOs.StoresIssueNotes;
 using DMS_Backend.Services.Interfaces;
+using DMS_Backend.Common;
+using DMS_Backend.Filters;
 
 namespace DMS_Backend.Controllers;
 
 [ApiController]
 [Route("api/stores-issue-notes")]
+[Authorize]
 public class StoresIssueNotesController : ControllerBase
 {
     private readonly IStoresIssueNoteService _storesIssueNoteService;
@@ -27,6 +31,8 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpPost("compute")]
+    [HasPermission("stores-issue-note:create")]
+    [Audit]
     public async Task<IActionResult> ComputeStoresIssueNote(
         [FromQuery] Guid productionPlanId,
         [FromQuery] Guid productionSectionId,
@@ -49,6 +55,9 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpPost]
+    [HasPermission("stores-issue-note:create")]
+    [Audit]
+    [DayLockGuard]
     public async Task<IActionResult> CreateStoresIssueNote([FromBody] CreateStoresIssueNoteDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
@@ -74,6 +83,7 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission("stores-issue-note:view")]
     public async Task<IActionResult> GetStoresIssueNoteById(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -95,6 +105,7 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpGet("by-section")]
+    [HasPermission("stores-issue-note:view")]
     public async Task<IActionResult> GetBySection(
         [FromQuery] Guid planId,
         [FromQuery] Guid sectionId,
@@ -119,6 +130,7 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission("stores-issue-note:view")]
     public async Task<IActionResult> GetAllStoresIssueNotes(CancellationToken cancellationToken)
     {
         try
@@ -134,6 +146,9 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [HasPermission("stores-issue-note:update")]
+    [Audit]
+    [DayLockGuard]
     public async Task<IActionResult> UpdateStoresIssueNote(Guid id, [FromBody] UpdateStoresIssueNoteDto dto, CancellationToken cancellationToken)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
@@ -161,6 +176,9 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [HasPermission("stores-issue-note:delete")]
+    [Audit]
+    [DayLockGuard]
     public async Task<IActionResult> DeleteStoresIssueNote(Guid id, CancellationToken cancellationToken)
     {
         try
@@ -182,6 +200,9 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpPost("{id}/issue")]
+    [HasPermission("stores-issue-note:execute")]
+    [Audit]
+    [DayLockGuard]
     public async Task<IActionResult> IssueNote(Guid id, [FromBody] IssueNoteActionDto dto, CancellationToken cancellationToken)
     {
         try
@@ -207,6 +228,9 @@ public class StoresIssueNotesController : ControllerBase
     }
 
     [HttpPost("{id}/receive")]
+    [HasPermission("stores-issue-note:execute")]
+    [Audit]
+    [DayLockGuard]
     public async Task<IActionResult> ReceiveNote(Guid id, [FromBody] IssueNoteActionDto dto, CancellationToken cancellationToken)
     {
         try

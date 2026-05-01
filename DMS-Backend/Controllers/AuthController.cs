@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using DMS_Backend.Configuration;
 using DMS_Backend.Models.DTOs.Auth;
 using DMS_Backend.Services.Interfaces;
 
@@ -11,10 +13,12 @@ namespace DMS_Backend.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly JwtOptions _jwtOptions;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions)
     {
         _authService = authService;
+        _jwtOptions = jwtOptions.Value;
     }
 
     [HttpPost("login")]
@@ -64,7 +68,7 @@ public sealed class AuthController : ControllerBase
             AccessToken = result.Value.AccessToken,
             RefreshToken = result.Value.RefreshToken,
             User = result.Value.User,
-            ExpiresIn = 900
+            ExpiresIn = _jwtOptions.AccessTokenExpirationSeconds
         });
     }
 
@@ -90,15 +94,23 @@ public sealed class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserDto>> GetCurrentUser(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-            return Unauthorized();
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
 
-        var user = await _authService.GetCurrentUserAsync(userId, cancellationToken);
-        if (user == null)
-            return NotFound();
+            var user = await _authService.GetCurrentUserAsync(userId, cancellationToken);
+            if (user == null)
+                return NotFound();
 
-        return Ok(user);
+            return Ok(user);
+        }
+        catch (OperationCanceledException)
+        {
+            // Request was cancelled by client (e.g., page navigation)
+            return StatusCode(499); // Client Closed Request
+        }
     }
 
     [HttpPost("change-password")]

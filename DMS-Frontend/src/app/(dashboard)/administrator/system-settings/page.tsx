@@ -1,41 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { Settings, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { systemSettingsApi, type SystemSetting, type CreateSystemSettingDto, type UpdateSystemSettingDto } from '@/lib/api/system-settings';
+import { systemSettingsApi, type SystemSetting, type UpdateSystemSettingDto } from '@/lib/api/system-settings';
 import toast from 'react-hot-toast';
 
 export default function SystemSettingsPage() {
+  const router = useRouter();
   const [settings, setSettings] = useState<SystemSetting[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedSetting, setSelectedSetting] = useState<SystemSetting | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    settingKey: '',
-    settingName: '',
-    settingValue: '',
-    settingType: 'String',
-    description: '',
-    category: 'General',
-    isSystemSetting: false,
-    isEncrypted: false,
-    displayOrder: 0,
-    isActive: true,
-  });
 
   useEffect(() => {
     loadSettings();
@@ -74,103 +56,6 @@ export default function SystemSettingsPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update setting');
     }
-  };
-
-  const handleAddSetting = async () => {
-    if (!formData.settingKey || !formData.settingName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const createData: CreateSystemSettingDto = {
-        settingKey: formData.settingKey,
-        settingName: formData.settingName,
-        settingValue: formData.settingValue,
-        settingType: formData.settingType,
-        description: formData.description,
-        category: formData.category,
-        isSystemSetting: formData.isSystemSetting,
-        isEncrypted: formData.isEncrypted,
-        displayOrder: formData.displayOrder,
-        isActive: formData.isActive,
-      };
-      await systemSettingsApi.create(createData);
-      toast.success('System setting created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadSettings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create setting');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditSetting = async () => {
-    if (!selectedSetting || !formData.settingKey || !formData.settingName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const updateData: UpdateSystemSettingDto = {
-        settingKey: formData.settingKey,
-        settingName: formData.settingName,
-        settingValue: formData.settingValue,
-        settingType: formData.settingType,
-        description: formData.description,
-        category: formData.category,
-        isSystemSetting: formData.isSystemSetting,
-        isEncrypted: formData.isEncrypted,
-        displayOrder: formData.displayOrder,
-        isActive: formData.isActive,
-      };
-      await systemSettingsApi.update(selectedSetting.id, updateData);
-      toast.success('System setting updated successfully');
-      setShowEditModal(false);
-      setSelectedSetting(null);
-      resetForm();
-      loadSettings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update setting');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      settingKey: '',
-      settingName: '',
-      settingValue: '',
-      settingType: 'String',
-      description: '',
-      category: 'General',
-      isSystemSetting: false,
-      isEncrypted: false,
-      displayOrder: 0,
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (setting: SystemSetting) => {
-    setSelectedSetting(setting);
-    setFormData({
-      settingKey: setting.settingKey,
-      settingName: setting.settingName,
-      settingValue: setting.settingValue || '',
-      settingType: setting.settingType,
-      description: setting.description || '',
-      category: setting.category || 'General',
-      isSystemSetting: setting.isSystemSetting,
-      isEncrypted: setting.isEncrypted,
-      displayOrder: setting.displayOrder,
-      isActive: setting.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -235,7 +120,7 @@ export default function SystemSettingsPage() {
       render: (item: SystemSetting) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/system-settings/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -259,103 +144,6 @@ export default function SystemSettingsPage() {
     },
   ];
 
-  const renderForm = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Setting Key"
-          value={formData.settingKey}
-          onChange={(e) => setFormData({ ...formData, settingKey: e.target.value })}
-          placeholder="e.g., app.session_timeout"
-          fullWidth
-          required
-        />
-        <Input
-          label="Setting Name"
-          value={formData.settingName}
-          onChange={(e) => setFormData({ ...formData, settingName: e.target.value })}
-          placeholder="Session Timeout"
-          fullWidth
-          required
-        />
-      </div>
-      <Input
-        label="Description"
-        value={formData.description}
-        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        placeholder="Optional description"
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Setting Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={formData.settingType}
-            onChange={(e) => setFormData({ ...formData, settingType: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
-          >
-            <option value="String">String</option>
-            <option value="Number">Number</option>
-            <option value="Boolean">Boolean</option>
-            <option value="JSON">JSON</option>
-            <option value="Password">Password</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>
-            Category
-          </label>
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg text-sm"
-            style={{ border: '1px solid var(--input)' }}
-          >
-            <option value="General">General</option>
-            <option value="Security">Security</option>
-            <option value="Email">Email</option>
-            <option value="Database">Database</option>
-            <option value="API">API</option>
-          </select>
-        </div>
-      </div>
-      <Input
-        label="Setting Value"
-        value={formData.settingValue}
-        onChange={(e) => setFormData({ ...formData, settingValue: e.target.value })}
-        placeholder="Setting value"
-        fullWidth
-      />
-      <Input
-        label="Display Order"
-        type="number"
-        value={formData.displayOrder.toString()}
-        onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
-        fullWidth
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-        <Toggle
-          checked={formData.isSystemSetting}
-          onChange={(checked) => setFormData({ ...formData, isSystemSetting: checked })}
-          label="System Setting"
-        />
-        <Toggle
-          checked={formData.isEncrypted}
-          onChange={(checked) => setFormData({ ...formData, isEncrypted: checked })}
-          label="Encrypted"
-        />
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -370,10 +158,7 @@ export default function SystemSettingsPage() {
             Manage system-wide configuration settings ({totalCount} settings)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/system-settings/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Setting
         </Button>
@@ -420,50 +205,6 @@ export default function SystemSettingsPage() {
           )}
         </CardContent>
       </Card>
-
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add System Setting"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddSetting} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Setting'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedSetting(null);
-          resetForm();
-        }}
-        title="Edit System Setting"
-        size="lg"
-      >
-        {renderForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedSetting(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditSetting} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

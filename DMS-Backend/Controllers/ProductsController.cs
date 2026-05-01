@@ -20,7 +20,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    [HasPermission("inventory:view")]
+    [HasPermission("products:view")]
     public async Task<ActionResult<ApiResponse<object>>> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -42,7 +42,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [HasPermission("inventory:view")]
+    [HasPermission("products:view")]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> GetById(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -57,7 +57,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    [HasPermission("inventory:create")]
+    [HasPermission("products:create")]
     [Audit]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> Create(
         [FromBody] CreateProductDto dto,
@@ -80,7 +80,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [HasPermission("inventory:edit")]
+    [HasPermission("products:edit")]
     [Audit]
     public async Task<ActionResult<ApiResponse<ProductDetailDto>>> Update(
         Guid id,
@@ -105,7 +105,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [HasPermission("inventory:delete")]
+    [HasPermission("products:delete")]
     [Audit]
     public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,

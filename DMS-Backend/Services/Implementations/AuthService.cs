@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using DMS_Backend.Configuration;
 using DMS_Backend.Data;
 using DMS_Backend.Models.DTOs.Auth;
 using DMS_Backend.Models.Entities;
@@ -16,6 +18,7 @@ public sealed class AuthService : IAuthService
     private readonly ISystemLogService _systemLogService;
     private readonly IEmailService _emailService;
     private readonly ApplicationDbContext _context;
+    private readonly JwtOptions _jwtOptions;
 
     public AuthService(
         IUserService userService,
@@ -23,7 +26,8 @@ public sealed class AuthService : IAuthService
         IAuthenticationLogService authLogService,
         ISystemLogService systemLogService,
         IEmailService emailService,
-        ApplicationDbContext context)
+        ApplicationDbContext context,
+        IOptions<JwtOptions> jwtOptions)
     {
         _userService = userService;
         _jwtService = jwtService;
@@ -31,6 +35,7 @@ public sealed class AuthService : IAuthService
         _systemLogService = systemLogService;
         _emailService = emailService;
         _context = context;
+        _jwtOptions = jwtOptions.Value;
     }
 
     public async Task<LoginResponseDto> LoginAsync(
@@ -82,7 +87,7 @@ public sealed class AuthService : IAuthService
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 User = MapToUserDto(userWithRoles!, permissions),
-                ExpiresIn = 900 // 15 minutes in seconds
+                ExpiresIn = _jwtOptions.AccessTokenExpirationSeconds
             };
         }
         catch (UnauthorizedAccessException)

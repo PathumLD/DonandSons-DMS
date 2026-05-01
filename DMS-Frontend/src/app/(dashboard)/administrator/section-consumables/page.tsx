@@ -1,37 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Modal, ModalFooter } from '@/components/ui/modal';
-import Input from '@/components/ui/input';
-import { Toggle } from '@/components/ui/toggle';
 import { Package, Plus, Search, Edit, X, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { sectionConsumablesApi, type SectionConsumable, type CreateSectionConsumableDto, type UpdateSectionConsumableDto } from '@/lib/api/section-consumables';
+import { sectionConsumablesApi, type SectionConsumable, type UpdateSectionConsumableDto } from '@/lib/api/section-consumables';
 import toast from 'react-hot-toast';
 
 export default function SectionConsumablesPage() {
+  const router = useRouter();
   const [consumables, setConsumables] = useState<SectionConsumable[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedConsumable, setSelectedConsumable] = useState<SectionConsumable | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    productionSectionId: '',
-    ingredientId: '',
-    quantityPerUnit: 1,
-    formula: '',
-    notes: '',
-    isActive: true,
-  });
 
   useEffect(() => {
     loadConsumables();
@@ -73,87 +59,6 @@ export default function SectionConsumablesPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update section consumable');
     }
-  };
-
-  const handleAddConsumable = async () => {
-    if (!formData.productionSectionId || !formData.ingredientId) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const createData: CreateSectionConsumableDto = {
-        productionSectionId: formData.productionSectionId,
-        ingredientId: formData.ingredientId,
-        quantityPerUnit: formData.quantityPerUnit,
-        formula: formData.formula,
-        notes: formData.notes,
-        isActive: formData.isActive,
-      };
-      await sectionConsumablesApi.create(createData);
-      toast.success('Section consumable created successfully');
-      setShowAddModal(false);
-      resetForm();
-      loadConsumables();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create section consumable');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditConsumable = async () => {
-    if (!selectedConsumable || !formData.productionSectionId || !formData.ingredientId) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const updateData: UpdateSectionConsumableDto = {
-        productionSectionId: formData.productionSectionId,
-        ingredientId: formData.ingredientId,
-        quantityPerUnit: formData.quantityPerUnit,
-        formula: formData.formula,
-        notes: formData.notes,
-        isActive: formData.isActive,
-      };
-      await sectionConsumablesApi.update(selectedConsumable.id, updateData);
-      toast.success('Section consumable updated successfully');
-      setShowEditModal(false);
-      setSelectedConsumable(null);
-      resetForm();
-      loadConsumables();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update section consumable');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      productionSectionId: '',
-      ingredientId: '',
-      quantityPerUnit: 1,
-      formula: '',
-      notes: '',
-      isActive: true,
-    });
-  };
-
-  const openEditModal = (consumable: SectionConsumable) => {
-    setSelectedConsumable(consumable);
-    setFormData({
-      productionSectionId: consumable.productionSectionId,
-      ingredientId: consumable.ingredientId,
-      quantityPerUnit: consumable.quantityPerUnit,
-      formula: consumable.formula || '',
-      notes: consumable.notes || '',
-      isActive: consumable.isActive,
-    });
-    setShowEditModal(true);
   };
 
   const columns = [
@@ -209,7 +114,7 @@ export default function SectionConsumablesPage() {
       render: (item: SectionConsumable) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => openEditModal(item)}
+            onClick={() => router.push(`/administrator/section-consumables/edit/${item.id}`)}
             className="p-1.5 rounded transition-colors"
             style={{ color: 'var(--muted-foreground)' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -233,57 +138,6 @@ export default function SectionConsumablesPage() {
     },
   ];
 
-  const renderConsumableForm = () => (
-    <div className="space-y-4">
-      <Input
-        label="Production Section ID"
-        value={formData.productionSectionId}
-        onChange={(e) => setFormData({ ...formData, productionSectionId: e.target.value })}
-        placeholder="Enter production section ID (GUID)"
-        fullWidth
-        required
-      />
-      <Input
-        label="Ingredient ID"
-        value={formData.ingredientId}
-        onChange={(e) => setFormData({ ...formData, ingredientId: e.target.value })}
-        placeholder="Enter ingredient ID (GUID)"
-        fullWidth
-        required
-      />
-      <Input
-        label="Quantity Per Unit"
-        type="number"
-        step="0.01"
-        value={formData.quantityPerUnit.toString()}
-        onChange={(e) => setFormData({ ...formData, quantityPerUnit: parseFloat(e.target.value) || 1 })}
-        fullWidth
-        required
-      />
-      <Input
-        label="Formula"
-        value={formData.formula}
-        onChange={(e) => setFormData({ ...formData, formula: e.target.value })}
-        placeholder="Optional formula"
-        fullWidth
-      />
-      <Input
-        label="Notes"
-        value={formData.notes}
-        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        placeholder="Optional notes"
-        fullWidth
-      />
-      <div className="pt-2">
-        <Toggle
-          checked={formData.isActive}
-          onChange={(checked) => setFormData({ ...formData, isActive: checked })}
-          label="Active Status"
-        />
-      </div>
-    </div>
-  );
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -298,10 +152,7 @@ export default function SectionConsumablesPage() {
             Manage non-ingredient consumables per production section ({totalCount} consumables)
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => {
-          resetForm();
-          setShowAddModal(true);
-        }}>
+        <Button variant="primary" size="md" onClick={() => router.push('/administrator/section-consumables/add')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Consumable
         </Button>
@@ -348,52 +199,6 @@ export default function SectionConsumablesPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Add Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Add Section Consumable"
-        size="md"
-      >
-        {renderConsumableForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setShowAddModal(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddConsumable} disabled={submitting}>
-            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {submitting ? 'Adding...' : 'Add Consumable'}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedConsumable(null);
-          resetForm();
-        }}
-        title="Edit Section Consumable"
-        size="md"
-      >
-        {renderConsumableForm()}
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => {
-            setShowEditModal(false);
-            setSelectedConsumable(null);
-            resetForm();
-          }} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditConsumable} disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {submitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
-      </Modal>
     </div>
   );
 }

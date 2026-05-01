@@ -89,6 +89,13 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<LabelPrintRequest> LabelPrintRequests => Set<LabelPrintRequest>();
     public DbSet<ShowroomLabelRequest> ShowroomLabelRequests => Set<ShowroomLabelRequest>();
 
+    // Phase 7: Production & Stock entities
+    public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<DailyProduction> DailyProductions => Set<DailyProduction>();
+    public DbSet<ProductionCancel> ProductionCancels => Set<ProductionCancel>();
+    public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
+    public DbSet<DailyProductionPlan> DailyProductionPlans => Set<DailyProductionPlan>();
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // Auto-generate document numbers for Phase 6 entities
@@ -126,6 +133,22 @@ public sealed class ApplicationDbContext : DbContext
 
                 case LabelPrintRequest labelPrintRequest when string.IsNullOrEmpty(labelPrintRequest.DisplayNo):
                     labelPrintRequest.DisplayNo = await GenerateLabelPrintRequestNoAsync(cancellationToken);
+                    break;
+
+                case DailyProduction dailyProduction when string.IsNullOrEmpty(dailyProduction.ProductionNo):
+                    dailyProduction.ProductionNo = await GenerateDailyProductionNoAsync(cancellationToken);
+                    break;
+
+                case ProductionCancel productionCancel when string.IsNullOrEmpty(productionCancel.CancelNo):
+                    productionCancel.CancelNo = await GenerateProductionCancelNoAsync(cancellationToken);
+                    break;
+
+                case StockAdjustment stockAdjustment when string.IsNullOrEmpty(stockAdjustment.AdjustmentNo):
+                    stockAdjustment.AdjustmentNo = await GenerateStockAdjustmentNoAsync(cancellationToken);
+                    break;
+
+                case DailyProductionPlan dailyProductionPlan when string.IsNullOrEmpty(dailyProductionPlan.PlanNo):
+                    dailyProductionPlan.PlanNo = await GenerateDailyProductionPlanNoAsync(cancellationToken);
                     break;
             }
         }
@@ -255,6 +278,74 @@ public sealed class ApplicationDbContext : DbContext
         return $"{prefix}00000001";
     }
 
+    private async Task<string> GenerateDailyProductionNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "PRO";
+        
+        var lastProduction = await DailyProductions
+            .Where(p => p.ProductionNo.StartsWith(prefix))
+            .OrderByDescending(p => p.ProductionNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastProduction != null && int.TryParse(lastProduction.ProductionNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D7}";
+        }
+
+        return $"{prefix}0000001";
+    }
+
+    private async Task<string> GenerateProductionCancelNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "PCC";
+        
+        var lastCancel = await ProductionCancels
+            .Where(p => p.CancelNo.StartsWith(prefix))
+            .OrderByDescending(p => p.CancelNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastCancel != null && int.TryParse(lastCancel.CancelNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D7}";
+        }
+
+        return $"{prefix}0000001";
+    }
+
+    private async Task<string> GenerateStockAdjustmentNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "PSA";
+        
+        var lastAdjustment = await StockAdjustments
+            .Where(s => s.AdjustmentNo.StartsWith(prefix))
+            .OrderByDescending(s => s.AdjustmentNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastAdjustment != null && int.TryParse(lastAdjustment.AdjustmentNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D7}";
+        }
+
+        return $"{prefix}0000001";
+    }
+
+    private async Task<string> GenerateDailyProductionPlanNoAsync(CancellationToken cancellationToken)
+    {
+        var prefix = "PRJ";
+        
+        var lastPlan = await DailyProductionPlans
+            .Where(p => p.PlanNo.StartsWith(prefix))
+            .OrderByDescending(p => p.PlanNo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastPlan != null && int.TryParse(lastPlan.PlanNo.Substring(prefix.Length), out var lastNumber))
+        {
+            return $"{prefix}{(lastNumber + 1):D7}";
+        }
+
+        return $"{prefix}0000001";
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -322,10 +413,12 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Code).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Module).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DisplayOrder).HasColumnName("DisplayOrder").IsRequired(false).HasDefaultValue(0);
             entity.Property(e => e.IsSystemPermission).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
 
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.DisplayOrder);
             entity.HasIndex(e => e.Module);
         });
 
@@ -1453,6 +1546,158 @@ public sealed class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.DisplayNo).IsUnique();
             entity.HasIndex(e => e.Date);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // Phase 7: Production & Stock entity configurations
+        // Shift entity configuration
+        modelBuilder.Entity<Shift>(entity =>
+        {
+            entity.ToTable("shifts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Code).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.StartTime).IsRequired();
+            entity.Property(e => e.EndTime).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DisplayOrder).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.DisplayOrder);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        // DailyProduction entity configuration
+        modelBuilder.Entity<DailyProduction>(entity =>
+        {
+            entity.ToTable("daily_productions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ProductionNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ProductionDate).IsRequired();
+            entity.Property(e => e.PlannedQty).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.ProducedQty).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.ShiftId).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Shift)
+                .WithMany(s => s.DailyProductions)
+                .HasForeignKey(e => e.ShiftId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.ProductionNo).IsUnique();
+            entity.HasIndex(e => e.ProductionDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProductId);
+            entity.HasIndex(e => e.ShiftId);
+        });
+
+        // ProductionCancel entity configuration
+        modelBuilder.Entity<ProductionCancel>(entity =>
+        {
+            entity.ToTable("production_cancels");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CancelNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CancelDate).IsRequired();
+            entity.Property(e => e.ProductionNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CancelledQty).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.CancelNo).IsUnique();
+            entity.HasIndex(e => e.CancelDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // StockAdjustment entity configuration
+        modelBuilder.Entity<StockAdjustment>(entity =>
+        {
+            entity.ToTable("stock_adjustments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AdjustmentNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.AdjustmentDate).IsRequired();
+            entity.Property(e => e.AdjustmentType).HasConversion<string>().IsRequired();
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.AdjustmentNo).IsUnique();
+            entity.HasIndex(e => e.AdjustmentDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProductId);
+        });
+
+        // DailyProductionPlan entity configuration
+        modelBuilder.Entity<DailyProductionPlan>(entity =>
+        {
+            entity.ToTable("daily_production_plans");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.PlanNo).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.PlanDate).IsRequired();
+            entity.Property(e => e.PlannedQty).HasColumnType("decimal(18,4)").IsRequired();
+            entity.Property(e => e.Priority).HasConversion<string>().IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().IsRequired();
+            entity.Property(e => e.Reference).HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.PlanNo).IsUnique();
+            entity.HasIndex(e => e.PlanDate);
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.ProductId);
         });

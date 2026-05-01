@@ -23,6 +23,13 @@ public sealed class ApiRequestLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
     {
+        // Skip DB-backed request logging for health probes (high frequency, no value)
+        if (context.Request.Path.StartsWithSegments("/health"))
+        {
+            await _next(context);
+            return;
+        }
+
         var requestId = context.TraceIdentifier;
         var stopwatch = Stopwatch.StartNew();
         

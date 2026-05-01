@@ -465,6 +465,194 @@ namespace DMS_Backend.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DailyProduction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_id");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal>("PlannedQty")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("planned_qty");
+
+                    b.Property<decimal>("ProducedQty")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("produced_qty");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("ProductionDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("production_date");
+
+                    b.Property<string>("ProductionNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("production_no");
+
+                    b.Property<Guid>("ShiftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shift_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductionDate");
+
+                    b.HasIndex("ProductionNo")
+                        .IsUnique();
+
+                    b.HasIndex("ShiftId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("daily_productions", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DailyProductionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_id");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_date");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text")
+                        .HasColumnName("comment");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PlanDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("plan_date");
+
+                    b.Property<string>("PlanNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("plan_no");
+
+                    b.Property<decimal>("PlannedQty")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("planned_qty");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("priority");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("PlanDate");
+
+                    b.HasIndex("PlanNo")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("daily_production_plans", (string)null);
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.DayLock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2411,6 +2599,12 @@ namespace DMS_Backend.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<int?>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("DisplayOrder");
+
                     b.Property<bool>("IsSystemPermission")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2430,6 +2624,8 @@ namespace DMS_Backend.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("DisplayOrder");
 
                     b.HasIndex("Module");
 
@@ -2713,6 +2909,96 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("ProductionPlanItemId");
 
                     b.ToTable("production_adjustments", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionCancel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_id");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_date");
+
+                    b.Property<DateTime>("CancelDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancel_date");
+
+                    b.Property<string>("CancelNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("cancel_no");
+
+                    b.Property<decimal>("CancelledQty")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("cancelled_qty");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductionNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("production_no");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CancelDate");
+
+                    b.HasIndex("CancelNo")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("production_cancels", (string)null);
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlan", b =>
@@ -3581,6 +3867,136 @@ namespace DMS_Backend.Migrations
                     b.ToTable("security_policies");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Shift", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval")
+                        .HasColumnName("end_time");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval")
+                        .HasColumnName("start_time");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("shifts", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ShowroomLabelRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LabelCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("label_count");
+
+                    b.Property<Guid>("OutletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outlet_id");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("request_date");
+
+                    b.Property<string>("Text1")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("text_1");
+
+                    b.Property<string>("Text2")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("text_2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("OutletId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("showroom_label_requests");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ShowroomOpenStock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3626,6 +4042,99 @@ namespace DMS_Backend.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("showroom_open_stock", (string)null);
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StockAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AdjustmentDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("adjustment_date");
+
+                    b.Property<string>("AdjustmentNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("adjustment_no");
+
+                    b.Property<string>("AdjustmentType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("adjustment_type");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_id");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdjustmentDate");
+
+                    b.HasIndex("AdjustmentNo")
+                        .IsUnique();
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("stock_adjustments", (string)null);
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.StockBF", b =>
@@ -4394,6 +4903,74 @@ namespace DMS_Backend.Migrations
                         .HasForeignKey("UpdatedById");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DailyProduction", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.Shift", "Shift")
+                        .WithMany("DailyProductions")
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Shift");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.DailyProductionPlan", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Product");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -5172,6 +5749,36 @@ namespace DMS_Backend.Migrations
                     b.Navigation("ProductionPlanItem");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionCancel", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ProductionPlan", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.DeliveryPlan", "DeliveryPlan")
@@ -5474,6 +6081,44 @@ namespace DMS_Backend.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Shift", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.ShowroomLabelRequest", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.Outlet", "Outlet")
+                        .WithMany()
+                        .HasForeignKey("OutletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Outlet");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("DMS_Backend.Models.Entities.ShowroomOpenStock", b =>
                 {
                     b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
@@ -5493,6 +6138,36 @@ namespace DMS_Backend.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Outlet");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.StockAdjustment", b =>
+                {
+                    b.HasOne("DMS_Backend.Models.Entities.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("DMS_Backend.Models.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DMS_Backend.Models.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Product");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -5810,6 +6485,11 @@ namespace DMS_Backend.Migrations
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("DMS_Backend.Models.Entities.Shift", b =>
+                {
+                    b.Navigation("DailyProductions");
                 });
 
             modelBuilder.Entity("DMS_Backend.Models.Entities.StoresIssueNote", b =>

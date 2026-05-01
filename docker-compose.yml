@@ -1,0 +1,123 @@
+name: donandsons-dms
+
+# ---------------------------------------------------------------------------
+# Don & Sons DMS-ERP — production-style local stack
+# Services: PostgreSQL 16, .NET 10 backend, Next.js 16 frontend
+# Configuration is loaded from a .env file at repo root (see .env.docker.example).
+# ---------------------------------------------------------------------------
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: dms-postgres
+    restart: unless-stopped
+    # POSTGRES_* is applied ONLY when the data volume is empty (first ever start).
+    # If you change POSTGRES_PASSWORD in .env later, Postgres still uses the OLD
+    # password until you reset the volume (docker compose down -v) or ALTER USER.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-prod}
+      POSTGRES_DB: ${POSTGRES_DB:-dms_erp_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: UTC
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dms_user} -d ${POSTGRES_DB:-dms_erp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - dms-net
+
+  backend:
+    image: dms-backend:latest
+    container_name: dms-backend
+    restart: unless-stopped
+    build:
+      context: ./DMS-Backend
+      dockerfile: Dockerfile
+      args:
+        DOTNET_VERSION: "10.0"
+        APP_PORT: "8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      # .NET nested config keys are mapped via "__"
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-dms_erp_db};Username=${POSTGRES_USER:-dms_user};Password=${POSTGRES_PASSWORD:-change-me-in-prod};Pooling=true;MinPoolSize=1;MaxPoolSize=50
+      Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env}
+      Jwt__Issuer: ${JWT_ISSUER:-DMS-ERP-Backend}
+      Jwt__Audience: ${JWT_AUDIENCE:-DMS-ERP-Frontend}
+      Jwt__AccessTokenExpirationMinutes: ${JWT_ACCESS_MINUTES:-1440}
+      Jwt__RefreshTokenExpirationDays: ${JWT_REFRESH_DAYS:-7}
+      SuperAdmin__Email: ${SUPERADMIN_EMAIL:-admin@donandson.com}
+      SuperAdmin__FirstName: ${SUPERADMIN_FIRSTNAME:-System}
+      SuperAdmin__LastName: ${SUPERADMIN_LASTNAME:-Administrator}
+      SuperAdmin__Password: ${SUPERADMIN_PASSWORD:?SUPERADMIN_PASSWORD must be set in .env}
+      DevSeed__Enabled: ${DEV_SEED_ENABLED:-false}
+      FrontendUrl: ${FRONTEND_URL:-http://localhost:3000}
+      # Align CORS with how the UI is opened and with FRONTEND_PORT (localhost vs 127.0.0.1 differ)
+      Cors__AllowedOrigins__0: ${FRONTEND_URL:-http://localhost:3000}
+      Cors__AllowedOrigins__1: http://127.0.0.1:${FRONTEND_PORT:-3000}
+      TZ: UTC
+    ports:
+      - "${BACKEND_PORT:-5126}:8080"
+    volumes:
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dms-net
+
+  frontend:
+    image: dms-frontend:latest
+    container_name: dms-frontend
+    restart: unless-stopped
+    build:
+      context: ./DMS-Frontend
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: "22.12-alpine"
+        APP_PORT: "3000"
+        # NEXT_PUBLIC_* vars are baked into the JS bundle at build time, so
+        # they MUST come from build-args, not runtime env.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5126}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      TZ: UTC
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - dms-net
+
+# ---------------------------------------------------------------------------
+# Persistent state lives in named volumes so containers can be recreated
+# without losing the database or backend logs.
+# ---------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: dms_postgres_data
+  backend_logs:
+    name: dms_backend_logs
+
+networks:
+  dms-net:
+    name: dms-network
+    driver: bridge
